@@ -136,15 +136,15 @@
   }
  ],
  "app": {
-  "version": "1.2.1",
-  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.1/AionDpsMeter.v1.2.1.exe",
-  "sha256": "be220eb9d1932d7739890f0ede45e88286ba27f533a2adf9ce14922d4af4065b",
-  "size": 86218477,
-  "notes": "• Горячие клавиши режимов: Ctrl+Shift+1 / 2 / 3, Ctrl+Shift+M — по кругу\n• Кнопки «Главное окно», «Размер по умолчанию», «Расписание» — наверху панели оверлея\n• Лёгкие обновления, разбор смерти, график и сравнение боёв, итог боя в Discord-канал, отчёт об ошибке",
+  "version": "1.2.2",
+  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.2/AionDpsMeter.v1.2.2.exe",
+  "sha256": "630ef648e104877e3923bd404704b8144797b69eeeb68c44d22b019e61ffe9e3",
+  "size": 86220877,
+  "notes": "• Пинг до сервера игры внизу оверлея\n• Уведомление об обновлении больше не мигает",
   "patch": {
-   "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.1/AionDpsMeter-patch-1.2.1.gz",
-   "sha256": "2778420b1a3954775b63c8a40ad67dc45877bc18a9f1bac20b54f4ece442296d",
-   "size": 1340719,
+   "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.2/AionDpsMeter-patch-1.2.2.gz",
+   "sha256": "dec6cf87c0db4bda988f81f3d6e74498dfdb1d954996d63e05b6a2acd4a332a7",
+   "size": 1343252,
    "shell": "e33-net10"
   }
  }
