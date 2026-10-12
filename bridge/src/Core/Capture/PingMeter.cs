@@ -54,12 +54,12 @@ public sealed class PingMeter
             }
         }
     }
-    /// <summary>Пинг по навыкам: нижняя четверть последних замеров (без ожидания такта сервера); -1, если замеров мало.</summary>
+    /// <summary>Пинг по навыкам: нижняя четверть последних замеров (без ожидания такта сервера); замеры живут 15 минут; -1, если замеров мало.</summary>
     public int AppPingMs(long nowMs)
     {
         lock (_gate)
         {
-            var r = _app.Where(x => nowMs - x.Ms < 120_000).Select(x => x.Rtt).OrderBy(x => x).ToArray();
+            var r = _app.Where(x => nowMs - x.Ms < 900_000).Select(x => x.Rtt).OrderBy(x => x).ToArray();
             return r.Length < 3 ? -1 : r[r.Length / 4];
         }
     }

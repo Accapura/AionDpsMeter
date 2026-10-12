@@ -309,7 +309,7 @@ string last = "";
 var icmpPing = new IcmpPinger(() => capture?.ServerIp);
 icmpPing.Start();
 long pingAt = 0;
-int pingLast = -2;
+int pingLast = int.MinValue;
 while (running)
 {
     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -362,20 +362,22 @@ while (running)
     if (now - pingAt >= 2000)
     {
         pingAt = now;
-        // 1) эхо-запрос до адреса сервера; 2) подтверждения TCP в трафике игры.
-        // Ответ быстрее 2–3 мс даёт не сервер, а местный посредник — ускоритель/VPN (ExitLag, GearUP…):
-        // настоящий пинг тогда знает только он, и мы показываем «VPN» (-2) вместо ложного 0.
+        // Главный источник — сама игра: время от нашего навыка до ответа сервера для нашего персонажа. Это путь
+        // «клиент → ускоритель/VPN → игровой сервер → обратно», то есть тот пинг, который реально у персонажа.
+        // Пока навыков не было, показываем оценку (помечена «~»): ICMP до адреса сервера или подтверждения TCP.
+        // Ответ быстрее 2–3 мс даёт не сервер, а местный посредник (ускоритель/VPN) — тогда оценки нет вовсе (-2).
         var icmp = icmpPing.Value(now);
         var passive = capture?.Ping.PingMs ?? -1;
         var lastUs = capture?.Ping.LastSampleUs ?? 0;
         if (lastUs > 0 && now - lastUs / 1000 > 15_000) passive = -1;
         var app = capture?.Ping.AppPingMs(now) ?? -1;
-        int ping;
-        if (icmp >= 2) ping = icmp;
-        else if (app >= 3) ping = app;
-        else if (passive >= 3) ping = passive;
+        int ping; var est = false;
+        if (app >= 3) ping = app;
+        else if (icmp >= 2) { ping = icmp; est = true; }
+        else if (passive >= 3) { ping = passive; est = true; }
         else ping = icmp >= 0 || passive >= 0 ? -2 : -1;
-        if (ping != pingLast) { pingLast = ping; Emit(new { t = "ping", ms = ping }); }
+        var pk = ping * 2 + (est ? 1 : 0);
+        if (pk != pingLast) { pingLast = pk; Emit(new { t = "ping", ms = ping, est }); }
     }
     Thread.Sleep(250);
 }
