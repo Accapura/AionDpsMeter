@@ -175,7 +175,7 @@ function showPing(ms) {
     // игра идёт через ускоритель/VPN: он сам подтверждает пакеты, настоящий пинг знает только он
     el.className = 'ping vpn';
     el.innerHTML = `<svg width="11" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9c-4.6-1-8-4.5-8-9V6z"/></svg>VPN`;
-    el.title = 'Игра идёт через ускоритель или VPN — настоящий пинг показывает он';
+    el.title = 'Игра идёт через ускоритель или VPN — пинг появится после первых навыков в бою';
     el.hidden = false; return;
   }
   if (ms == null || ms < 0) { el.hidden = true; return; }

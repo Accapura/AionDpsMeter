@@ -14,6 +14,9 @@ public sealed partial class CombatTracker
     private readonly List<(long TimeMs, uint Source, int Skill, long Amount, bool Crit, bool Heal)> _recap = new();
     private DeathRecap? _pendingDeath;
 
+    /// <summary>AionDps: id своего персонажа (0 — ещё не известен).</summary>
+    public uint SelfActorId { get { lock (_gate) return _entities.SelfId ?? 0; } }
+
     /// <summary>Свой персонаж погиб (вызывается вне блокировки).</summary>
     public event Action<DeathRecap>? SelfDied;
 

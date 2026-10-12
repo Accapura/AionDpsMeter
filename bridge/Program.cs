@@ -244,6 +244,8 @@ void StartCapture()
     {
         var c = new LiveCapture(data, new LiveCaptureOptions());
         c.EventDecoded += tracker.Process;
+        // пинг по своим навыкам (работает и через ускорители/VPN)
+        c.EventDecoded += e => { if (e is AionMeter.Core.Events.CastEvent ce && ce.ActorId != 0 && ce.ActorId == tracker.SelfActorId) c.Ping.MatchCast(ce.TimeMs, ce.SkillCode); };
         c.StatusChanged += st => Emit(new { t = "status", state = st.State.ToString(), msg = Ru(st) });
         c.RecordingFinished += path => Emit(new { t = "record", state = "done", path });
         c.Start();
@@ -378,8 +380,10 @@ while (running)
         var passive = capture?.Ping.PingMs ?? -1;
         var lastUs = capture?.Ping.LastSampleUs ?? 0;
         if (lastUs > 0 && now - lastUs / 1000 > 15_000) passive = -1;
+        var app = capture?.Ping.AppPingMs(now) ?? -1;
         int ping;
         if (icmp >= 2) ping = icmp;
+        else if (app >= 3) ping = app;
         else if (passive >= 3) ping = passive;
         else ping = icmp >= 0 || passive >= 0 ? -2 : -1;
         if (ping != pingLast) { pingLast = ping; Emit(new { t = "ping", ms = ping }); }
