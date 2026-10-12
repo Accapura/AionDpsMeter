@@ -245,6 +245,7 @@ void StartCapture()
         var c = new LiveCapture(data, new LiveCaptureOptions());
         c.EventDecoded += tracker.Process;
         c.StatusChanged += st => Emit(new { t = "status", state = st.State.ToString(), msg = Ru(st) });
+        c.RecordingFinished += path => Emit(new { t = "record", state = "done", path });
         c.Start();
         capture = c;
     }
@@ -267,6 +268,16 @@ new Thread(() =>
         else if (parts[0] == "reset") tracker.Reset();
         else if (parts[0] == "lang" && parts.Length > 1) data.ReloadNames(dataDir, parts[1] == "en" ? "en" : "ru");
         else if (parts[0] == "detail" && parts.Length > 1 && uint.TryParse(parts[1], out var actor)) EmitDetail(actor);
+        else if (parts[0] == "record" && parts.Length > 1)
+        {
+            // record <секунды> <папка>
+            var ra = parts[1].Split(' ', 2);
+            if (ra.Length == 2 && int.TryParse(ra[0], out var sec))
+            {
+                var path = capture?.StartRecording(ra[1], sec);
+                Emit(path is null ? new { t = "record", state = "error", path = (string?)null } : new { t = "record", state = "on", path = (string?)path });
+            }
+        }
         else if (parts[0] == "quit") break;
     }
     running = false; // приложение закрыло stdin — выходим вместе с ним
@@ -304,6 +315,8 @@ void CheckForeground()
 }
 
 string last = "";
+var icmpPing = new IcmpPinger(() => capture?.ServerIp);
+icmpPing.Start();
 long pingAt = 0;
 int pingLast = -2;
 while (running)
@@ -354,13 +367,21 @@ while (running)
         });
     }
     CheckForeground();
-    // пинг до игрового сервера (по трафику игры): раз в 2 секунды, если изменился
+    // пинг до игрового сервера: раз в 2 секунды, если изменился
     if (now - pingAt >= 2000)
     {
         pingAt = now;
-        var ping = capture?.Ping.PingMs ?? -1;
+        // 1) эхо-запрос до адреса сервера; 2) подтверждения TCP в трафике игры.
+        // Ответ быстрее 2–3 мс даёт не сервер, а местный посредник — ускоритель/VPN (ExitLag, GearUP…):
+        // настоящий пинг тогда знает только он, и мы показываем «VPN» (-2) вместо ложного 0.
+        var icmp = icmpPing.Value(now);
+        var passive = capture?.Ping.PingMs ?? -1;
         var lastUs = capture?.Ping.LastSampleUs ?? 0;
-        if (lastUs > 0 && now - lastUs / 1000 > 15_000) ping = -1; // давно нет обмена с сервером
+        if (lastUs > 0 && now - lastUs / 1000 > 15_000) passive = -1;
+        int ping;
+        if (icmp >= 2) ping = icmp;
+        else if (passive >= 3) ping = passive;
+        else ping = icmp >= 0 || passive >= 0 ? -2 : -1;
         if (ping != pingLast) { pingLast = ping; Emit(new { t = "ping", ms = ping }); }
     }
     Thread.Sleep(250);
@@ -368,3 +389,52 @@ while (running)
 
 capture?.Dispose();
 return 0;
+
+// Пинг до сервера игры, как команда ping: эхо-запрос ICMP на адрес сервера раз в 2 секунды (в саму игру ничего не идёт).
+// Работает и с ускорителями/VPN: они перехватывают соединение игры, а эхо-запрос идёт напрямую — это «прямой» пинг.
+sealed class IcmpPinger(Func<System.Net.IPAddress?> target)
+{
+    private readonly object _gate = new();
+    private readonly List<(long At, int Ms)> _samples = new();
+    private int _fails;
+    public void Start() => new Thread(Loop) { IsBackground = true, Name = "ping" }.Start();
+    private void Loop()
+    {
+        using var p = new System.Net.NetworkInformation.Ping();
+        var buf = new byte[32];
+        while (true)
+        {
+            var ip = target();
+            if (ip is not null && !System.Net.IPAddress.IsLoopback(ip))
+            {
+                try
+                {
+                    var r = p.Send(ip, 1500, buf);
+                    var at = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    lock (_gate)
+                    {
+                        if (r.Status == System.Net.NetworkInformation.IPStatus.Success)
+                        {
+                            _fails = 0;
+                            _samples.Add((at, (int)r.RoundtripTime));
+                            if (_samples.Count > 10) _samples.RemoveAt(0);
+                        }
+                        else _fails++;
+                    }
+                }
+                catch { lock (_gate) _fails++; }
+            }
+            Thread.Sleep(2000);
+        }
+    }
+    /// <summary>Медиана последних ответов; -1, если сервер не отвечает на эхо-запросы.</summary>
+    public int Value(long now)
+    {
+        lock (_gate)
+        {
+            if (_fails >= 3) return -1;
+            var recent = _samples.Where(x => now - x.At < 15_000).Select(x => x.Ms).OrderBy(x => x).ToArray();
+            return recent.Length == 0 ? -1 : recent[recent.Length / 2];
+        }
+    }
+}

@@ -4,8 +4,11 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Записать трафик (90 с)': 'Record traffic (90 s)', 'Идёт запись…': 'Recording…', 'Запись трафика сохранена': 'Traffic recording saved',
+    '«Записать трафик» — по просьбе автора: 90 секунд пакетов игры в файл на рабочем столе (для разбора новых функций). В записи есть ники и чат — отправляйте её только автору.': '“Record traffic” — on the author’s request: 90 seconds of game packets to a file on the desktop (to study new features). It contains nicknames and chat — send it only to the author.',
+    'VPN': 'VPN', 'Запись не началась': 'Recording did not start', 'Запустите игру и войдите персонажем': 'Start the game and log in with a character',
     'Надёжная загрузка обновлений': 'Reliable update download', 'Обновление скачивается тем же сетевым модулем, что и браузер: работает через системный прокси, VPN и защищённый DNS. Если связь всё же прервётся — в уведомлении будет код ошибки': 'Updates download with the same network stack as the browser: works through the system proxy, VPN and secure DNS. If the connection still drops, the notification shows an error code',
-    'Пинг до сервера игры': 'Ping to the game server', 'Внизу оверлея — пинг в миллисекундах с полосками сигнала. Считается по трафику самой игры, без отправки чего-либо на сервер': 'At the bottom of the overlay — ping in milliseconds with signal bars. Measured from the game’s own traffic, nothing is sent to the server',
+    'Пинг до сервера игры': 'Ping to the game server', 'Внизу оверлея — пинг в миллисекундах с полосками сигнала, как команда ping до адреса сервера игры': 'At the bottom of the overlay — ping in milliseconds with signal bars, like the ping command to the game server address', 'Пинг с ускорителями и VPN': 'Ping with boosters and VPN', 'С ExitLag, GearUP и другими ускорителями пинг больше не показывает 0 — вместо ложного значения стоит значок VPN: настоящий пинг в этом случае показывает сам ускоритель': 'With ExitLag, GearUP and other boosters ping no longer shows 0 — a VPN badge replaces the false value: the booster itself shows the real ping', 'Запись трафика для автора': 'Traffic recording for the author', 'В «Настройках» — запись 90 секунд пакетов игры в файл, чтобы автор мог разобрать новые функции': 'In Settings — record 90 seconds of game packets to a file so the author can study new features',
     'мс': 'ms',
     'Уведомление об обновлении без мигания': 'Update notification no longer flickers', 'Карточка больше не перерисовывается каждую секунду — плавное появление один раз, подсветка кнопок не сбрасывается': 'The card is no longer redrawn every second — it fades in once and button highlights stay put',
     'Кнопки панели оверлея наверху': 'Overlay panel buttons on top', '«Главное окно», «Размер по умолчанию» и «Расписание» — сразу под шестерёнкой': '“Main window”, “Default size” and “Schedule” — right under the gear',
@@ -236,6 +239,7 @@
   };
   // Кусочки внутри составных строк — длинные раньше коротких.
   const PARTS = [
+    ['Игра идёт через ускоритель или VPN — настоящий пинг показывает он', 'The game goes through a booster or VPN — it shows the real ping'],
     ['Пинг до сервера игры:', 'Ping to the game server:'],
     ['Счётчик урона для AION 2 · версия', 'Damage meter for AION 2 · version'],
     ['бесплатная программа с открытым исходным кодом для игроков. Она', 'a free open-source program for players. It'],

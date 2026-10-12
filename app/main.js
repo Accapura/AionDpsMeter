@@ -307,6 +307,7 @@ const bridge = {
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') addFight(m);
       else if (m.t === 'death') addDeath(m);
+      else if (m.t === 'record') onRecord(m);
       else if (m.t === 'ping') { lastPing = m.ms; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', lastPing); }
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
       else if (m.t === 'boss') { bossLog.unshift({ ...m, at: Date.now() }); bossLog.length = Math.min(bossLog.length, 40); broadcast('boss-log', bossLog); }
@@ -367,6 +368,25 @@ function addDeath(m) {
     const k = killerOf(d);
     showToast({ key: 'death' + d.at, type: 'death', icon: 'skull', start: null, name: T('Ваш персонаж погиб'), text: k ? `${k.src} · ${k.skill} · ${nf(k.amt)}` : T('Разбор — в «Статистике»'), actions: [{ id: 'death', label: T('Разбор'), primary: true }] });
   }
+}
+
+// ---------------------------------------------------------------- запись трафика для автора (разбор протокола)
+let recState = { state: 'idle', path: '', until: 0 };
+function startRecord() {
+  if (recState.state === 'on') return;
+  let dir = app.getPath('desktop');
+  try { fs.accessSync(dir, fs.constants.W_OK); } catch { dir = app.getPath('userData'); }
+  bridge.send('record 90 ' + dir);
+  recState = { state: 'wait', path: '', until: Date.now() + 90000 };
+  broadcast('record', recState);
+}
+function onRecord(m) {
+  if (m.state === 'on') recState = { state: 'on', path: m.path, until: Date.now() + 90000 };
+  else if (m.state === 'done') {
+    recState = { state: 'done', path: m.path || '', until: 0 };
+    if (m.path) { shell.showItemInFolder(m.path); showToast({ key: 'rec' + Date.now(), type: 'info', icon: 'info', start: null, name: T('Запись трафика сохранена'), text: T('Отправьте файл автору в Discord') }); }
+  } else { recState = { state: 'error', path: '', until: 0 }; showToast({ key: 'rec' + Date.now(), type: 'info', icon: 'info', start: null, name: T('Запись не началась'), text: T('Запустите игру и войдите персонажем') }); }
+  broadcast('record', recState);
 }
 
 // ---------------------------------------------------------------- журнал для отчёта об ошибке
@@ -564,6 +584,8 @@ ipcMain.on('deaths-clear', () => { deaths = []; try { fs.writeFileSync(DEATHS_FI
 ipcMain.handle('whats-new', () => whatsNew());
 ipcMain.on('whats-new-seen', () => patchSettings({ whatsNewSeen: APP_VERSION, whatsNewFrom: '' }));
 ipcMain.handle('report', () => saveReport());
+ipcMain.on('record', () => startRecord());
+ipcMain.handle('record-state', () => recState);
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
 ipcMain.on('fights-clear', () => { fights = []; try { fs.writeFileSync(FIGHTS_FILE(), '[]'); } catch { /* ignore */ } broadcast('fights', fights); broadcast('records', {}); });
 ipcMain.on('share', (_e, fightId) => shareFight(fightId));

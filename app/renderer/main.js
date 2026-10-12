@@ -39,6 +39,7 @@ function sideSet() {
   bindDropList(lb, 'ddLang', v => { closeDropList('ddLang'); if (v !== lang) setTimeout(() => api.set({ lang: v }), 250); });
 }
 
+let REC = { state: 'idle', until: 0 }; // запись трафика
 let WHN = { text: '', cls: '' }; // сообщение под ссылкой вебхука
 const NOTIFY_STYLES = [['glass', 'Стекло'], ['solid', 'Плотная'], ['accent', 'Акцент'], ['minimal', 'Минимал'], ['banner', 'Баннер']];
 const NOTIFY_POS = [['tl', 'Слева вверху'], ['tc', 'Сверху по центру'], ['tr', 'Справа вверху'], ['bl', 'Слева внизу'], ['bc', 'Снизу по центру'], ['br', 'Справа внизу']];
@@ -111,8 +112,9 @@ const pages = {
     return `${head('Настройки', 'Чтение боя, уведомления и что нужно для работы программы')}
     <div class="card field center"><span class="lbl">Состояние</span><div class="big">${esc(main || '—')}</div>
       ${addr ? `<div class="addr" style="justify-content:center"><span class="muted">Адрес сервера игры:</span><code>${showAddr ? esc(addr) : '••••••••••••'}</code><button type="button" id="addrToggle">${showAddr ? 'Скрыть' : 'Показать'}</button></div>` : ''}
-      <div class="row" style="justify-content:center"><button type="button" id="restart">Перезапустить чтение</button><button type="button" id="report">Отчёт об ошибке</button></div>
-      <div class="muted" style="font-size:12px">Что-то не работает? «Отчёт об ошибке» сохранит на рабочий стол файл с версией, состоянием чтения и последними сообщениями — отправьте его автору в Discord.</div></div>
+      <div class="row" style="justify-content:center"><button type="button" id="restart">Перезапустить чтение</button><button type="button" id="report">Отчёт об ошибке</button><button type="button" id="recBtn" ${REC.state === 'on' || REC.state === 'wait' ? 'disabled' : ''}>${REC.state === 'on' || REC.state === 'wait' ? 'Идёт запись… ' + Math.max(0, Math.ceil((REC.until - Date.now()) / 1000)) + ' с' : 'Записать трафик (90 с)'}</button></div>
+      <div class="muted" style="font-size:12px">Что-то не работает? «Отчёт об ошибке» сохранит на рабочий стол файл с версией, состоянием чтения и последними сообщениями — отправьте его автору в Discord.</div>
+      <div class="muted" style="font-size:12px">«Записать трафик» — по просьбе автора: 90 секунд пакетов игры в файл на рабочем столе (для разбора новых функций). В записи есть ники и чат — отправляйте её только автору.</div></div>
     <div class="card field center"><span class="lbl">Уведомления о событиях</span>
       <div>Где на экране показывать уведомления перед ивентами и о новых событиях в расписании:</div>
       <div class="ddwrap ddpos">${(() => { const cur = S.notify.position || 'br', n = (NOTIFY_POS.find(x => x[0] === cur) || NOTIFY_POS[5])[1];
@@ -546,6 +548,7 @@ function render() {
   on('restart', 'onclick', () => api.restartBridge());
   on('tt', 'onclick', () => api.testToast());
   on('nSound', 'onchange', e => api.set({ notify: { sound: e.target.checked } }));
+  on('recBtn', 'onclick', () => { REC = { state: 'wait', until: Date.now() + 90000 }; api.record(); render(); });
   on('nDeath', 'onchange', e => api.set({ deathToast: e.target.checked }));
   on('report', 'onclick', async () => { const b = $('report'); b.disabled = true; b.textContent = T('Собираю…'); await api.report(); b.disabled = false; b.textContent = T('Отчёт об ошибке'); });
   const whValid = v => /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(v.trim());
@@ -599,6 +602,8 @@ api.on('page', p => {
   else page = p;
   render();
 });
+api.on('record', r => { REC = r; if (page === 'connect') render(); });
+setInterval(() => { if ((REC.state === 'on' || REC.state === 'wait') && page === 'connect') { const b = $('recBtn'); if (b) b.textContent = T('Идёт запись…') + ' ' + Math.max(0, Math.ceil((REC.until - Date.now()) / 1000)) + ' ' + T('с'); } }, 1000);
 api.on('deaths', l => { D.list = l; if (page === 'stats' && statTab === 'deaths') render(); });
 api.on('hotkey-errors', e => { hkErr = { ...hkErr, ...e }; for (const k of Object.keys(hkErr)) if (!e[k] && hkErr[k] && hkErr[k].startsWith('Сочетание')) hkErr[k] = ''; if (page === 'overlay') render(); });
 api.on('fights', l => { F.list = l; if (page === 'stats') render(); });
