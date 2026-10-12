@@ -1,0 +1,138 @@
+{
+  "version": 4,
+  "updated": "2026-10-12",
+  "note": "Расписание AION 2 Global. Часы сервера Global — GMT+9; в программе время показывается по вашим местным часам.",
+  "serverTz": {
+    "default": "Asia/Seoul"
+  },
+  "events": [
+    {
+      "id": "reset-daily",
+      "name": "Ежедневный сброс",
+      "type": "reset",
+      "duration": 0,
+      "confirmed": true,
+      "bell": false,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "time": "07:00",
+        "tz": "utc"
+      }
+    },
+    {
+      "id": "reset-weekly",
+      "name": "Еженедельный сброс",
+      "type": "reset",
+      "duration": 0,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          2
+        ],
+        "time": "07:00",
+        "tz": "utc"
+      }
+    },
+    {
+      "id": "rift",
+      "name": "Пространственный разлом",
+      "type": "pvp",
+      "duration": 60,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 180,
+        "anchorUtc": "00:00"
+      }
+    },
+    {
+      "id": "kaira",
+      "name": "Дозорщик Кайра",
+      "type": "world",
+      "duration": 30,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 180,
+        "anchorUtc": "01:00"
+      },
+      "note": "Нижний уровень Арэшурата хаоса"
+    },
+    {
+      "id": "executors",
+      "name": "Исполнители: Агро, Кайра, Тамаса",
+      "type": "world",
+      "duration": 30,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          0,
+          3,
+          5
+        ],
+        "time": "12:30",
+        "tz": "utc"
+      },
+      "note": "Нижний уровень Арэшурата хаоса"
+    },
+    {
+      "id": "siege-boss",
+      "name": "Босс осады Бездны",
+      "type": "world",
+      "duration": 30,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          4,
+          6
+        ],
+        "time": "12:00",
+        "tz": "utc"
+      }
+    },
+    {
+      "id": "field-events",
+      "name": "Фестиваль шуго",
+      "type": "pve",
+      "duration": 10,
+      "confirmed": true,
+      "bell": false,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 60,
+        "anchorUtc": "00:00"
+      },
+      "note": "Вход открыт первые 3 минуты"
+    },
+    {
+      "id": "beritra",
+      "name": "Налёт Беритры",
+      "type": "world",
+      "duration": 10,
+      "confirmed": true,
+      "bell": false,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 60,
+        "anchorUtc": "00:30"
+      }
+    }
+  ]
+}

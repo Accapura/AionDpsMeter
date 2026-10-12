@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Aion DPS Meter bridge: reads the AION 2 combat from the game's own network traffic (passive, via Npcap) and prints
+    JSON lines for the overlay app. Built on AionMeter.Core (github.com/cyberbadger6969/aion2-dps-meter, GPL-3.0),
+    SharpPcap and PacketDotNet (MIT). Licence of this program: GPL-3.0.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>annotations</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>AionDpsBridge</AssemblyName>
+    <RootNamespace>AionDps.Bridge</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+    <NoWarn>$(NoWarn);CS1591;CS0618;CS8632;CS0162;CS0168;CS0219;CS0414;CS0649;CS0169;CS1573;CS1572;CS1587;SYSLIB0011;CA2022;CS8981</NoWarn>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>none</DebugType>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <TieredPGO>true</TieredPGO>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="data\**\*.json" LogicalName="data/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

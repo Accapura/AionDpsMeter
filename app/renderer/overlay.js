@@ -1,0 +1,171 @@
+'use strict';
+let S = null, status = {}, snap = null, records = {};
+const $ = id => document.getElementById(id);
+$('bGear').innerHTML = ICON.gear; $('bHide').innerHTML = ICON.close; $('bReset').innerHTML = ICON.reset;
+$('bShare').innerHTML = ICON.share;
+$('bShare').onclick = () => api.share();
+$('bHide').onclick = () => api.win('hide');
+$('bReset').onclick = () => api.reset();
+$('bLock').onclick = () => api.set({ clickThrough: !S.clickThrough });
+$('bCompact').onclick = () => api.set({ compact: !S.compact });
+$('bGear').onclick = e => { e.stopPropagation(); togglePanel(); };
+$('pMain').onclick = () => { togglePanel(false); api.open('main'); };
+$('pSched').onclick = () => { togglePanel(false); api.open('schedule'); };
+$('pSize').onclick = () => api.overlayResetSize();
+$('count').oninput = e => { S.count = +e.target.value; $('countV').value = S.count; render(); api.set({ count: S.count }); };
+$('opacity').oninput = e => { S.opacity = +e.target.value; $('opV').value = S.opacity + '%'; applyTheme(S, S.opacity); api.set({ opacity: S.opacity }); };
+$('scale').onchange = e => api.set({ scale: +e.target.value });
+$('showHead').onchange = e => api.set({ showHeader: e.target.checked });
+$('solo').onchange = e => api.set({ solo: e.target.checked });
+$('autoHide').onchange = e => api.set({ autoHide: e.target.checked });
+document.querySelectorAll('[data-col]').forEach(c => c.onchange = () => api.set({ columns: { [c.dataset.col]: c.checked } }));
+$('scale').oninput = e => { $('scV').value = e.target.value + '%'; };
+function togglePanel(force) {
+  const p = $('panel'), open = force ?? p.hidden;
+  p.hidden = !open; $('bGear').setAttribute('aria-expanded', String(open));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
+
+// Уголок изменения размера (прозрачные окна Windows не тянутся за край).
+resizeGrip($('resize'));
+const fit = () => { document.body.classList.toggle('narrow', innerWidth < 300); document.body.classList.toggle('short', innerHeight < 240); };
+addEventListener('resize', fit); fit();
+
+// Режим сменили (горячей клавишей или кнопкой) — коротко показываем его название.
+let lastMode = null, flashT = null;
+function flashMode() {
+  if (lastMode !== null && lastMode !== S.mode) {
+    const f = $('mflash'), m = MODES.find(x => x[0] === S.mode);
+    f.textContent = m ? m[1] : S.mode;
+    if (typeof translate === 'function') translate(f, S.lang);
+    f.classList.add('on'); clearTimeout(flashT); flashT = setTimeout(() => f.classList.remove('on'), 1100);
+  }
+  lastMode = S.mode;
+}
+function chrome() {
+  flashMode();
+  applyTheme(S, S.opacity);
+  $('nick').textContent = S.character || '';
+  document.body.classList.toggle('hasnick', !!S.character);
+  document.body.classList.toggle('locked', !!S.clickThrough);
+  document.body.classList.toggle('compact', !!S.compact);
+  document.body.classList.toggle('nohead', S.showHeader === false);
+  $('showHead').checked = S.showHeader !== false;
+  $('solo').checked = !!S.solo; $('autoHide').checked = S.autoHide !== false;
+  $('bLock').innerHTML = S.clickThrough ? ICON.lock : ICON.unlock;
+  $('bLock').style.color = S.clickThrough ? 'var(--accent)' : '';
+  const hk = Object.assign({ overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C' }, S.hotkeys || {});
+  $('bShare').title = 'Поделиться боем (' + hk.share + ')'; $('bShare').setAttribute('aria-label', 'Скопировать итог боя (' + hk.share + ')');
+  $('bLock').setAttribute('aria-label', (S.clickThrough ? 'Снять закрепление (' : 'Закрепить: клики сквозь оверлей (') + hk.lock + ')');
+  $('bLock').title = S.clickThrough ? 'Закреплён — ' + hk.lock : 'Закрепить (' + hk.lock + ')';
+  $('bReset').title = 'Начать заново (' + hk.reset + ')'; $('bReset').setAttribute('aria-label', 'Начать подсчёт заново (' + hk.reset + ')');
+  $('bHide').title = 'Скрыть (' + hk.overlay + ')'; $('bHide').setAttribute('aria-label', 'Скрыть оверлей (' + hk.overlay + ')');
+  $('bCompact').innerHTML = S.compact ? ICON.chevDown : ICON.chevUp;
+  $('bCompact').setAttribute('aria-label', S.compact ? 'Показать режимы' : 'Скрыть режимы');
+  $('bCompact').title = S.compact ? 'Показать режимы' : 'Компактно';
+  $('modes').innerHTML = MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('');
+  $('modes').querySelectorAll('button').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
+  $('count').value = S.count; $('countV').value = S.count;
+  $('opacity').value = S.opacity; $('opV').value = S.opacity + '%';
+  $('scale').value = S.scale; $('scV').value = S.scale + '%';
+  document.querySelectorAll('[data-col]').forEach(c => { c.checked = !!(S.columns || {})[c.dataset.col]; });
+  paintRanges();
+  $('themeSlot').innerHTML = themeButton(S.theme);
+  bindThemeButton($('themeSlot'), S.theme, k => api.set({ theme: k }));
+}
+
+const fmtHp = n => Math.round(n).toLocaleString(LOC());
+// Своя строка: если игра ещё не прислала имя, показываем ник персонажа.
+const nm = p => (p.self && String(p.name).startsWith('#') && S.character ? S.character : p.name);
+
+// Показываем только то, что выбрано в режиме.
+function matches(s) {
+  if (!s || !s.players || !s.players.length) return false;
+  if (S.mode === 'boss') return !!s.boss && s.dungeon;
+  if (S.mode === 'world') return !!s.boss && !s.dungeon;
+  return true;
+}
+
+function empty() {
+  const bad = ['no-npcap', 'no-dotnet', 'error', 'Error', 'disabled'].includes(status.state);
+  const wait = S.mode === 'boss' ? 'Ждём босса подземелья' : S.mode === 'world' ? 'Ждём мирового босса' : 'Ждём боя';
+  const msg = String(status.msg || '').split(' · ')[0];
+  const text = bad ? msg : (status.state === 'Capturing' ? wait : (msg || wait));
+  return `<div class="empty"><div>${esc(text)}</div>${bad ? '<button type="button" class="primary" data-a="conn">Подробнее</button>' : ''}</div>`;
+}
+
+function render() {
+  if (!S) return;
+  const body = $('body');
+  if (!matches(snap)) {
+    body.innerHTML = empty();
+    const b = body.querySelector('[data-a]');
+    if (b) b.onclick = () => api.open('main', 'connect');
+    $('stats').textContent = '';
+    return;
+  }
+  const ps = snap.players, top = ps[0].dmg || 1;
+  // Дополнительные колонки (включаются в настройках оверлея).
+  const extra = [
+    S.columns?.crit && { h: 'Крит', t: 'Доля критических ударов', w: '38px', v: p => p.crit != null ? Math.round(p.crit * 100) + '%' : '—' },
+    S.columns?.hits && { h: 'Удары', t: 'Количество ударов', w: '40px', v: p => p.hits ?? '—' },
+    S.columns?.maxHit && { h: 'Макс', t: 'Самый сильный удар', w: '46px', v: p => p.maxHit ? fmt(p.maxHit) : '—' },
+    S.columns?.hps && { h: 'HPS', t: 'Лечение в секунду', w: '44px', v: p => p.hps ? fmt(p.hps) : '—' },
+  ].filter(Boolean);
+  const narrow = innerWidth < 300;
+  document.body.style.setProperty('--cols', (narrow ? '14px 20px minmax(0,1fr) 48px' : '16px 20px minmax(0,1fr) 50px 50px') + extra.map(c => ' ' + c.w).join('') + ' 38px');
+  const shown = ps.slice(0, S.count), rest = ps.length - shown.length;
+  const restShare = ps.slice(S.count).reduce((a, p) => a + (p.share || 0), 0);
+  const boss = snap.boss, tg = snap.target;
+  // Цель: босс, иначе основная цель боя (больше всего урона).
+  const tName = boss?.name || tg?.name || (tg && tg.count > 1 ? 'Несколько целей' : 'Цель без имени');
+  const src = boss ? { hp: boss.hp, max: boss.maxHp } : (tg && tg.hp >= 0 && tg.maxHp > 0 ? { hp: tg.hp, max: tg.maxHp } : null);
+  const hp = src ? Math.max(0, Math.min(1, src.hp / src.max)) * 100 : null;
+  const more = tg && tg.count > 1 ? ` <span class="more-t">+${tg.count - 1}</span>` : '';
+  const me = ps.find(p => p.self);
+  const rec = recordLine(me);
+  const targetHtml = `
+    <div class="target" title="${esc(snap.zone || '')}">
+      <div class="trow"><div class="tname">${boss?.name || tg?.name ? nt(tName) : esc(tName)}${more}</div>
+        ${hp != null ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>` : ''}
+        <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
+      ${hp != null ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
+    </div>`;
+  if (S.solo && me) {
+    const place = ps.indexOf(me) + 1;
+    body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" title="Нажмите — разбивка по навыкам">${classIcon(me.cls)}
+      <div class="who"><span class="name" data-notr>${esc(nm(me))}</span><span class="bigdps num">${fmt(me.dps)}<small>DPS</small></span></div>
+      <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
+      <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
+      <div><span>Крит</span><b>${me.crit != null ? Math.round(me.crit * 100) + '%' : '—'}</b></div><div><span>Макс. удар</span><b>${fmt(me.maxHit)}</b></div>
+      ${me.hps ? `<div><span>HPS</span><b>${fmt(me.hps)}</b></div>` : ''}</div>${rec ? `<div style="text-align:center">${rec}</div>` : ''}</div>`;
+    body.querySelector('.me1').onclick = () => { if (me.id != null) api.open('breakdown', +me.id); };
+    $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою`;
+    return;
+  }
+  body.innerHTML = targetHtml + `
+    <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="Урон в секунду">DPS</span><span class="r c-total" title="Общий урон за бой">Урон</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="Доля от урона всей группы">%</span></div>
+    <div class="list">${shown.map((p, i) => {
+      const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
+      return `<div class="row${p.self ? ' me' : ''}" data-id="${p.id ?? ''}" title="Нажмите — разбивка по навыкам"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
+      <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(nm(p))}">${esc(nm(p))}</span>
+      <span class="r dps">${fmt(p.dps)}</span><span class="r muted c-total">${fmt(p.dmg)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${((p.share || 0) * 100).toFixed(1).replace('.', ',')}</span></div></div>`;
+    }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;
+  body.querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
+  $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`;
+  if (rec) $('stats').insertAdjacentHTML('beforeend', ' ' + rec);
+}
+
+// Сравнение своего DPS с рекордом на этом боссе (после первых 20 секунд боя — раньше цифры скачут).
+function recordLine(me) {
+  const best = me && snap.boss?.name ? records[snap.boss.name] : 0;
+  if (!best || !me.dps || (snap.combatMs || 0) < 20000) return '';
+  const d = me.dps / best - 1, pct = Math.round(Math.abs(d) * 100);
+  return `<span class="rec ${d >= 0 ? 'up' : 'down'}" title="Ваш рекорд на этом боссе: ${fmt(best)} DPS">${d >= 0 ? '▲' : '▼'} ${pct}% к рекорду</span>`;
+}
+
+api.on('settings', s => { S = s; chrome(); render(); });
+api.on('status', s => { status = s; if (!matches(snap)) render(); });
+api.on('snap', s => { snap = s; render(); });
+api.on('records', r => { records = r || {}; });
+api.state().then(st => { records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });

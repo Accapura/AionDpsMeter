@@ -1,0 +1,10 @@
+node_modules/
+bridge/bin/
+bridge/obj/
+bridge-out/
+dist/
+setup/art/
+setup/setup.nsi
+setup/*.exe
+setup/*.gz
+*.log

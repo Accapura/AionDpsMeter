@@ -1,0 +1,18 @@
+{
+  "name": "aion-dps-meter",
+  "productName": "Aion DPS Meter",
+  "version": "1.2.0",
+  "description": "Aion DPS Meter — счётчик урона для AION 2",
+  "author": "Accapura",
+  "main": "boot.js",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "start": "electron .",
+    "pack:win": "electron-packager . AionDpsMeter --platform=win32 --arch=x64 --out=../dist --overwrite --no-asar --icon=assets/icon.ico --extra-resource=../bridge-out --app-version=1.2.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "18.3.6",
+    "electron": "33.2.1"
+  },
+  "shell": "e33-net10"
+}

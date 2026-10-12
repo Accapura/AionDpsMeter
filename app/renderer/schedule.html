@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+<title>Aion DPS Meter — расписание</title>
+<link rel="stylesheet" href="common.css">
+<style>
+.top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 6px 0 14px;border-bottom:1px solid var(--line)}
+.top .t{font-weight:700;white-space:nowrap}
+.top .sp{flex:1}
+.top select{height:32px;max-width:220px}
+.top .sel-btn{height:32px;width:auto;max-width:220px;min-width:130px}
+.wrap{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px 16px}
+.left{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.right{width:290px;flex:none;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:2px}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.days button{height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:12px;padding:0;font-weight:600}
+.days small{font-size:10px;font-weight:400;opacity:.85}
+.list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px}
+.ev{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.ev.past{opacity:.5}
+.ev .time{width:52px;font-size:17px;font-weight:700}
+.ev .stripe{width:4px;align-self:stretch;border-radius:2px}
+.ev .info{flex:1;min-width:0}
+.evic{flex:none;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08)}
+.evic.sm{width:22px;height:22px;border-radius:7px;color:var(--accent);margin-right:6px}
+.fbn{display:flex;align-items:center;min-width:0}
+.nx{display:flex;gap:12px;align-items:center;margin-top:6px}
+.nx .evic{width:44px;height:44px;border-radius:13px;color:var(--accent)}
+.ev .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev .meta{font-size:11.5px;color:var(--muted)}
+.ev .meta.note{color:var(--accent)}
+.ev .st{min-width:120px;text-align:right;font-weight:600;font-size:12.5px}
+.tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:4px;vertical-align:1px}
+.tag.game{background:rgba(127,240,176,.18);color:#9ff0c0}
+.tag.unc{background:rgba(255,170,90,.18);color:#ffd1a3}
+.tag.mine{background:rgba(255,255,255,.14);color:var(--muted)}
+.big{font-size:30px;font-weight:700;color:var(--accent)}
+.card b.h{display:block;margin-bottom:6px}
+form{display:flex;flex-direction:column;gap:8px}
+.dchk{display:flex;gap:4px;flex-wrap:wrap}
+.dchk label{display:flex;align-items:center;gap:3px;font-size:12px;padding:3px 6px;border-radius:8px;background:rgba(0,0,0,.18)}
+.f2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chk{display:flex;align-items:center;gap:8px;min-height:28px}
+.fb{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.fb:last-child{border:0}
+.small{font-size:12px;color:var(--muted)}
+details summary{cursor:pointer;font-weight:700;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details[open] summary{margin-bottom:8px}
+@media (max-width:800px){.right{width:240px}.ev .st{min-width:90px}.top select,.top .sel-btn{max-width:150px}}
+.tmode{flex:none;padding:2px;border-radius:10px}
+.tmode button{height:26px;font-size:11.5px;padding:0 10px;border-radius:8px;white-space:nowrap}
+.clock{flex:none;font-weight:700;color:var(--accent);min-width:44px;text-align:right}
+@media (max-width:860px){.tmode button{padding:0 6px;font-size:11px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top drag">
+    <img src="../assets/logo.png" width="22" height="22" alt="" style="border-radius:6px">
+    <span class="t">Расписание ивентов</span><span class="sp"></span>
+    <label class="small" for="server">Сервер</label><select id="server" aria-label="Сервер"></select>
+    <div class="seg tmode" id="tmode" role="group" aria-label="Время"><button type="button" data-tm="server">Время сервера</button><button type="button" data-tm="local">Моё время</button></div>
+    <span class="clock num" id="clock" title="Время сервера"></span>
+    <button class="icon" id="bMax" aria-label="Развернуть"></button><button class="icon" id="bClose" aria-label="Закрыть"></button>
+  </div>
+  <div class="wrap">
+    <div class="left">
+      <div class="days" id="days" role="tablist" aria-label="Дни"></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="right">
+      <div class="card"><div class="small">Следующий ивент</div><div class="nx"><div class="evic" id="nIc"></div><div style="min-width:0"><div style="font-weight:700;font-size:16px" id="nName">—</div><div class="small" id="nWhen"></div></div></div><div class="big num" id="nLeft"></div></div>
+      <div class="card"><b class="h">Полевые боссы <span class="small" id="fbServer"></span></b><div id="fb"></div></div>
+      <div class="card"><b class="h">Отчёт до ивента</b>
+        <label class="chk"><input type="checkbox" data-n="m15"> За 15 минут</label>
+        <label class="chk"><input type="checkbox" data-n="m5"> За 5 минут</label>
+        <label class="chk"><input type="checkbox" data-n="m1"> За 1 минуту</label>
+        <label class="chk"><input type="checkbox" data-n="sound"> Звуковой сигнал</label></div>
+      <div class="card"><details id="addBox"><summary id="fTitle">+ Свой ивент</summary><form id="form">
+        <input type="text" id="fName" placeholder="Название" required aria-label="Название">
+        <div class="f2"><select id="fType" aria-label="Тип"><option value="world">Мировой</option><option value="pve">PvE</option><option value="pvp">PvP</option></select>
+        <input type="time" id="fTime" value="20:00" required aria-label="Время"></div>
+        <div class="f2"><input type="number" id="fDur" min="0" max="600" value="30" aria-label="Длительность, мин"><span class="small" style="align-self:center">мин длится</span></div>
+        <div class="dchk" id="fDays"></div>
+        <div style="display:flex;gap:6px"><button type="submit" class="primary" style="flex:1">Сохранить</button><button type="button" id="fCancel">Отмена</button></div>
+      </form></details></div>
+      <div class="card"><b class="h">Обновление расписания</b><div class="small" id="feedInfo"></div>
+        <div style="margin-top:8px"><button type="button" id="bFeed">Обновить сейчас</button></div></div>
+    </div>
+  </div>
+  <div class="grip" id="grip" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M11 4L4 11M11 8L8 11"/></svg></div>
+</div>
+<script src="common.js"></script>
+<script src="i18n.js"></script>
+<script src="schedule-core.js"></script>
+<script src="schedule.js"></script>
+</body>
+</html>
