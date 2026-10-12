@@ -168,4 +168,16 @@ api.on('settings', s => { S = s; chrome(); render(); });
 api.on('status', s => { status = s; if (!matches(snap)) render(); });
 api.on('snap', s => { snap = s; render(); });
 api.on('records', r => { records = r || {}; });
-api.state().then(st => { records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });
+// Пинг до игрового сервера (считается по трафику игры): полоски сигнала и миллисекунды.
+function showPing(ms) {
+  const el = $('ping');
+  if (ms == null || ms < 0) { el.hidden = true; return; }
+  const q = ms < 80 ? 'good' : ms < 150 ? 'mid' : 'bad', n = ms < 80 ? 3 : ms < 150 ? 2 : 1;
+  const bars = [0, 1, 2].map(i => `<rect x="${1 + i * 4}" y="${8 - i * 3}" width="2.6" height="${3 + i * 3}" rx="1" fill="currentColor" opacity="${i < n ? 1 : .28}"/>`).join('');
+  el.className = 'ping ' + q;
+  el.innerHTML = `<svg width="13" height="12" viewBox="0 0 13 12" aria-hidden="true">${bars}</svg>${ms}<span class="u">мс</span>`;
+  el.title = 'Пинг до сервера игры: ' + ms + ' мс';
+  el.hidden = false;
+}
+api.on('ping', ms => showPing(ms));
+api.state().then(st => { showPing(st.ping); records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });

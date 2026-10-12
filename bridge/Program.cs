@@ -304,6 +304,8 @@ void CheckForeground()
 }
 
 string last = "";
+long pingAt = 0;
+int pingLast = -2;
 while (running)
 {
     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -352,6 +354,15 @@ while (running)
         });
     }
     CheckForeground();
+    // пинг до игрового сервера (по трафику игры): раз в 2 секунды, если изменился
+    if (now - pingAt >= 2000)
+    {
+        pingAt = now;
+        var ping = capture?.Ping.PingMs ?? -1;
+        var lastUs = capture?.Ping.LastSampleUs ?? 0;
+        if (lastUs > 0 && now - lastUs / 1000 > 15_000) ping = -1; // давно нет обмена с сервером
+        if (ping != pingLast) { pingLast = ping; Emit(new { t = "ping", ms = ping }); }
+    }
     Thread.Sleep(250);
 }
 

@@ -48,6 +48,9 @@ public sealed class PacketPipeline
 
     public event Action<FlowKey>? FlowLocked;
 
+    /// <summary>AionDps: поток признан игровым (сервер → клиент).</summary>
+    public bool IsGameFlow(FlowKey key) => _flows.TryGetValue(key, out var f) && f.IsGame;
+
     public void OnSegment(long timeMs, FlowKey key, uint seq, bool syn, bool finOrRst, ReadOnlySpan<byte> payload)
     {
         Segments++;

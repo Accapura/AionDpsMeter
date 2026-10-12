@@ -47,6 +47,8 @@ public sealed class LiveCapture : IEventSource
     public CaptureStatus Status => _status;
     public PacketPipeline Pipeline => _pipeline;
     public string? RecordingPath { get; private set; }
+    /// <summary>AionDps: пинг до игрового сервера по трафику игры.</summary>
+    public PingMeter Ping { get; } = new();
 
     /// <summary>Npcap's capture library is on this PC (its own folder, or System32 in WinPcap-compatible mode).</summary>
     public static bool IsNpcapInstalled() =>
@@ -271,7 +273,10 @@ public sealed class LiveCapture : IEventSource
         {
             _writer?.Write(raw);
             if (SegmentReader.TryRead(raw, out var seg))
+            {
                 _pipeline.OnSegment(seg.TimeMs, seg.Key, seg.Seq, seg.Syn, seg.FinOrRst, seg.Payload);
+                Ping.Observe(seg, _pipeline.IsGameFlow);
+            }
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -306,7 +311,7 @@ public readonly record struct CaptureHealth(long Received, long Dropped, long Ga
 /// <summary>Link layer → TCP segment, shared by live capture and pcap replay.</summary>
 public static class SegmentReader
 {
-    public readonly record struct Segment(long TimeMs, FlowKey Key, uint Seq, bool Syn, bool FinOrRst, byte[] Payload);
+    public readonly record struct Segment(long TimeMs, FlowKey Key, uint Seq, bool Syn, bool FinOrRst, byte[] Payload, uint Ack = 0, bool HasAck = false, long Us = 0);
 
     public static bool TryRead(RawCapture raw, out Segment segment)
     {
@@ -326,8 +331,9 @@ public static class SegmentReader
 
         var t = raw.Timeval;
         var ms = (long)t.Seconds * 1000 + (long)t.MicroSeconds / 1000;
+        var us = (long)t.Seconds * 1_000_000 + (long)t.MicroSeconds;
         var key = new FlowKey(ip.SourceAddress, tcp.SourcePort, ip.DestinationAddress, tcp.DestinationPort);
-        segment = new Segment(ms, key, tcp.SequenceNumber, tcp.Synchronize, tcp.Finished || tcp.Reset, tcp.PayloadData ?? []);
+        segment = new Segment(ms, key, tcp.SequenceNumber, tcp.Synchronize, tcp.Finished || tcp.Reset, tcp.PayloadData ?? [], tcp.AcknowledgmentNumber, tcp.Acknowledgment, us);
         return true;
     }
 }

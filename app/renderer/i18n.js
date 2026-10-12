@@ -4,6 +4,8 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Пинг до сервера игры': 'Ping to the game server', 'Внизу оверлея — пинг в миллисекундах с полосками сигнала. Считается по трафику самой игры, без отправки чего-либо на сервер': 'At the bottom of the overlay — ping in milliseconds with signal bars. Measured from the game’s own traffic, nothing is sent to the server',
+    'мс': 'ms',
     'Уведомление об обновлении без мигания': 'Update notification no longer flickers', 'Карточка больше не перерисовывается каждую секунду — плавное появление один раз, подсветка кнопок не сбрасывается': 'The card is no longer redrawn every second — it fades in once and button highlights stay put',
     'Кнопки панели оверлея наверху': 'Overlay panel buttons on top', '«Главное окно», «Размер по умолчанию» и «Расписание» — сразу под шестерёнкой': '“Main window”, “Default size” and “Schedule” — right under the gear',
     'Горячие клавиши режимов': 'Mode hotkeys', 'Ctrl+Shift+1 / 2 / 3 — «Данж: Босс», «Мир: Босс», «Моб»; Ctrl+Shift+M — по кругу': 'Ctrl+Shift+1 / 2 / 3 — “Dungeon: Boss”, “World: Boss”, “Mobs”; Ctrl+Shift+M — cycle',
@@ -233,6 +235,7 @@
   };
   // Кусочки внутри составных строк — длинные раньше коротких.
   const PARTS = [
+    ['Пинг до сервера игры:', 'Ping to the game server:'],
     ['Счётчик урона для AION 2 · версия', 'Damage meter for AION 2 · version'],
     ['бесплатная программа с открытым исходным кодом для игроков. Она', 'a free open-source program for players. It'],
     ['зайдите в игру', 'log into the game'],

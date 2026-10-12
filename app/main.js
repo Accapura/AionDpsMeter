@@ -180,7 +180,7 @@ function openOverlay() {
     alwaysOnTop: true, skipTaskbar: true, maximizable: false, minimizable: false, fullscreenable: false,
   }, 'overlay.html');
   w.setAlwaysOnTop(true, 'screen-saver');
-  w.on('show', () => w.webContents.send('snap', lastSnap)); // пока оверлей скрыт, снимки ему не шлём
+  w.on('show', () => { w.webContents.send('snap', lastSnap); w.webContents.send('ping', lastPing); }); // пока оверлей скрыт, снимки ему не шлём
   const keep = () => {
     if (w.isDestroyed()) return;
     const r = w.getBounds();
@@ -253,6 +253,7 @@ function toggleOverlay() {
 // ---------------------------------------------------------------- мост чтения трафика
 const BRIDGE_DIR = () => global.__aionBoot?.bridge || (app.isPackaged ? path.join(process.resourcesPath, 'bridge') : path.join(ROOT, '..', 'bridge-out'));
 let lastSnap = null;
+let lastPing = -1; // пинг до игрового сервера, мс (-1 — неизвестен)
 let status = { state: 'starting', msg: 'Запуск…' };
 const bossLog = [];
 function setStatus(s) { status = { ...status, ...s }; broadcast('status', status); }
@@ -274,6 +275,7 @@ const bridge = {
     p.stderr.on('data', d => { errText += d; logLine('bridge: ' + String(d).trim().slice(0, 500)); });
     p.on('exit', code => {
       if (this.proc !== p) return;
+      lastPing = -1; { const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', -1); }
       this.proc = null;
       if (/install or update \.NET|framework.*not found|Microsoft\.NETCore\.App/i.test(errText)) setStatus({ state: 'no-dotnet', msg: 'Нужен .NET 10 Runtime' });
       else setStatus({ state: 'error', msg: 'Модуль чтения остановился (код ' + code + ')' });
@@ -305,6 +307,7 @@ const bridge = {
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') addFight(m);
       else if (m.t === 'death') addDeath(m);
+      else if (m.t === 'ping') { lastPing = m.ms; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', lastPing); }
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
       else if (m.t === 'boss') { bossLog.unshift({ ...m, at: Date.now() }); bossLog.length = Math.min(bossLog.length, 40); broadcast('boss-log', bossLog); }
     });
@@ -553,7 +556,7 @@ function registerHotkeys() {
 ipcMain.on('hotkeys-pause', (_e, on) => { if (on) globalShortcut.unregisterAll(); else registerHotkeys(); });
 
 // ---------------------------------------------------------------- IPC
-ipcMain.handle('get-state', () => ({ settings, status, snap: lastSnap, bossLog, version: APP_VERSION, records: records(), whatsNew: whatsNew(), update: updateInfo(), rpcAvailable: !!DISCORD_APP_ID }));
+ipcMain.handle('get-state', () => ({ settings, status, snap: lastSnap, bossLog, version: APP_VERSION, ping: lastPing, records: records(), whatsNew: whatsNew(), update: updateInfo(), rpcAvailable: !!DISCORD_APP_ID }));
 ipcMain.handle('schedule-data', () => scheduleData());
 ipcMain.handle('fights', () => loadFights());
 ipcMain.handle('deaths', () => loadDeaths());
