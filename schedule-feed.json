@@ -136,15 +136,15 @@
   }
  ],
  "app": {
-  "version": "1.2.2",
-  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.2/AionDpsMeter.v1.2.2.exe",
-  "sha256": "630ef648e104877e3923bd404704b8144797b69eeeb68c44d22b019e61ffe9e3",
-  "size": 86220877,
-  "notes": "• Пинг до сервера игры внизу оверлея\n• Уведомление об обновлении больше не мигает",
+  "version": "1.2.3",
+  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.3/AionDpsMeter.v1.2.3.exe",
+  "sha256": "9ff689fbd3d10e450d69ead93691c10d46e49dab43d6b525974dfcde9149161e",
+  "size": 86247755,
+  "notes": "• Надёжная загрузка обновлений (прокси, VPN, защищённый DNS)\n• Пинг с ускорителями: по вашим навыкам в бою\n• Любые клавиши для горячих клавиш, включая Num-блок\n• «Только я» — всегда ваш персонаж\n• Настройки и место оверлея — свои для каждого режима\n• Окна запоминают место и размер",
   "patch": {
-   "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.2/AionDpsMeter-patch-1.2.2.gz",
-   "sha256": "dec6cf87c0db4bda988f81f3d6e74498dfdb1d954996d63e05b6a2acd4a332a7",
-   "size": 1343252,
+   "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.3/AionDpsMeter-patch-1.2.3.gz",
+   "sha256": "c45be1897a2d786fa52e9af574df3adad56194ce47ef9e287634996207c60e22",
+   "size": 1347546,
    "shell": "e33-net10"
   }
  }
