@@ -4,6 +4,7 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Надёжная загрузка обновлений': 'Reliable update download', 'Обновление скачивается тем же сетевым модулем, что и браузер: работает через системный прокси, VPN и защищённый DNS. Если связь всё же прервётся — в уведомлении будет код ошибки': 'Updates download with the same network stack as the browser: works through the system proxy, VPN and secure DNS. If the connection still drops, the notification shows an error code',
     'Пинг до сервера игры': 'Ping to the game server', 'Внизу оверлея — пинг в миллисекундах с полосками сигнала. Считается по трафику самой игры, без отправки чего-либо на сервер': 'At the bottom of the overlay — ping in milliseconds with signal bars. Measured from the game’s own traffic, nothing is sent to the server',
     'мс': 'ms',
     'Уведомление об обновлении без мигания': 'Update notification no longer flickers', 'Карточка больше не перерисовывается каждую секунду — плавное появление один раз, подсветка кнопок не сбрасывается': 'The card is no longer redrawn every second — it fades in once and button highlights stay put',

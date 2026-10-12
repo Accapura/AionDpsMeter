@@ -907,45 +907,75 @@ function checkUpdate() {
   sendUpdate();
   if (u.available && u.version !== settings.updateSkip && u.version !== updateToastFor) { updateToastFor = u.version; updateToast(); }
 }
-// Скачивание с докачкой: url → file (с проверкой SHA-256)
+// Скачивание с докачкой: url → file (с проверкой SHA-256).
+// Сначала — сетевым модулем Chromium (как браузер: системный прокси, VPN, защищённый DNS), при неудаче — модулем Node.
 function fetchFile(url, file, sha256, onProgress) {
-  return new Promise((resolve, reject) => {
-    const part = file + '.part';
-    const get = (u, hops = 0) => {
-      if (!UPDATE_HOSTS.test(u) && hops === 0) return reject(new Error(T('недопустимый адрес обновления')));
-      if (hops > 6) return reject(new Error(T('недопустимый адрес обновления')));
-      let have = 0;
-      try { have = fs.statSync(part).size; } catch { /* нет части */ }
-      const req = https.get(u, { headers: { 'User-Agent': 'AionDpsMeter/' + APP_VERSION, ...(have ? { Range: `bytes=${have}-` } : {}) }, timeout: 30000 }, res => {
-        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) { res.resume(); return get(new URL(res.headers.location, u).href, hops + 1); }
-        if (res.statusCode === 416) { res.resume(); return done(); }
-        if (res.statusCode !== 200 && res.statusCode !== 206) { res.resume(); return reject(new Error(T('сервер ответил') + ' ' + res.statusCode)); }
-        if (res.statusCode === 200) have = 0;
-        const total = have + Number(res.headers['content-length'] || 0);
-        const out = fs.createWriteStream(part, { flags: have ? 'a' : 'w' });
-        let got = have, lastSent = 0;
-        res.on('data', c => { got += c.length; if (total && Date.now() - lastSent > 250) { lastSent = Date.now(); onProgress(got / total); } });
-        res.pipe(out);
-        out.on('finish', done);
-        res.on('error', () => reject(new Error(T('связь прервалась — нажмите «Повторить», загрузка продолжится'))));
-      });
-      req.on('timeout', () => req.destroy(new Error('timeout')));
-      req.on('error', () => reject(new Error(T('связь прервалась — нажмите «Повторить», загрузка продолжится'))));
+  const part = file + '.part';
+  const attempt = engine => new Promise((resolve, reject) => {
+    let have = 0, settled = false, idle = null;
+    try { have = fs.statSync(part).size; } catch { /* нет части */ }
+    const ok = () => { if (!settled) { settled = true; clearTimeout(idle); resolve(); } };
+    const bad = e => { if (!settled) { settled = true; clearTimeout(idle); reject(e); } };
+    let abort = () => {};
+    const touch = () => { clearTimeout(idle); idle = setTimeout(() => { abort(); bad(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })); }, 45000); };
+    const onResponse = (status, header, stream) => {
+      if (status === 416) { stream.resume?.(); return ok(); }
+      if (status !== 200 && status !== 206) { stream.resume?.(); return bad(Object.assign(new Error(T('сервер ответил') + ' ' + status), { code: 'HTTP' + status, final: true })); }
+      if (status === 200) have = 0;
+      const total = have + Number(header('content-length') || 0);
+      const out = fs.createWriteStream(part, { flags: have ? 'a' : 'w' });
+      let got = have, last = 0;
+      out.on('error', bad);
+      stream.on('data', c => { touch(); got += c.length; out.write(c); if (total && Date.now() - last > 250) { last = Date.now(); onProgress(Math.min(1, got / total)); } });
+      stream.on('end', () => out.end(ok));
+      stream.on('error', e => { out.end(); bad(e); });
+      stream.on('aborted', () => { out.end(); bad(Object.assign(new Error('aborted'), { code: 'ABORTED' })); });
     };
-    const done = () => {
-      try {
-        const buf = fs.readFileSync(part);
-        if (sha256 && require('crypto').createHash('sha256').update(buf).digest('hex').toLowerCase() !== String(sha256).toLowerCase()) {
-          fs.rmSync(part, { force: true });
-          return reject(new Error(T('файл повреждён при загрузке — нажмите «Повторить»')));
-        }
-        fs.rmSync(file, { force: true });
-        fs.renameSync(part, file);
-        resolve(file);
-      } catch (e) { reject(e); }
-    };
-    get(url);
+    const headers = { 'User-Agent': 'AionDpsMeter/' + APP_VERSION, ...(have ? { Range: `bytes=${have}-` } : {}) };
+    touch();
+    if (engine === 'net') {
+      const req = net.request({ url, redirect: 'manual', cache: 'no-store' });
+      for (const [k, v] of Object.entries(headers)) req.setHeader(k, v);
+      abort = () => { try { req.abort(); } catch { /* ignore */ } };
+      req.on('redirect', (_st, _m, to) => { if (UPDATE_HOSTS.test(to)) req.followRedirect(); else { abort(); bad(Object.assign(new Error(T('недопустимый адрес обновления')), { final: true })); } });
+      req.on('response', res => onResponse(res.statusCode, h => { const v = res.headers[h]; return Array.isArray(v) ? v[0] : v; }, res));
+      req.on('error', bad);
+      req.end();
+    } else {
+      const get = (u, hops) => {
+        if (!UPDATE_HOSTS.test(u) || hops > 6) return bad(Object.assign(new Error(T('недопустимый адрес обновления')), { final: true }));
+        const req = https.get(u, { headers }, res => {
+          if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) { res.resume(); return get(new URL(res.headers.location, u).href, hops + 1); }
+          onResponse(res.statusCode, h => res.headers[h], res);
+        });
+        abort = () => req.destroy();
+        req.on('error', bad);
+      };
+      get(url, 0);
+    }
   });
+  return (async () => {
+    if (!UPDATE_HOSTS.test(url)) throw new Error(T('недопустимый адрес обновления'));
+    try { await attempt('net'); }
+    catch (e1) {
+      logLine('update (chromium): ' + (e1.code || '') + ' ' + e1.message);
+      if (e1.final) throw e1;
+      try { await attempt('node'); }
+      catch (e2) {
+        logLine('update (node): ' + (e2.code || '') + ' ' + e2.message);
+        if (e2.final) throw e2;
+        throw new Error(T('связь прервалась — нажмите «Повторить», загрузка продолжится') + ' (' + String(e1.code || e1.message).slice(0, 32) + ')');
+      }
+    }
+    const buf = fs.readFileSync(part);
+    if (sha256 && require('crypto').createHash('sha256').update(buf).digest('hex').toLowerCase() !== String(sha256).toLowerCase()) {
+      fs.rmSync(part, { force: true });
+      throw new Error(T('файл повреждён при загрузке — нажмите «Повторить»'));
+    }
+    fs.rmSync(file, { force: true });
+    fs.renameSync(part, file);
+    return file;
+  })();
 }
 // Лёгкое обновление: распаковать пакет в папку данных и перезапуститься.
 function applyPatch(gzFile, version) {
