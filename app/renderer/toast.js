@@ -1,5 +1,5 @@
 'use strict';
-let data = { toasts: [] }, played = new Set();
+let data = { toasts: [] }, played = new Set(), entered = new Set(), lastHtml = '';
 const TYPE = { world: 'Мировой ивент', pve: 'PvE', pvp: 'PvP', reset: 'Сброс', info: 'Aion DPS Meter', update: 'Обновление', death: 'Разбор смерти' };
 // кнопки и полоса загрузки под текстом уведомления
 function foot(t) {
@@ -8,11 +8,11 @@ function foot(t) {
   return bar + (acts ? `<div class="acts">${acts}</div>` : '');
 }
 // Карточка обновления — одна для всех стилей уведомлений.
-function updCard(t) {
+function updCard(t, enter) {
   const busy = t.state === 'downloading' || t.state === 'installing';
   const pr = Math.round(Math.max(0, Math.min(1, t.progress || 0)) * 100);
   const line = t.state === 'downloading' ? `<span>Загрузка</span> <b class="num">${pr}%</b>` : t.state === 'installing' ? '<span>Перезапуск…</span>' : t.state === 'error' ? `<span class="err">${esc(t.text || '')}</span>` : `<span>${esc(t.kind)}</span>`;
-  return `<div class="upd${busy ? ' busy' : ''}">
+  return `<div class="upd${busy ? ' busy' : ''}${enter ? ' enter' : ''}">
     <div class="uh"><div class="uic">${eventIcon({ icon: 'update' }, 22)}</div>
       <div class="ut"><div class="uk"><span>Доступно обновление</span></div><div class="un">Aion DPS Meter <b>${esc(t.ver)}</b></div>
       <div class="uv"><span class="old">${esc(t.cur)}</span><span class="ar">→</span><span class="new">${esc(t.ver)}</span>${t.size ? `<span class="dot">·</span><span>${esc(t.size)}</span>` : ''}</div>
@@ -25,8 +25,8 @@ function render() {
   applyTheme({ theme: data.theme }, 94);
   document.body.style.justifyContent = data.top ? 'flex-start' : 'flex-end';
   const st = data.style || 'glass', icSize = st === 'banner' ? 44 : st === 'minimal' ? 20 : 24;
-  document.body.innerHTML = data.toasts.map(t => {
-    if (t.type === 'update') return updCard(t);
+  const html = data.toasts.map(t => {
+    if (t.type === 'update') return updCard(t, !entered.has(t.key));
     const left = t.start ? Math.max(0, Math.floor((t.start - Date.now()) / 1000)) : 0;
     const at = t.start ? ' · в ' + new Date(t.start).toLocaleTimeString(data.lang === 'en' ? 'en-GB' : 'ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
     const line = t.start ? `Начало через <b class="num">${left >= 3600 ? Math.floor(left / 3600) + ' ч ' : ''}${clock((left % 3600) * 1000)}</b>` : esc(t.text || 'Смотрите окно «Расписание»');
@@ -34,6 +34,12 @@ function render() {
       <div class="n">${esc(t.name)}</div><div class="l">${line}</div>${foot(t)}</div>
       <button class="icon x" data-k="${esc(t.key)}" aria-label="Закрыть уведомление">${ICON.close}</button></div>`;
   }).join('');
+  const sig = html.replace(/ enter"/g, '"') + '|' + st + '|' + data.theme + '|' + data.lang;
+  // перерисовываем только если что-то изменилось — иначе анимации и подсветка кнопок сбрасывались бы каждую секунду
+  if (sig === lastHtml) return;
+  lastHtml = sig;
+  document.body.innerHTML = html;
+  for (const t of data.toasts) entered.add(t.key);
   document.querySelectorAll('[data-k]').forEach(b => b.onclick = () => api.toastClose(b.dataset.k));
   document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => api.toastAction(b.dataset.key, b.dataset.act));
   if (typeof translate === 'function') translate(document.body, data.lang);
