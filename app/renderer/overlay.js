@@ -54,7 +54,8 @@ function chrome() {
   $('solo').checked = !!S.solo; $('autoHide').checked = S.autoHide !== false;
   $('bLock').innerHTML = S.clickThrough ? ICON.lock : ICON.unlock;
   $('bLock').style.color = S.clickThrough ? 'var(--accent)' : '';
-  const hk = Object.assign({ overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C' }, S.hotkeys || {});
+  const hk0 = Object.assign({ overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C' }, S.hotkeys || {});
+  const hk = Object.fromEntries(Object.entries(hk0).map(([k, v]) => [k, hkLabel(v)]));
   $('bShare').title = 'Поделиться боем (' + hk.share + ')'; $('bShare').setAttribute('aria-label', 'Скопировать итог боя (' + hk.share + ')');
   $('bLock').setAttribute('aria-label', (S.clickThrough ? 'Снять закрепление (' : 'Закрепить: клики сквозь оверлей (') + hk.lock + ')');
   $('bLock').title = S.clickThrough ? 'Закреплён — ' + hk.lock : 'Закрепить (' + hk.lock + ')';

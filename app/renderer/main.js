@@ -51,7 +51,17 @@ const HOTKEYS = [['overlay', 'показать / скрыть оверлей'], 
 const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' };
 let hkWait = null, hkErr = {};
 const hkText = id => ((S.hotkeys || {})[id] || HOTKEY_DEFAULTS[id]);
-const KEYNAMES = { Space: 'Space', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Backquote: '`', Comma: ',', Period: '.', Slash: '/', Backslash: '\\', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown', Insert: 'Insert', Delete: 'Delete' };
+// Клавиши → имена ускорителей Electron. Можно назначить любую клавишу клавиатуры, включая цифровой блок (Num).
+const KEYNAMES = {
+  Space: 'Space', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Backquote: '`',
+  Comma: ',', Period: '.', Slash: '/', Backslash: '\\', IntlBackslash: '\\',
+  ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown',
+  Insert: 'Insert', Delete: 'Delete', Backspace: 'Backspace', Tab: 'Tab', Enter: 'Return', CapsLock: 'Capslock', NumLock: 'Numlock',
+  ScrollLock: 'Scrolllock', PrintScreen: 'PrintScreen', ContextMenu: 'Menu' /* не все версии Electron */,
+  NumpadAdd: 'numadd', NumpadSubtract: 'numsub', NumpadMultiply: 'nummult', NumpadDivide: 'numdiv', NumpadDecimal: 'numdec', NumpadEnter: 'Return',
+  MediaPlayPause: 'MediaPlayPause', MediaStop: 'MediaStop', MediaTrackNext: 'MediaNextTrack', MediaTrackPrevious: 'MediaPreviousTrack',
+  AudioVolumeUp: 'VolumeUp', AudioVolumeDown: 'VolumeDown', AudioVolumeMute: 'VolumeMute',
+};
 function accelFrom(e) {
   let k = null;
   if (/^Key[A-Z]$/.test(e.code)) k = e.code.slice(3);
@@ -59,19 +69,20 @@ function accelFrom(e) {
   else if (/^F([1-9]|1[0-9]|2[0-4])$/.test(e.code)) k = e.code;
   else if (/^Numpad\d$/.test(e.code)) k = 'num' + e.code.slice(6);
   else if (KEYNAMES[e.code]) k = KEYNAMES[e.code];
-  if (!k) return null;
-  const mods = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift'].filter(Boolean);
-  if (!mods.length && !/^F\d+$/.test(k)) return null; // без Ctrl/Alt/Shift — только F1…F24
+  if (!k || k === 'Menu') return null;
+  const mods = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean);
   return [...mods, k].join('+');
 }
+// Одиночная обычная клавиша (буква, цифра, пробел…) будет перехвачена во всех программах — предупредим.
+const plainKey = acc => !/\+/.test(acc) && !/^(F\d+|num|Media|Volume|Insert|Delete|Home|End|PageUp|PageDown|Scrolllock|PrintScreen|Numlock|Capslock)/.test(acc);
 document.addEventListener('keydown', e => {
   if (!hkWait) return;
   e.preventDefault(); e.stopPropagation();
   if (e.key === 'Escape') { hkWait = null; api.hotkeysPause(false); render(); return; }
   if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
   const acc = accelFrom(e);
-  if (!acc) { hkErr[hkWait] = 'Нужно сочетание с Ctrl, Alt или Shift (или клавиша F1–F24)'; render(); return; }
-  const id = hkWait; hkWait = null; hkErr[id] = '';
+  if (!acc) { hkErr[hkWait] = 'Эту клавишу назначить нельзя — выберите другую'; render(); return; }
+  const id = hkWait; hkWait = null; hkErr[id] = plainKey(acc) ? 'Одиночная клавиша будет срабатывать во всех программах, в том числе в чате игры' : '';
   api.set({ hotkeys: { [id]: acc } });
 }, true);
 
@@ -104,8 +115,8 @@ const pages = {
     <div class="card row" style="justify-content:center"><button type="button" class="primary" id="showOv">Показать оверлей</button><button type="button" id="resetSize">Размер и место по умолчанию</button>
       <button type="button" id="ct">${S.clickThrough ? 'Снять закрепление' : 'Закрепить (клики сквозь)'}</button></div>
     <div class="card field"><span class="lbl">Горячие клавиши</span>
-      <div class="keys">${HOTKEYS.map(([id, text]) => `<div class="hk"><button type="button" class="kbd hkb${hkWait === id ? ' wait' : ''}" data-hk="${id}" title="Нажмите и затем нужное сочетание клавиш">${hkWait === id ? 'Нажмите сочетание…' : esc(hkText(id))}</button><span>${text}</span>${hkErr[id] ? `<span class="hkerr">${esc(hkErr[id])}</span>` : ''}</div>`).join('')}</div>
-      <div class="row"><button type="button" id="hkReset">Вернуть стандартные</button><span class="muted" style="font-size:12px">Нажмите на сочетание, затем новое (например Ctrl+Alt+F2). Esc — отмена.</span></div></div>`,
+      <div class="keys">${HOTKEYS.map(([id, text]) => `<div class="hk"><button type="button" class="kbd hkb${hkWait === id ? ' wait' : ''}" data-hk="${id}" title="Нажмите и затем нужное сочетание клавиш">${hkWait === id ? 'Нажмите сочетание…' : esc(hkLabel(hkText(id)))}</button><span>${text}</span>${hkErr[id] ? `<span class="hkerr">${esc(hkErr[id])}</span>` : ''}</div>`).join('')}</div>
+      <div class="row"><button type="button" id="hkReset">Вернуть стандартные</button><span class="muted" style="font-size:12px">Нажмите на сочетание, затем любую клавишу или сочетание — подойдут и клавиши цифрового блока (Num 1, Num +). Esc — отмена.</span></div></div>`,
 
   connect: () => {
     const [main, addr] = splitStatus(status.msg);
@@ -130,7 +141,7 @@ const pages = {
       <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
       <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — уведомление, кто и чем добил персонажа, с кнопкой «Разбор»</span></label></div>
     <div class="card field center"><span class="lbl">Итог боя в Discord-канал</span>
-      <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkText('share'))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
+      <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkLabel(hkText('share')))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
       <div class="whrow"><input type="password" id="whUrl" value="${esc(S.webhook?.url || '')}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false"><button type="button" id="whTest">Проверить</button></div>
       <div id="whMsg" class="${WHN.cls || 'muted'}" style="font-size:12px;min-height:16px">${esc(WHN.text)}</div>
       <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="whOn" ${S.webhook?.on ? 'checked' : ''}> <span><b>Отправлять в канал</b> при нажатии «Поделиться»</span></label>

@@ -569,7 +569,7 @@ function registerHotkeys() {
     if (!acc) continue;
     let ok = false;
     try { ok = globalShortcut.register(acc, fn); } catch { ok = false; }
-    if (!ok) hotkeyErrors[id] = 'Сочетание ' + acc + ' занято другой программой или недопустимо';
+    if (!ok) hotkeyErrors[id] = 'Сочетание ' + acc.replace(/num(\d)/g, 'Num $1').replace(/numadd/g, 'Num +').replace(/numsub/g, 'Num −') + ' занято другой программой или недопустимо';
   }
   broadcast('hotkey-errors', hotkeyErrors);
 }

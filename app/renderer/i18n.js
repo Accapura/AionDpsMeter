@@ -4,6 +4,11 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Любые клавиши для горячих клавиш': 'Any keys for hotkeys', 'Можно назначить любую клавишу или сочетание, включая цифровой блок (Num 1, Num +, Num *), Win, медиа-клавиши; названия показываются понятно': 'Assign any key or combination, including the numpad (Num 1, Num +, Num *), Win and media keys; names are shown clearly',
+    'Эту клавишу назначить нельзя — выберите другую': 'This key cannot be assigned — choose another',
+    'Одиночная клавиша будет срабатывать во всех программах, в том числе в чате игры': 'A single key will trigger in every program, including the game chat',
+    'Нажмите на сочетание, затем любую клавишу или сочетание — подойдут и клавиши цифрового блока (Num 1, Num +). Esc — отмена.': 'Click a shortcut, then press any key or combination — numpad keys work too (Num 1, Num +). Esc — cancel.',
+    'Пробел': 'Space',
     'Записать трафик (90 с)': 'Record traffic (90 s)', 'Идёт запись…': 'Recording…', 'Запись трафика сохранена': 'Traffic recording saved',
     '«Записать трафик» — по просьбе автора: 90 секунд пакетов игры в файл на рабочем столе (для разбора новых функций). В записи есть ники и чат — отправляйте её только автору.': '“Record traffic” — on the author’s request: 90 seconds of game packets to a file on the desktop (to study new features). It contains nicknames and chat — send it only to the author.',
     'VPN': 'VPN', 'Запись не началась': 'Recording did not start', 'Запустите игру и войдите персонажем': 'Start the game and log in with a character',

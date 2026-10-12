@@ -227,6 +227,14 @@ function paintRanges(root = document) {
 }
 document.addEventListener('input', e => { if (e.target.matches && e.target.matches('input[type=range]')) paintRanges(e.target.parentElement); });
 
+// Горячая клавиша для показа: «Ctrl + Shift + Num 1» вместо «Ctrl+Shift+num1».
+const HK_NAMES = { numadd: 'Num +', numsub: 'Num −', nummult: 'Num *', numdiv: 'Num /', numdec: 'Num .', Return: 'Enter', Super: 'Win',
+  Up: '↑', Down: '↓', Left: '←', Right: '→', Capslock: 'Caps Lock', Numlock: 'Num Lock', Scrolllock: 'Scroll Lock', PrintScreen: 'Print Screen',
+  PageUp: 'Page Up', PageDown: 'Page Down', Space: 'Пробел', MediaPlayPause: 'Play/Pause', MediaNextTrack: 'Next', MediaPreviousTrack: 'Prev',
+  MediaStop: 'Stop', VolumeUp: 'Vol +', VolumeDown: 'Vol −', VolumeMute: 'Mute' };
+function hkLabel(acc) {
+  return String(acc || '').split('+').filter(Boolean).map(p => (/^num\d$/.test(p) ? 'Num ' + p.slice(3) : HK_NAMES[p] || p)).join(' + ') || '—';
+}
 // Иконки ивентов (по id ивента, иначе по типу).
 const EV_ICON = {
   rift: '<path d="M12 3c4.5 0 8 4 8 9s-3.5 9-8 9s-8-4-8-9s3.5-9 8-9z"/><path d="M12 7c2.2 0 4 2.2 4 5s-1.8 5-4 5s-4-2.2-4-5s1.8-5 4-5z"/><path d="M12 11v2"/>',
