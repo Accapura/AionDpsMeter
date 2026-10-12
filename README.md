@@ -54,7 +54,7 @@
 
 ## 📥 Установка
 
-1. Скачайте **`AionDpsMeter.v1.2.0.exe`** со страницы [**Releases**](https://github.com/Accapura/AionDpsMeter/releases/latest) и запустите.
+1. Скачайте установщик **`AionDpsMeter.vX.Y.Z.exe`** со страницы [**Releases**](https://github.com/Accapura/AionDpsMeter/releases/latest) и запустите.
 2. Выберите язык, примите соглашение и папку — программа появится в меню «Пуск».
 3. Для чтения боя нужны (установщик сам проверит и даст ссылки):
    - [**Npcap**](https://npcap.com/#download) — драйвер захвата трафика, ставьте с настройками по умолчанию;
@@ -99,7 +99,7 @@ cd bridge && dotnet publish -c Release -o ../bridge-out -p:UseAppHost=false
 # программа (для запуска из исходников)
 cd app && npm install && npm start
 # установщик: art.py рисует графику, gen.py собирает setup.nsi, затем makensis
-cd setup && python3 art.py 1.2.0 && python3 gen.py 1.2.0 <папка_с_программой> && makensis setup.nsi
+cd setup && python3 art.py <версия> && python3 gen.py <версия> <папка_с_программой> && makensis setup.nsi
 ```
 
 ## 🙏 Благодарности и лицензии

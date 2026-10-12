@@ -4,6 +4,7 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Кнопки панели оверлея наверху': 'Overlay panel buttons on top', '«Главное окно», «Размер по умолчанию» и «Расписание» — сразу под шестерёнкой': '“Main window”, “Default size” and “Schedule” — right under the gear',
     'Горячие клавиши режимов': 'Mode hotkeys', 'Ctrl+Shift+1 / 2 / 3 — «Данж: Босс», «Мир: Босс», «Моб»; Ctrl+Shift+M — по кругу': 'Ctrl+Shift+1 / 2 / 3 — “Dungeon: Boss”, “World: Boss”, “Mobs”; Ctrl+Shift+M — cycle',
     'режим «Данж: Босс»': 'mode “Dungeon: Boss”', 'режим «Мир: Босс»': 'mode “World: Boss”', 'режим «Моб»': 'mode “Mobs”', 'следующий режим по кругу': 'next mode (cycle)',
     'За секунды, без установщика': 'In seconds, no installer', 'Через установщик, в ту же папку': 'Via the installer, same folder',

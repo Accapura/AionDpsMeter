@@ -48,7 +48,7 @@
 
 ## 📥 Install
 
-1. Download **`AionDpsMeter.v1.2.0.exe`** from [**Releases**](https://github.com/Accapura/AionDpsMeter/releases/latest) and run it.
+1. Download the installer **`AionDpsMeter.vX.Y.Z.exe`** from [**Releases**](https://github.com/Accapura/AionDpsMeter/releases/latest) and run it.
 2. Pick the language, accept the agreement and choose a folder — the app appears in the Start menu.
 3. To read fights you need (the installer checks and gives links):
    - [**Npcap**](https://npcap.com/#download) — traffic capture driver, install with default options;
@@ -90,7 +90,7 @@ setup/    — installer (NSIS) and light updates
 ```bash
 cd bridge && dotnet publish -c Release -o ../bridge-out -p:UseAppHost=false
 cd app && npm install && npm start
-cd setup && python3 art.py 1.2.0 && python3 gen.py 1.2.0 <app_folder> && makensis setup.nsi
+cd setup && python3 art.py <version> && python3 gen.py <version> <app_folder> && makensis setup.nsi
 ```
 
 ## 🙏 Credits and licenses
