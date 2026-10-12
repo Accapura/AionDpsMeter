@@ -235,36 +235,6 @@ public sealed class LiveCapture : IEventSource
         }
     }
 
-    /// <summary>AionDps: записать трафик игры в .pcap на заданное время (для разбора протокола автором). Возвращает путь или null.</summary>
-    public string? StartRecording(string dir, int seconds)
-    {
-        string path;
-        lock (_gate)
-        {
-            if (_device is null) return null;
-            if (_writer is not null) return RecordingPath;
-            Directory.CreateDirectory(dir);
-            path = Path.Combine(dir, $"AionDpsMeter-record-{DateTime.Now:yyyyMMdd-HHmmss}.pcap");
-            var w = new CaptureFileWriterDevice(path);
-            w.Open(new DeviceConfiguration { LinkLayerType = _device.LinkType });
-            RecordingPath = path;
-            _writer = w;
-        }
-        Task.Delay(Math.Clamp(seconds, 5, 600) * 1000).ContinueWith(_ => RecordingFinished?.Invoke(StopRecording()));
-        return path;
-    }
-    public event Action<string?>? RecordingFinished;
-    public string? StopRecording()
-    {
-        CaptureFileWriterDevice? w;
-        string? path;
-        lock (_gate) { w = _writer; path = RecordingPath; _writer = null; RecordingPath = null; }
-        if (w is null) return null;
-        Thread.Sleep(200); // пакет, который пишется прямо сейчас, успеет записаться
-        try { w.Close(); } catch { /* ignore */ }
-        return path;
-    }
-
     private void OpenRecorder(LibPcapLiveDevice device)
     {
         if (_options.RecordDirectory is not { Length: > 0 } dir) return;

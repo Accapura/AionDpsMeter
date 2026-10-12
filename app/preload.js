@@ -12,8 +12,6 @@ contextBridge.exposeInMainWorld('api', {
   deathsClear: () => ipcRenderer.send('deaths-clear'),
   whatsNewSeen: () => ipcRenderer.send('whats-new-seen'),
   report: () => ipcRenderer.invoke('report'),
-  record: () => ipcRenderer.send('record'),
-  recordState: () => ipcRenderer.invoke('record-state'),
   webhookTest: url => ipcRenderer.invoke('webhook-test', url),
   detail: id => ipcRenderer.send('detail', id),
   set: patch => ipcRenderer.send('set-settings', patch),

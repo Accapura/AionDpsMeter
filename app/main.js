@@ -61,6 +61,7 @@ const DEFAULTS = {
   whatsNewFrom: '',             // с какой версии обновлялись (для списка изменений)
   deathToast: true,             // уведомление с разбором смерти
   webhook: { url: '', on: false }, // отправка итога боя в Discord-канал
+  winBounds: {},                // место и размер окон (главное, расписание, разбивка), как их оставил пользователь
 };
 
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -80,11 +81,17 @@ const langArg = process.argv.find(a => a.startsWith('--lang='));
 if (langArg && firstRun && ['ru', 'en'].includes(langArg.slice(7))) settings.lang = langArg.slice(7);
 
 let saveTimer = null;
+function saveNow() {
+  clearTimeout(saveTimer); saveTimer = null;
+  try { fs.mkdirSync(path.dirname(SETTINGS_FILE()), { recursive: true }); fs.writeFileSync(SETTINGS_FILE(), JSON.stringify(settings, null, 2)); } catch { /* не критично */ }
+}
 function save() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try { fs.mkdirSync(path.dirname(SETTINGS_FILE()), { recursive: true }); fs.writeFileSync(SETTINGS_FILE(), JSON.stringify(settings, null, 2)); } catch { /* не критично */ }
-  }, 300);
+  saveTimer = setTimeout(saveNow, 300);
+}
+// Место окна — только если оно видно хотя бы на одном экране (монитор могли отключить или сменить разрешение).
+function onScreen(r) {
+  return r && r.x != null && r.y != null && screen.getAllDisplays().some(d => { const a = d.workArea; return r.x + 60 > a.x && r.x < a.x + a.width - 60 && r.y >= a.y - 10 && r.y < a.y + a.height - 40; });
 }
 // Профили оверлея: у «Данж: Босс», «Мир: Босс» и «Моб» свои список, прозрачность, колонки и размер.
 const PROFILE_KEYS = ['count', 'opacity', 'columns', 'showHeader', 'solo', 'compact'];
@@ -105,7 +112,7 @@ function applyProfile(mode) {
     const b = w.getBounds();
     const nb = { x: b.x, y: b.y, width: p.size?.width || b.width, height: p.size?.height || b.height };
     // место — только если оно на одном из экранов (монитор могли отключить)
-    if (p.pos && screen.getAllDisplays().some(d => { const a = d.workArea; return p.pos.x + 60 > a.x && p.pos.x < a.x + a.width - 60 && p.pos.y >= a.y - 10 && p.pos.y < a.y + a.height - 40; })) { nb.x = p.pos.x; nb.y = p.pos.y; }
+    if (p.pos && onScreen(p.pos)) { nb.x = p.pos.x; nb.y = p.pos.y; }
     w.setBounds(nb);
     settings.overlay = { ...settings.overlay, ...nb };
   }
@@ -136,9 +143,15 @@ const wins = {};
 function broadcast(ch, data) { for (const w of Object.values(wins)) if (w && !w.isDestroyed()) w.webContents.send(ch, data); }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+const REMEMBER = ['main', 'schedule', 'breakdown']; // окна, чьи место и размер запоминаются
 function makeWindow(name, opts, file) {
   const old = wins[name];
   if (old && !old.isDestroyed()) { if (!opts.showInactive) { old.show(); old.focus(); } return old; }
+  const mem = REMEMBER.includes(name) && settings.winBounds?.[name];
+  if (mem && mem.width && mem.height) {
+    opts = { ...opts, width: Math.max(opts.minWidth || 0, mem.width), height: Math.max(opts.minHeight || 0, mem.height) };
+    if (onScreen(mem)) { opts.x = mem.x; opts.y = mem.y; delete opts.center; }
+  }
   const w = new BrowserWindow({
     frame: false,
     transparent: true,
@@ -153,6 +166,17 @@ function makeWindow(name, opts, file) {
   w.webContents.on('did-finish-load', () => w.webContents.setZoomFactor(settings.scale / 100));
   w.once('ready-to-show', () => (opts.showInactive ? w.showInactive() : w.show()));
   w.on('closed', () => { delete wins[name]; });
+  if (REMEMBER.includes(name)) {
+    let t = null;
+    const remember = () => { clearTimeout(t); t = setTimeout(() => {
+      if (w.isDestroyed() || w.isMaximized() || w.isMinimized() || w.isFullScreen()) return;
+      settings.winBounds = { ...(settings.winBounds || {}), [name]: w.getBounds() };
+      save();
+    }, 400); };
+    w.on('move', remember); w.on('resize', remember);
+    w.__keep = () => { if (!w.isDestroyed() && !w.isMaximized() && !w.isMinimized()) settings.winBounds = { ...(settings.winBounds || {}), [name]: w.getBounds() }; save(); };
+    w.on('close', w.__keep);
+  }
   w.on('maximize', () => w.webContents.send('maxed', true));
   w.on('unmaximize', () => w.webContents.send('maxed', false));
   wins[name] = w;
@@ -168,11 +192,10 @@ function overlayBounds() {
   };
   const b = settings.overlay;
   const r = { width: b.width || def.width, height: b.height || def.height, x: b.x, y: b.y };
-  const visible = r.x != null && screen.getAllDisplays().some(d => {
-    const a = d.workArea;
-    return r.x + 60 > a.x && r.x < a.x + a.width - 60 && r.y >= a.y - 10 && r.y < a.y + a.height - 40;
-  });
-  if (!visible) { r.x = wa.x + wa.width - r.width - 24; r.y = wa.y + Math.round(wa.height * 0.18); }
+  // размер не больше экрана, на котором окажется оверлей
+  const wa2 = onScreen(r) ? screen.getDisplayMatching({ x: r.x, y: r.y, width: r.width, height: r.height }).workArea : wa;
+  r.width = Math.min(r.width, wa2.width); r.height = Math.min(r.height, wa2.height);
+  if (!onScreen(r)) { r.x = wa.x + wa.width - r.width - 24; r.y = wa.y + Math.round(wa.height * 0.18); }
   return r;
 }
 
@@ -185,15 +208,21 @@ function openOverlay() {
   }, 'overlay.html');
   w.setAlwaysOnTop(true, 'screen-saver');
   w.on('show', () => { w.webContents.send('snap', lastSnap); w.webContents.send('ping', lastPing); }); // пока оверлей скрыт, снимки ему не шлём
-  const keep = () => {
-    if (w.isDestroyed()) return;
+  // Место и размер оверлея запоминаются сразу после перетаскивания или изменения размера (и своей ручкой тоже).
+  let kt = null;
+  const keepNow = () => {
+    clearTimeout(kt);
+    if (w.isDestroyed() || w.isMinimized()) return;
     const r = w.getBounds();
     settings.overlay = { ...settings.overlay, x: r.x, y: r.y, width: r.width, height: r.height };
     if (settings.profilesOn) settings.profiles[settings.mode] = profileOf();
     save();
   };
-  w.on('moved', keep);
-  w.on('resized', keep);
+  const keep = () => { clearTimeout(kt); kt = setTimeout(keepNow, 400); };
+  w.on('move', keep); w.on('resize', keep);
+  w.on('moved', keepNow); w.on('resized', keepNow);
+  w.on('close', keepNow);
+  w.__keep = keepNow;
   w.webContents.once('did-finish-load', applyClickThrough);
   return w;
 }
@@ -311,7 +340,6 @@ const bridge = {
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') addFight(m);
       else if (m.t === 'death') addDeath(m);
-      else if (m.t === 'record') onRecord(m);
       else if (m.t === 'ping') { lastPing = m.ms; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', lastPing); }
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
       else if (m.t === 'boss') { bossLog.unshift({ ...m, at: Date.now() }); bossLog.length = Math.min(bossLog.length, 40); broadcast('boss-log', bossLog); }
@@ -372,25 +400,6 @@ function addDeath(m) {
     const k = killerOf(d);
     showToast({ key: 'death' + d.at, type: 'death', icon: 'skull', start: null, name: T('Ваш персонаж погиб'), text: k ? `${k.src} · ${k.skill} · ${nf(k.amt)}` : T('Разбор — в «Статистике»'), actions: [{ id: 'death', label: T('Разбор'), primary: true }] });
   }
-}
-
-// ---------------------------------------------------------------- запись трафика для автора (разбор протокола)
-let recState = { state: 'idle', path: '', until: 0 };
-function startRecord() {
-  if (recState.state === 'on') return;
-  let dir = app.getPath('desktop');
-  try { fs.accessSync(dir, fs.constants.W_OK); } catch { dir = app.getPath('userData'); }
-  bridge.send('record 90 ' + dir);
-  recState = { state: 'wait', path: '', until: Date.now() + 90000 };
-  broadcast('record', recState);
-}
-function onRecord(m) {
-  if (m.state === 'on') recState = { state: 'on', path: m.path, until: Date.now() + 90000 };
-  else if (m.state === 'done') {
-    recState = { state: 'done', path: m.path || '', until: 0 };
-    if (m.path) { shell.showItemInFolder(m.path); showToast({ key: 'rec' + Date.now(), type: 'info', icon: 'info', start: null, name: T('Запись трафика сохранена'), text: T('Отправьте файл автору в Discord') }); }
-  } else { recState = { state: 'error', path: '', until: 0 }; showToast({ key: 'rec' + Date.now(), type: 'info', icon: 'info', start: null, name: T('Запись не началась'), text: T('Запустите игру и войдите персонажем') }); }
-  broadcast('record', recState);
 }
 
 // ---------------------------------------------------------------- журнал для отчёта об ошибке
@@ -588,8 +597,6 @@ ipcMain.on('deaths-clear', () => { deaths = []; try { fs.writeFileSync(DEATHS_FI
 ipcMain.handle('whats-new', () => whatsNew());
 ipcMain.on('whats-new-seen', () => patchSettings({ whatsNewSeen: APP_VERSION, whatsNewFrom: '' }));
 ipcMain.handle('report', () => saveReport());
-ipcMain.on('record', () => startRecord());
-ipcMain.handle('record-state', () => recState);
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
 ipcMain.on('fights-clear', () => { fights = []; try { fs.writeFileSync(FIGHTS_FILE(), '[]'); } catch { /* ignore */ } broadcast('fights', fights); broadcast('records', {}); });
 ipcMain.on('share', (_e, fightId) => shareFight(fightId));
@@ -709,7 +716,7 @@ function stopResize() {
   const { w, wasResizable } = resizing;
   resizing = null;
   // Окно снова «нерастягиваемое» за край (прозрачным окнам Windows это нужно), но размер уже новый.
-  if (!w.isDestroyed()) w.setResizable(wasResizable);
+  if (!w.isDestroyed()) { w.setResizable(wasResizable); w.emit('resized'); }
 }
 ipcMain.on('resize-start', e => {
   stopResize();
@@ -1160,4 +1167,5 @@ app.on('second-instance', () => {
   showToast({ key: 'dup' + Date.now(), name: 'Aion DPS Meter уже запущен', type: 'info', icon: 'app', start: null, text: 'Окно программы открыто' });
 });
 app.on('window-all-closed', () => { /* программа живёт в трее */ });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); bridge.stop(); rpc.stop(); });
+app.on('before-quit', () => { for (const w of Object.values(wins)) if (w && !w.isDestroyed() && w.__keep) w.__keep(); saveNow(); });
+app.on('will-quit', () => { saveNow(); globalShortcut.unregisterAll(); bridge.stop(); rpc.stop(); });

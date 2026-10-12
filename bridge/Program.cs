@@ -247,7 +247,6 @@ void StartCapture()
         // пинг по своим навыкам (работает и через ускорители/VPN)
         c.EventDecoded += e => { if (e is AionMeter.Core.Events.CastEvent ce && ce.ActorId != 0 && ce.ActorId == tracker.SelfActorId) c.Ping.MatchCast(ce.TimeMs, ce.SkillCode); };
         c.StatusChanged += st => Emit(new { t = "status", state = st.State.ToString(), msg = Ru(st) });
-        c.RecordingFinished += path => Emit(new { t = "record", state = "done", path });
         c.Start();
         capture = c;
     }
@@ -270,16 +269,6 @@ new Thread(() =>
         else if (parts[0] == "reset") tracker.Reset();
         else if (parts[0] == "lang" && parts.Length > 1) data.ReloadNames(dataDir, parts[1] == "en" ? "en" : "ru");
         else if (parts[0] == "detail" && parts.Length > 1 && uint.TryParse(parts[1], out var actor)) EmitDetail(actor);
-        else if (parts[0] == "record" && parts.Length > 1)
-        {
-            // record <секунды> <папка>
-            var ra = parts[1].Split(' ', 2);
-            if (ra.Length == 2 && int.TryParse(ra[0], out var sec))
-            {
-                var path = capture?.StartRecording(ra[1], sec);
-                Emit(path is null ? new { t = "record", state = "error", path = (string?)null } : new { t = "record", state = "on", path = (string?)path });
-            }
-        }
         else if (parts[0] == "quit") break;
     }
     running = false; // приложение закрыло stdin — выходим вместе с ним
