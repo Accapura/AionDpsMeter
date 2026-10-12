@@ -92,7 +92,8 @@ const head = (title, lead, rawLead) => `<header class="ph"><h1>${esc(title)}</h1
 const pages = {
   overlay: () => `${head('Оверлей', 'Внешний вид и поведение окна урона поверх игры')}
     <div class="card field"><span class="lbl">Режим подсчёта</span><div class="seg" id="mModes">${MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('')}</div>
-      <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Мир: Босс» — только мировые боссы, «Моб» — весь урон по всем целям.</div></div>
+      <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Мир: Босс» — только мировые боссы, «Моб» — весь урон по всем целям.</div>
+      ${S.profilesOn !== false ? `<div class="profnote"><span>Настройки ниже сохраняются отдельно для режима</span> <b>${esc((MODES.find(m => m[0] === S.mode) || MODES[0])[1])}</b><span>: список, прозрачность, колонки, «Только я», размер и место оверлея.</span></div>` : ''}</div>
     <div class="card field"><span class="lbl">Колонки оверлея</span>
       <div class="row" style="gap:18px">
         <label class="row" style="gap:7px"><input type="checkbox" id="cHead" ${S.showHeader !== false ? 'checked' : ''}> Названия колонок (#, Игрок, DPS, Урон, %)</label>
@@ -105,7 +106,7 @@ const pages = {
     <div class="card field"><span class="lbl">Поведение</span>
       <label class="opt"><input type="checkbox" id="oSolo" ${S.solo ? 'checked' : ''}> <span><b>Только я</b> — крупно свой DPS, место, урон и крит вместо списка группы</span></label>
       <label class="opt"><input type="checkbox" id="oAuto" ${S.autoHide !== false ? 'checked' : ''}> <span><b>Прятать оверлей</b>, когда игра свёрнута или открыто другое окно</span></label>
-      <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я» и размер запоминаются отдельно для «Данж: Босс», «Мир: Босс» и «Моб»</span></label></div>
+      <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Мир: Босс» и «Моб»</span></label></div>
     <div class="card field"><span class="lbl">Список, прозрачность и масштаб</span>
       <div class="sliders">
         <div class="sl"><label for="mCount">Игроков в списке</label><b class="num" id="vCount">${S.count}</b><input id="mCount" type="range" min="1" max="50" value="${S.count}"></div>

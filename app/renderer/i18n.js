@@ -4,6 +4,12 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    '«Только я» — всегда ваш персонаж': '“Only me” — always your character', 'Показывает урон персонажа, с которого запущен счётчик, даже если игра не прислала метку «это вы»; чужой список больше не подставляется': 'Shows the damage of the character the meter runs on, even if the game did not mark it as you; the group list is no longer shown instead',
+    'Настройки оверлея для каждого режима': 'Overlay settings per mode', 'Список, прозрачность, колонки, «Только я», размер и теперь место оверлея хранятся отдельно для «Данж: Босс», «Мир: Босс» и «Моб»': 'List, opacity, columns, “Only me”, size and now the overlay position are kept separately for Dungeon: Boss, World: Boss and Mobs',
+    'Ждём ваш урон — ': 'Waiting for your damage — ', 'Ждём ваш урон': 'Waiting for your damage',
+    'Настройки ниже сохраняются отдельно для режима': 'The settings below are saved separately for the mode',
+    ': список, прозрачность, колонки, «Только я», размер и место оверлея.': ': list, opacity, columns, “Only me”, overlay size and position.',
+    '— список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Мир: Босс» и «Моб»': '— list, opacity, columns, “Only me”, overlay size and position are remembered separately for Dungeon: Boss, World: Boss and Mobs',
     'Любые клавиши для горячих клавиш': 'Any keys for hotkeys', 'Можно назначить любую клавишу или сочетание, включая цифровой блок (Num 1, Num +, Num *), Win, медиа-клавиши; названия показываются понятно': 'Assign any key or combination, including the numpad (Num 1, Num +, Num *), Win and media keys; names are shown clearly',
     'Эту клавишу назначить нельзя — выберите другую': 'This key cannot be assigned — choose another',
     'Одиночная клавиша будет срабатывать во всех программах, в том числе в чате игры': 'A single key will trigger in every program, including the game chat',

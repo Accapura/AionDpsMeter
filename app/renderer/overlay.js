@@ -123,7 +123,9 @@ function render() {
   const src = boss ? { hp: boss.hp, max: boss.maxHp } : (tg && tg.hp >= 0 && tg.maxHp > 0 ? { hp: tg.hp, max: tg.maxHp } : null);
   const hp = src ? Math.max(0, Math.min(1, src.hp / src.max)) * 100 : null;
   const more = tg && tg.count > 1 ? ` <span class="more-t">+${tg.count - 1}</span>` : '';
-  const me = ps.find(p => p.self);
+  // свой персонаж: по метке игры, иначе по нику персонажа, с которого запущен счётчик
+  const meName = String(S.character || '').toLowerCase();
+  const me = ps.find(p => p.self) || (meName ? ps.find(p => String(p.name).toLowerCase() === meName) : null);
   const rec = recordLine(me);
   const targetHtml = `
     <div class="target" title="${esc(snap.zone || '')}">
@@ -132,6 +134,12 @@ function render() {
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
       ${hp != null ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;
+  if (S.solo && !me) {
+    // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
+    body.innerHTML = targetHtml + `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(S.character)}</b>` : ''}</div></div></div>`;
+    $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою`;
+    return;
+  }
   if (S.solo && me) {
     const place = ps.indexOf(me) + 1;
     body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" title="Нажмите — разбивка по навыкам">${classIcon(me.cls)}
@@ -148,7 +156,7 @@ function render() {
     <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="Урон в секунду">DPS</span><span class="r c-total" title="Общий урон за бой">Урон</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="Доля от урона всей группы">%</span></div>
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
-      return `<div class="row${p.self ? ' me' : ''}" data-id="${p.id ?? ''}" title="Нажмите — разбивка по навыкам"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
+      return `<div class="row${p === me ? ' me' : ''}" data-id="${p.id ?? ''}" title="Нажмите — разбивка по навыкам"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(nm(p))}">${esc(nm(p))}</span>
       <span class="r dps">${fmt(p.dps)}</span><span class="r muted c-total">${fmt(p.dmg)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${((p.share || 0) * 100).toFixed(1).replace('.', ',')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;

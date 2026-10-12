@@ -93,6 +93,7 @@ function profileOf() {
   for (const k of PROFILE_KEYS) p[k] = clone(settings[k]);
   const ow = settings.overlay;
   if (ow.width && ow.height) p.size = { width: ow.width, height: ow.height };
+  if (ow.x != null && ow.y != null) p.pos = { x: ow.x, y: ow.y }; // и место оверлея на экране
   return p;
 }
 function applyProfile(mode) {
@@ -100,10 +101,13 @@ function applyProfile(mode) {
   if (!p) return;
   for (const k of PROFILE_KEYS) if (p[k] !== undefined) settings[k] = clone(p[k]);
   const w = wins.overlay;
-  if (p.size && w && !w.isDestroyed()) {
+  if ((p.size || p.pos) && w && !w.isDestroyed()) {
     const b = w.getBounds();
-    w.setBounds({ x: b.x, y: b.y, width: p.size.width, height: p.size.height });
-    settings.overlay = { ...settings.overlay, width: p.size.width, height: p.size.height };
+    const nb = { x: b.x, y: b.y, width: p.size?.width || b.width, height: p.size?.height || b.height };
+    // место — только если оно на одном из экранов (монитор могли отключить)
+    if (p.pos && screen.getAllDisplays().some(d => { const a = d.workArea; return p.pos.x + 60 > a.x && p.pos.x < a.x + a.width - 60 && p.pos.y >= a.y - 10 && p.pos.y < a.y + a.height - 40; })) { nb.x = p.pos.x; nb.y = p.pos.y; }
+    w.setBounds(nb);
+    settings.overlay = { ...settings.overlay, ...nb };
   }
 }
 function patchSettings(patch) {
