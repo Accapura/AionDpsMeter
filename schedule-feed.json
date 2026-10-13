@@ -1,6 +1,6 @@
 {
  "version": 4,
- "updated": "2026-10-12",
+ "updated": "2026-10-13",
  "note": "Расписание AION 2 Global. Часы сервера Global — GMT+9; в программе время показывается по вашим местным часам.",
  "serverTz": {
   "default": "Asia/Seoul"
@@ -136,15 +136,15 @@
   }
  ],
  "app": {
-  "version": "1.2.3",
-  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.3/AionDpsMeter.v1.2.3.exe",
-  "sha256": "9ff689fbd3d10e450d69ead93691c10d46e49dab43d6b525974dfcde9149161e",
-  "size": 86247755,
-  "notes": "• Надёжная загрузка обновлений (прокси, VPN, защищённый DNS)\n• Пинг с ускорителями: по вашим навыкам в бою\n• Любые клавиши для горячих клавиш, включая Num-блок\n• «Только я» — всегда ваш персонаж\n• Настройки и место оверлея — свои для каждого режима\n• Окна запоминают место и размер",
+  "version": "1.2.4",
+  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.4/AionDpsMeter.v1.2.4.exe",
+  "sha256": "fce422f1b2755d3a00805e0ccb682b0df66afa74268531dbe0161245e10f8e58",
+  "size": 86240467,
+  "notes": "• Пинг персонажа — по вашим навыкам, по всему маршруту с ускорителем\n• До первых навыков показывается примерное значение «~»",
   "patch": {
-   "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.3/AionDpsMeter-patch-1.2.3.gz",
-   "sha256": "c45be1897a2d786fa52e9af574df3adad56194ce47ef9e287634996207c60e22",
-   "size": 1347546,
+   "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.2.4.gz",
+   "sha256": "1c58f540d1203ef8761c8e0a94935dbb0c8ab4c29c17075d12dc5c07e53beb6b",
+   "size": 1348138,
    "shell": "e33-net10"
   }
  }
