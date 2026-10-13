@@ -32,7 +32,8 @@
 | 📅 **Schedule and checklist** | Events, rifts and world bosses in the selected server time, reminders, custom events, field boss timers from the game. A daily and weekly checklist that resets by itself. |
 | 🎥 **Streamer mode** | Player nicknames become “Player NN” in the overlay and the app (`Ctrl+Shift+H`). |
 | ⚡ **Light updates** | New versions (~1.5 MB) download and install in seconds. Start with Windows is optional. |
-| 🎨 **Look** | 11 themes, 5 notification styles, Russian and English. |
+| 🔔 **Notifications** | Hide themselves after 8 seconds (3–30 in settings); every kind has its own switch and sound, 6 new soft sounds and 10 styles to choose from. |
+| 🎨 **Look** | 11 themes, 10 notification styles, Russian and English. |
 
 ## 📸 Screenshots
 

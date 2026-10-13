@@ -4,6 +4,18 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Уведомления скрываются сами': 'Notifications hide themselves',
+    'Через 8 секунд (от 3 до 30 в настройках); для каждого вида уведомлений свой переключатель и свой звук': 'After 8 seconds (3 to 30 in settings); every kind of notification has its own switch and sound',
+    'Новые звуки уведомлений': 'New notification sounds',
+    'Chime, Drop, Glass, Marimba, Harp и Pulse — мягкие и негромкие': 'Chime, Drop, Glass, Marimba, Harp and Pulse — soft and quiet',
+    'Новые оформления уведомлений': 'New notification styles',
+    'Аврора, Неон, Билет, Компакт и Таймер — всего десять на выбор': 'Aurora, Neon, Ticket, Compact and Timer — ten to choose from',
+    '«Что нового» в уведомлении об обновлении': '“What’s new” in the update notification',
+    'Кнопка открывает страницу релиза на GitHub': 'The button opens the release page on GitHub',
+    'Расписание: без безымянных боссов': 'Schedule: no unnamed bosses',
+    'Не показываются «Полевой босс №N» и записи с давно прошедшим временем возрождения': 'Unnamed “Field boss #N” rows and long-past respawn times are no longer shown',
+    'Секундные бои без урона не сохраняются': 'One-second fights without damage are not saved',
+    'Они больше не попадают в историю и в «Поделиться»': 'They no longer reach the history or “Share”',
     'Аврора': 'Aurora', 'Неон': 'Neon', 'Билет': 'Ticket', 'Компакт': 'Compact', 'Таймер': 'Timer',
     'Скрывать уведомление через': 'Hide a notification after',
     'Уведомление об обновлении не исчезает само — только по кнопке.': 'The update notification does not disappear by itself — only by its button.',
