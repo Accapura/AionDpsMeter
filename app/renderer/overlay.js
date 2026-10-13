@@ -134,7 +134,7 @@ function render() {
   }
   const ps = snap.players, top = ps[0].dmg || 1;
   // Дополнительные колонки (включаются в настройках оверлея).
-  const extra = [
+  let extra = [
     S.columns?.crit && { h: 'Крит', t: 'Доля критических ударов', w: '38px', v: p => p.crit != null ? Math.round(p.crit * 100) + '%' : '—' },
     S.columns?.hits && { h: 'Удары', t: 'Количество ударов', w: '40px', v: p => p.hits ?? '—' },
     S.columns?.maxHit && { h: 'Макс', t: 'Самый сильный удар', w: '46px', v: p => p.maxHit ? fmt(p.maxHit) : '—' },
@@ -142,7 +142,14 @@ function render() {
     S.columns?.gs && { h: 'ГС', t: 'Гир-скор (уровень экипировки): известен у игроков вашей группы', w: '40px', v: p => p.gs ? p.gs : '—' },
     S.columns?.cp && { h: 'БМ', t: 'Боевая мощь: известна у игроков вашей группы', w: '50px', v: p => p.cp ? fmt(p.cp) : '—' },
   ].filter(Boolean);
-  const narrow = innerWidth < 300;
+  // Колонкам хватает места, только если нику остаётся ≥ 90px: иначе сначала убираем «Урон», потом доп. колонки справа налево
+  const avail = innerWidth - (document.body.dataset.hd === 'side' ? 38 : 0) - 24;
+  const need = (tot, list) => 16 + 20 + 50 + (tot ? 50 : 0) + list.reduce((a, c) => a + parseInt(c.w), 0) + 38 + 5 * (4 + (tot ? 1 : 0) + list.length);
+  let tot = innerWidth >= 300;
+  if (avail - need(tot, extra) < 90) tot = false;
+  while (extra.length && avail - need(tot, extra) < 90) extra = extra.slice(0, -1);
+  const narrow = !tot;
+  document.body.classList.toggle('notot', narrow);
   document.body.style.setProperty('--cols', (narrow ? '14px 20px minmax(0,1fr) 48px' : '16px 20px minmax(0,1fr) 50px 50px') + extra.map(c => ' ' + c.w).join('') + ' 38px');
   const shown = ps.slice(0, S.count), rest = ps.length - shown.length;
   const restShare = ps.slice(S.count).reduce((a, p) => a + (p.share || 0), 0);

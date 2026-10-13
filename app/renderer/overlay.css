@@ -71,7 +71,7 @@ body.hasnick .title .full,body.hasnick .title .short{display:none}
 .mflash.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .resize{position:absolute;right:0;bottom:0;width:24px;height:24px;z-index:6;cursor:nwse-resize;display:flex;align-items:flex-end;justify-content:flex-end;padding:0 3px 3px 0;color:var(--muted);-webkit-app-region:no-drag}
 /* узкий оверлей: прячем колонку «Урон», короткое название */
-body.narrow .c-total{display:none}
+body.narrow .c-total,body.notot .c-total{display:none}
 body.narrow .title .full{display:none}
 body.narrow .title .short{display:inline}
 body.compact .modes{display:none}
