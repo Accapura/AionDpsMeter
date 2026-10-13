@@ -649,7 +649,7 @@ function checkSchedule() {
   }
   for (const map of Object.values(fieldBosses[currentServer()] || {})) for (const sl of map.slots || []) {
     const id = 'fb:' + sl.name;
-    if (!sl.alive && sl.atMs > now && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss');
+    if (!sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss');
   }
 }
 function showToast(t) {

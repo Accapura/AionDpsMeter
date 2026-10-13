@@ -102,7 +102,9 @@ function renderList() {
 function renderBosses() {
   $('fbServer').textContent = D?.server ? '· ' + D.server : '';
   const rows = [];
-  for (const map of Object.values(D?.fieldBosses || {})) for (const sl of map.slots || []) rows.push({ ...sl, map: map.map });
+  // Слоты без опознанного имени («Полевой босс №N») ничего не говорят игроку — не показываем; как и давно прошедшее время возрождения.
+  const known = sl => !/^Полевой босс №/.test(sl.name || '') && (sl.alive || !sl.atMs || sl.atMs > Date.now() - 3600000);
+  for (const map of Object.values(D?.fieldBosses || {})) for (const sl of map.slots || []) if (known(sl)) rows.push({ ...sl, map: map.map });
   $('fb').innerHTML = rows.length ? rows.sort((a, b) => (b.alive - a.alive) || (a.atMs || 9e15) - (b.atMs || 9e15)).map(r =>
     `<div class="fb"><span class="fbn"><span class="evic sm">${eventIcon({ id: 'fb' }, 15)}</span>${nt(r.name)} <span class="small" data-notr>${esc(r.map)}</span></span><span class="num" data-fb="${r.alive ? -1 : r.atMs || 0}"></span></div>`).join('')
     : '<div class="small">Откройте в игре карту со списком полевых боссов — таймеры возрождения подтянутся сами.</div>';
@@ -135,7 +137,7 @@ function tick() {
     if (t && (!best || t < best.t)) best = { e, t };
   }
   for (const map of Object.values(D?.fieldBosses || {})) for (const sl of map.slots || [])
-    if (!sl.alive && sl.atMs > now && (!best || sl.atMs < best.t)) best = { e: { id: 'fb', name: sl.name + ' · ' + map.map }, t: sl.atMs };
+    if (!sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && (!best || sl.atMs < best.t)) best = { e: { id: 'fb', name: sl.name + ' · ' + map.map }, t: sl.atMs };
   $('nName').textContent = best ? best.e.name : '—';
   $('nIc').innerHTML = eventIcon(best ? (best.e.id ? best.e : { id: 'fb' }) : { id: 'calendar' }, 22);
   $('nWhen').textContent = best ? new Date(best.t).toLocaleString(LOC(), { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: TZ() }) : 'Нет ивентов с напоминанием';
