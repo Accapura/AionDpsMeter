@@ -136,8 +136,9 @@ function render() {
     </div>`;
   if (S.solo && !me) {
     // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
-    body.innerHTML = targetHtml + `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(S.character)}</b>` : ''}</div></div></div>`;
-    $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою`;
+    // ни HP моба, ни таймер, ни суммы чужого боя не показываем: бой «начинается» для оверлея, когда урон нанёс сам персонаж
+    body.innerHTML = `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(S.character)}</b>` : ''}</div></div></div>`;
+    $('stats').innerHTML = '';
     return;
   }
   if (S.solo && me) {
