@@ -246,20 +246,26 @@ function bossGrowth(by) {
   const pts = by[BG.boss].filter(f => meOf(f) && !f.partial).sort((a, b) => a.at - b.at).map(f => ({ f, v: meOf(f).dps }));
   const sel = `<select id="bgBoss" class="bgsel">${names.map(n => `<option value="${esc(n)}"${n === BG.boss ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
   if (pts.length < 2) return `<div class="card field"><span class="lbl">Рост вашего DPS по боссу</span>${sel}<div class="muted">Нужно хотя бы два боя с этим боссом, чтобы построить график.</div></div>`;
-  const W = 760, H = 200, PL = 52, PR = 16, PT = 16, PB = 26, max = niceMax(Math.max(...pts.map(p => p.v)));
+  const W = 760, H = 250, PL = 58, PR = 46, PT = 26, PB = 38, max = niceMax(Math.max(...pts.map(p => p.v)));
   const X = i => PL + i / (pts.length - 1) * (W - PL - PR), Y = v => PT + (1 - v / max) * (H - PT - PB);
   const bi = pts.reduce((b, p, i) => (p.v > pts[b].v ? i : b), 0);
   const avg = pts.reduce((a, p) => a + p.v, 0) / pts.length;
   const d = pts.map((p, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join('');
-  let g = '';
-  for (let k = 0; k <= 4; k++) { const v = max * k / 4, y = Y(v); g += `<line x1="${PL}" x2="${W - PR}" y1="${y}" y2="${y}" class="gl"/><text x="${PL - 8}" y="${y + 4}" class="ax" text-anchor="end">${fmt(v)}</text>`; }
-  g += `<line x1="${PL}" x2="${W - PR}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="rgba(170,150,255,.7)" stroke-dasharray="5 4"/>`;
-  g += `<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>`;
-  g += pts.map((p, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${i === bi ? 6 : 3.4}" fill="${i === bi ? '#ffc66b' : 'var(--accent)'}"><title>${dt(p.f.at)} · ${fmt(p.v)} DPS${i === bi ? ' · лучший' : ''}</title></circle>`).join('');
-  g += `<text x="${X(bi)}" y="${Y(pts[bi].v) - 10}" class="ax" text-anchor="middle" fill="#ffc66b">${fmt(pts[bi].v)}</text>`;
-  g += `<text x="${PL}" y="${H - 8}" class="ax">${dt(pts[0].f.at)}</text><text x="${W - PR}" y="${H - 8}" class="ax" text-anchor="end">${dt(pts[pts.length - 1].f.at)}</text>`;
+  const dd = x => new Date(x).toLocaleDateString(LOC(), { day: '2-digit', month: '2-digit' });
+  let g = `<defs><linearGradient id="bgfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.38"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>`;
+  for (let k = 0; k <= 4; k++) { const v = max * k / 4, y = Y(v); g += `<line x1="${PL}" x2="${W - PR}" y1="${y}" y2="${y}" class="gl"/><text x="${PL - 10}" y="${y + 4}" class="ax" text-anchor="end">${fmt(v)}</text>`; }
+  g += `<path d="${d}L${X(pts.length - 1).toFixed(1)} ${H - PB}L${X(0).toFixed(1)} ${H - PB}Z" fill="url(#bgfill)"/>`;
+  g += `<line x1="${PL}" x2="${W - PR}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="rgba(190,170,255,.75)" stroke-width="1.2" stroke-dasharray="6 5"/>`;
+  g += `<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const every = Math.max(1, Math.ceil(pts.length / 8));
+  g += pts.map((p, i) => {
+    const x = X(i).toFixed(1), y = Y(p.v).toFixed(1), best = i === bi;
+    const lbl = best || i === pts.length - 1 || (pts.length <= 8) ? `<text x="${x}" y="${(Y(p.v) - (best ? 16 : 11)).toFixed(1)}" class="ax" text-anchor="middle" fill="${best ? '#ffc66b' : 'currentColor'}" font-weight="${best ? 700 : 500}">${best ? '★ ' : ''}${fmt(p.v)}</text>` : '';
+    const tick = i % every === 0 || i === pts.length - 1 ? `<text x="${x}" y="${H - 14}" class="ax" text-anchor="middle">${dd(p.f.at)}</text>` : '';
+    return `<g><circle cx="${x}" cy="${y}" r="${best ? 9 : 6}" fill="${best ? 'rgba(255,198,107,.25)' : 'rgba(255,255,255,.12)'}"/><circle cx="${x}" cy="${y}" r="${best ? 5.5 : 3.8}" fill="${best ? '#ffc66b' : 'var(--accent)'}" stroke="#1b1233" stroke-width="1.5"/><circle cx="${x}" cy="${y}" r="13" fill="transparent"><title>${dt(p.f.at)} · ${fmt(p.v)} DPS${best ? ' · лучший' : ''}</title></circle>${lbl}${tick}</g>`;
+  }).join('');
   const first = pts[0].v, last = pts[pts.length - 1].v, tr = first > 0 ? Math.round((last / first - 1) * 100) : 0;
-  return `<div class="card field"><span class="lbl">Рост вашего DPS по боссу</span>${sel}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;aspect-ratio:${W}/${H}">${g}</svg>
+  return `<div class="card field"><span class="lbl">Рост вашего DPS по боссу</span>${sel}<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>
     <div class="muted" style="font-size:12px">Боёв: ${pts.length} · лучший ${fmt(pts[bi].v)} · средний ${fmt(avg)} (пунктир) · последний к первому: <b class="${tr >= 0 ? 'good' : 'bad'}">${tr >= 0 ? '+' : ''}${tr}%</b></div></div>`;
 }
 // сравнение с предыдущим боем против того же босса
