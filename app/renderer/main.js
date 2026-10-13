@@ -23,14 +23,9 @@ function nav() {
   document.querySelector('nav button[data-p=about]').classList.toggle('upd', !!U?.available);
   sideSet();
 }
-// Левое меню: оформление (списком) и язык RU/EN.
+// Левое меню: язык RU/EN (оформление — на странице «Настройки»).
 function sideSet() {
-  const box = $('sideSet');
   const lang = S.lang === 'en' ? 'en' : 'ru';
-  box.innerHTML = `<span class="slbl">Тема</span>
-    ${dropList('ddTheme', `${themeSwatch(S.theme)}<span class="dd-v">${esc((THEMES[S.theme] || THEMES.catppuccin).name)}</span>`, Object.entries(THEMES).map(([k, t]) => ({ v: k, on: k === S.theme, html: `${themeSwatch(k)}<span class="tn">${esc(t.name)}</span><span class="ck">${ICON.check}</span>` })), { up: true, label: 'Оформление' })}
-`;
-  bindDropList(box, 'ddTheme', v => { closeDropList('ddTheme'); if (v !== S.theme) api.set({ theme: v }); });
   // Язык — маленький квадрат «RU ▾» под «О программе», по клику раскрывается список.
   const lb = $('langBox');
   lb.innerHTML = dropList('ddLang', `<span class="dd-v">${lang.toUpperCase()}</span>`, [['ru', 'Русский'], ['en', 'English']].map(([k, n]) => ({ v: k, on: k === lang, html: `<b>${k.toUpperCase()}</b><span>${n}</span><span class="ck">${ICON.check}</span>` })), { label: 'Язык · Language' });
