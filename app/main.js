@@ -89,6 +89,18 @@ function merge(a, b) {
 const firstRun = !fs.existsSync(SETTINGS_FILE());
 let settings;
 try { settings = merge(clone(DEFAULTS), JSON.parse(fs.readFileSync(SETTINGS_FILE(), 'utf8'))); } catch { settings = clone(DEFAULTS); }
+// Версия 1.2.7 (новые темы): при обновлении один раз сбрасываем настройки внешнего вида и оверлея на стандартные.
+// Личное остаётся: язык, ник, сервер, вебхук, дела, напоминания, места окон. Метка не даёт сбросить снова в следующих версиях.
+if (settings.settingsResetV !== '1.2.7') {
+  if (!firstRun) {
+    const KEEP = ['lang', 'character', 'serverId', 'detectedServerId', 'detectedServer', 'webhook', 'checklist', 'bells', 'seenFeedIds', 'whatsNewSeen', 'whatsNewFrom', 'winBounds'];
+    const keep = {};
+    for (const k of KEEP) if (settings[k] !== undefined) keep[k] = settings[k];
+    settings = merge(clone(DEFAULTS), keep);
+  }
+  settings.settingsResetV = '1.2.7';
+  try { fs.mkdirSync(path.dirname(SETTINGS_FILE()), { recursive: true }); fs.writeFileSync(SETTINGS_FILE(), JSON.stringify(settings, null, 2)); } catch { /* не критично */ }
+}
 // Язык, выбранный при установке, — только для самого первого запуска (потом его меняют в «Настройках»).
 const langArg = process.argv.find(a => a.startsWith('--lang='));
 if (langArg && firstRun && ['ru', 'en'].includes(langArg.slice(7))) settings.lang = langArg.slice(7);
