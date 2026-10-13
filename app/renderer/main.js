@@ -27,8 +27,8 @@ function nav() {
 function sideSet() {
   const box = $('sideSet');
   const lang = S.lang === 'en' ? 'en' : 'ru';
-  box.innerHTML = `<span class="slbl">Оформление</span>
-    ${dropList('ddTheme', `${themeSwatch(S.theme)}<span class="dd-v">${esc((THEMES[S.theme] || THEMES.amethyst).name)}</span>`, Object.entries(THEMES).map(([k, t]) => ({ v: k, on: k === S.theme, html: `${themeSwatch(k)}<span class="tn">${esc(t.name)}</span><span class="ck">${ICON.check}</span>` })), { up: true, label: 'Оформление' })}
+  box.innerHTML = `<span class="slbl">Тема</span>
+    ${dropList('ddTheme', `${themeSwatch(S.theme)}<span class="dd-v">${esc((THEMES[S.theme] || THEMES.catppuccin).name)}</span>`, Object.entries(THEMES).map(([k, t]) => ({ v: k, on: k === S.theme, html: `${themeSwatch(k)}<span class="tn">${esc(t.name)}</span><span class="ck">${ICON.check}</span>` })), { up: true, label: 'Оформление' })}
 `;
   bindDropList(box, 'ddTheme', v => { closeDropList('ddTheme'); if (v !== S.theme) api.set({ theme: v }); });
   // Язык — маленький квадрат «RU ▾» под «О программе», по клику раскрывается список.
@@ -168,6 +168,9 @@ const pages = {
       ${addr ? `<div class="addr" style="justify-content:center"><span class="muted">Адрес сервера игры:</span><code>${showAddr ? esc(addr) : '••••••••••••'}</code><button type="button" id="addrToggle">${showAddr ? 'Скрыть' : 'Показать'}</button></div>` : ''}
       <div class="row" style="justify-content:center"><button type="button" id="restart">Перезапустить чтение</button><button type="button" id="report">Отчёт об ошибке</button></div>
       <div class="muted" style="font-size:12px">Что-то не работает? «Отчёт об ошибке» сохранит на рабочий стол файл с версией, состоянием чтения и последними сообщениями — отправьте его автору в Discord.</div>
+    <div class="card field center"><span class="lbl">Внешний вид</span>
+      <div>Тема задаёт цвета, раскладку и форму всего интерфейса — оверлея и главного окна:</div>
+      <div class="row" style="justify-content:center"><span id="themeSlot"></span></div></div>
     <div class="card field center"><span class="lbl">Уведомления о событиях</span>
       <div>Где на экране показывать уведомления перед ивентами и о новых событиях в расписании:</div>
       <div class="ddwrap ddpos">${(() => { const cur = S.notify.position || 'br', n = (NOTIFY_POS.find(x => x[0] === cur) || NOTIFY_POS[5])[1];

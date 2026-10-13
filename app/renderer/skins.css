@@ -1,0 +1,126 @@
+/* ===== Темы: форма, шрифты, рамки и полосы (цвета — в common.js, раскладки — в layouts.css) ===== */
+body[data-skin] .shell{border-radius:var(--rad,var(--radius))}
+body[data-skin] button,body[data-skin] input[type=text],body[data-skin] input[type=password],body[data-skin] input[type=time],body[data-skin] input[type=number],body[data-skin] select,body[data-skin] .sel-btn{border-radius:var(--r2,10px)}
+body[data-skin] .card{border-radius:var(--r3,14px)}
+body[data-skin] nav>button{border-radius:var(--r2,12px)}
+body[data-skin] .row{border-radius:var(--rr,7px)}
+body[data-skin] .row .bar{border-radius:var(--rr,7px)}
+body[data-skin] .hpbar,body[data-skin] .hpbar i{border-radius:var(--hr,8px)}
+body[data-skin] .seg,body[data-skin] .seg button{border-radius:var(--r2,12px)}
+
+
+/* Catppuccin — мягкие пастельные карточки */
+body[data-skin=catppuccin]{--rad:22px;--r2:14px;--r3:20px;--rr:14px;--hr:10px}
+body[data-skin=catppuccin] .shell{background:linear-gradient(160deg,rgba(var(--g1),var(--a)),rgba(var(--g2),var(--a)));border:1px solid rgba(203,166,247,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+body[data-skin=catppuccin] .row{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+body[data-skin=catppuccin] .row.me{box-shadow:inset 0 0 0 1.5px var(--accent)}
+body[data-skin=catppuccin] .card{background:rgba(255,255,255,.05);border-color:rgba(203,166,247,.22)}
+body[data-skin=catppuccin] .title,body[data-skin=catppuccin] .top .t{letter-spacing:.04em}
+
+/* Tokyo Night — тонкие линии и неоновое свечение */
+body[data-skin=tokyo]{--rad:10px;--r2:8px;--r3:10px;--rr:6px;--hr:3px}
+body[data-skin=tokyo] .shell{background:linear-gradient(180deg,rgba(var(--g2),var(--a)),rgba(22,22,30,var(--a)));border:1px solid rgba(122,162,247,.35);box-shadow:inset 0 0 22px rgba(122,162,247,.07)}
+body[data-skin=tokyo] .head,body[data-skin=tokyo] .top,body[data-skin=tokyo] nav{border-bottom-color:rgba(122,162,247,.5);box-shadow:0 1px 10px -4px #7aa2f7}
+body[data-skin=tokyo] .row{background:transparent;border-left:2px solid rgba(122,162,247,.35)}
+body[data-skin=tokyo] .row.me{border-left-color:#7aa2f7;background:rgba(122,162,247,.1);box-shadow:none}
+body[data-skin=tokyo] .row .bar{opacity:.4}
+body[data-skin=tokyo] .hpbar{background:rgba(255,255,255,.07)}
+body[data-skin=tokyo] .hpbar i{box-shadow:0 0 10px var(--hp)}
+body[data-skin=tokyo] .card{background:rgba(122,162,247,.05)}
+body[data-skin=tokyo] .title,body[data-skin=tokyo] .top .t{text-shadow:0 0 10px rgba(122,162,247,.6);letter-spacing:.12em}
+
+/* Dracula — глубокий фиолет, выразительный лидер */
+body[data-skin=dracula]{--rad:14px;--r2:10px;--r3:14px;--rr:10px;--hr:7px}
+body[data-skin=dracula] .shell{background:linear-gradient(150deg,rgba(var(--g1),var(--a)),rgba(33,34,44,var(--a)));border:1.5px solid rgba(189,147,249,.5);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
+body[data-skin=dracula] .row{background:rgba(255,255,255,.05);box-shadow:inset 3px 0 0 rgba(189,147,249,.5)}
+body[data-skin=dracula] .row.me{box-shadow:inset 3px 0 0 #ff79c6,inset 0 0 0 1px rgba(255,121,198,.5)}
+body[data-skin=dracula] .row:first-child{box-shadow:inset 4px 0 0 #50fa7b}
+body[data-skin=dracula] .card{border-top:2px solid #bd93f9;background:rgba(255,255,255,.04)}
+body[data-skin=dracula] .pct{color:#50fa7b}
+body[data-skin=dracula] .title,body[data-skin=dracula] .top .t{color:#ff79c6;font-weight:800}
+
+/* Nord — чистый, строгий, тонкие линии */
+body[data-skin=nord]{--rad:6px;--r2:5px;--r3:6px;--rr:2px;--hr:2px;--line:rgba(216,222,233,.14)}
+body[data-skin=nord] .shell{background:rgba(var(--g2),var(--a));border:1px solid rgba(136,192,208,.3);box-shadow:none}
+body[data-skin=nord] .shell::before{display:none}
+body[data-skin=nord] .row{background:transparent;border-bottom:1px solid rgba(216,222,233,.07)}
+body[data-skin=nord] .row.me{box-shadow:inset 2px 0 0 var(--accent);background:rgba(136,192,208,.08)}
+body[data-skin=nord] .row .bar{opacity:.9;height:2px;top:auto;bottom:0;border-radius:0}
+body[data-skin=nord] .hpbar{height:4px;background:rgba(255,255,255,.1);border-radius:0}
+body[data-skin=nord] .hpbar span{display:none}
+body[data-skin=nord] .hpbar i{border-radius:0}
+body[data-skin=nord] .title,body[data-skin=nord] .top .t{text-transform:none;letter-spacing:.01em;color:var(--text);font-weight:600}
+body[data-skin=nord] .card{background:rgba(255,255,255,.03)}
+body[data-skin=nord] nav>button.on{background:rgba(136,192,208,.12);box-shadow:inset 2px 0 0 var(--accent)}
+
+/* Rosé Pine — воздушный, мягкие тени, курсив в заголовках */
+body[data-skin=rosepine]{--rad:24px;--r2:16px;--r3:22px;--rr:16px;--hr:12px}
+body[data-skin=rosepine] .shell{background:linear-gradient(165deg,rgba(var(--g1),var(--a)),rgba(var(--g2),var(--a)));border:1px solid rgba(235,188,186,.3);box-shadow:inset 0 1px 0 rgba(235,188,186,.2),0 0 0 1px rgba(0,0,0,.3)}
+body[data-skin=rosepine] .row{background:rgba(224,222,244,.07);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+body[data-skin=rosepine] .row.me{box-shadow:inset 0 0 0 1.5px var(--accent),0 2px 10px rgba(235,111,146,.25)}
+body[data-skin=rosepine] .card{background:rgba(224,222,244,.06);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+body[data-skin=rosepine] .title,body[data-skin=rosepine] .top .t{font-family:Georgia,"Palatino Linotype",serif;font-style:italic;text-transform:none;letter-spacing:.02em;font-size:13px}
+body[data-skin=rosepine] .hpbar{height:17px}
+
+/* Gruvbox — тёплый, плотный, моноширинный */
+body[data-skin=gruvbox]{--rad:3px;--r2:3px;--r3:3px;--rr:2px;--hr:2px;--line:rgba(235,219,178,.22);font-family:Consolas,"Cascadia Mono","Courier New",monospace}
+body[data-skin=gruvbox] .shell{background:rgba(40,40,40,var(--a));border:2px solid #504945;box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)}
+body[data-skin=gruvbox] .shell::before{background:none}
+body[data-skin=gruvbox] .row{background:rgba(235,219,178,.05);border-bottom:1px dashed rgba(235,219,178,.12)}
+body[data-skin=gruvbox] .row.me{background:rgba(250,189,47,.13);box-shadow:inset 0 0 0 1px #fabd2f}
+body[data-skin=gruvbox] .row .bar{opacity:.4}
+body[data-skin=gruvbox] .hpbar{background:rgba(0,0,0,.4);border:1px solid #665c54}
+body[data-skin=gruvbox] .card{background:rgba(235,219,178,.04);border:1px solid #504945;border-left:3px solid #fabd2f}
+body[data-skin=gruvbox] .title,body[data-skin=gruvbox] .top .t{text-transform:none;letter-spacing:0;color:#fabd2f}
+body[data-skin=gruvbox] .title::before{content:"$ "}
+body[data-skin=gruvbox] .name,body[data-skin=gruvbox] .tname{text-shadow:none}
+
+/* Kanagawa — японская гравюра: засечки, бумага, столбцы */
+body[data-skin=kanagawa]{--rad:4px;--r2:3px;--r3:4px;--rr:2px;--hr:1px;--line:rgba(220,215,186,.2)}
+body[data-skin=kanagawa] .shell{background:linear-gradient(180deg,rgba(var(--g1),var(--a)),rgba(var(--g2),var(--a)));border:1px solid rgba(230,195,132,.4);box-shadow:inset 0 0 0 3px rgba(22,22,29,.8),inset 0 0 0 4px rgba(230,195,132,.2)}
+body[data-skin=kanagawa] .shell::before{background:radial-gradient(70% 40% at 100% 0,rgba(228,104,118,.12),transparent 70%)}
+body[data-skin=kanagawa] .title,body[data-skin=kanagawa] .top .t{font-family:"Palatino Linotype",Georgia,serif;letter-spacing:.18em;color:#e6c384;font-weight:600}
+body[data-skin=kanagawa] .row{background:rgba(220,215,186,.04)}
+body[data-skin=kanagawa] .row.me{box-shadow:inset 0 0 0 1px #e6c384}
+body[data-skin=kanagawa] .row .bar{opacity:.5}
+body[data-skin=kanagawa] .hpbar{height:8px;background:rgba(255,255,255,.08)}
+body[data-skin=kanagawa] .hpbar span{display:none}
+body[data-skin=kanagawa] .card{background:rgba(220,215,186,.04);border:1px solid rgba(230,195,132,.3)}
+body[data-skin=kanagawa] nav>button.on{box-shadow:inset 3px 0 0 #e46876}
+
+/* One Dark — как редактор: плоско, чётко */
+body[data-skin=onedark]{--rad:8px;--r2:6px;--r3:8px;--rr:4px;--hr:4px;--line:rgba(171,178,191,.16)}
+body[data-skin=onedark] .shell{background:rgba(var(--g2),var(--a));border:1px solid rgba(97,175,239,.28);box-shadow:none}
+body[data-skin=onedark] .shell::before{display:none}
+body[data-skin=onedark] .row{background:rgba(255,255,255,.035)}
+body[data-skin=onedark] .row.me{background:rgba(97,175,239,.12);box-shadow:inset 0 0 0 1px rgba(97,175,239,.6)}
+body[data-skin=onedark] .row .bar{opacity:.5}
+body[data-skin=onedark] .card{background:rgba(255,255,255,.035)}
+body[data-skin=onedark] nav{background:rgba(0,0,0,.18)}
+body[data-skin=onedark] nav>button.on{background:rgba(97,175,239,.14);box-shadow:inset 3px 0 0 #61afef}
+body[data-skin=onedark] .title,body[data-skin=onedark] .top .t{text-transform:none;letter-spacing:.01em}
+
+/* Everforest — органичный, мягкий, природный */
+body[data-skin=everforest]{--rad:18px;--r2:12px;--r3:16px;--rr:12px;--hr:9px;--line:rgba(167,192,128,.24)}
+body[data-skin=everforest] .shell{background:linear-gradient(160deg,rgba(var(--g1),var(--a)),rgba(var(--g2),var(--a)));border:1.5px solid rgba(167,192,128,.4);box-shadow:inset 0 0 40px rgba(167,192,128,.06)}
+body[data-skin=everforest] .shell::before{background:radial-gradient(80% 50% at 0 100%,rgba(167,192,128,.12),transparent 70%)}
+body[data-skin=everforest] .row{background:rgba(167,192,128,.07);box-shadow:inset 0 0 0 1px rgba(167,192,128,.1)}
+body[data-skin=everforest] .row.me{box-shadow:inset 0 0 0 1.5px #a7c080}
+body[data-skin=everforest] .row .bar{opacity:.55}
+body[data-skin=everforest] .card{background:rgba(167,192,128,.06)}
+body[data-skin=everforest] .title,body[data-skin=everforest] .top .t{letter-spacing:.06em;color:#dbbc7f}
+
+/* Solarized — плоский инженерный */
+body[data-skin=solarized]{--rad:4px;--r2:3px;--r3:4px;--rr:0;--hr:0;--line:rgba(147,161,161,.25)}
+body[data-skin=solarized] .shell{background:rgba(var(--g2),var(--a));border:1px solid #2aa198;box-shadow:none}
+body[data-skin=solarized] .shell::before{display:none}
+body[data-skin=solarized] .row{background:transparent;border-bottom:1px solid rgba(147,161,161,.12)}
+body[data-skin=solarized] .row.me{background:rgba(42,161,152,.14);box-shadow:inset 3px 0 0 #2aa198}
+body[data-skin=solarized] .row .bar{opacity:.35}
+body[data-skin=solarized] .hpbar{height:10px;background:rgba(147,161,161,.15);border-radius:0}
+body[data-skin=solarized] .hpbar i{border-radius:0}
+body[data-skin=solarized] .card{background:rgba(147,161,161,.05);border-radius:4px}
+body[data-skin=solarized] .num,body[data-skin=solarized] .dps,body[data-skin=solarized] .pct{font-family:Consolas,"Cascadia Mono",monospace}
+body[data-skin=solarized] .title,body[data-skin=solarized] .top .t{letter-spacing:.1em;color:#b58900}
+body[data-skin=gruvbox] nav>button{padding:0 9px;font-size:12px;gap:7px}
+body[data-skin=gruvbox][data-app=top] nav{overflow-x:auto;overflow-y:hidden}

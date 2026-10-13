@@ -186,7 +186,7 @@ function render() {
     <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="Урон в секунду">DPS</span><span class="r c-total" title="Общий урон за бой">Урон</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="Доля от урона всей группы">%</span></div>
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
-      return `<div class="row${p === me ? ' me' : ''}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
+      return `<div class="row${p === me ? ' me' : ''}" style="--c:${c}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="--p:${(p.dmg / top * 100).toFixed(1)}%;width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
       <span class="r dps">${fmt(p.dps)}</span><span class="r muted c-total">${fmt(p.dmg)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${((p.share || 0) * 100).toFixed(1).replace('.', ',')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;

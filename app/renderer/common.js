@@ -1,30 +1,35 @@
 'use strict';
 const THEMES = {
-  amethyst: { name: 'Аметист', g1: '58,40,92', g2: '20,24,48', accent: '#ffc66b', accentFg: '#2a1d48', text: '#fbf7ff', muted: '#cbc2dc', line: 'rgba(255,255,255,.18)', hp: '#ff5d73' },
-  aether: { name: 'Эфир', g1: '20,92,140', g2: '40,22,96', accent: '#7fe3ff', accentFg: '#05202e', text: '#f2fbff', muted: '#b9d6e6', line: 'rgba(160,230,255,.28)', hp: '#ff5d8a' },
-  graphite: { name: 'Графит', g1: '70,74,86', g2: '22,24,30', accent: '#ffffff', accentFg: '#16171b', text: '#f6f6f8', muted: '#c4c6cc', line: 'rgba(255,255,255,.16)', hp: '#ff5a5f' },
-  emerald: { name: 'Изумруд', g1: '16,96,84', g2: '10,34,40', accent: '#6ff0c4', accentFg: '#05261e', text: '#effff9', muted: '#b4dccf', line: 'rgba(150,255,220,.22)', hp: '#ff6b6b' },
-  crimson: { name: 'Багрянец', g1: '120,24,48', g2: '34,10,22', accent: '#ffb36b', accentFg: '#2a0d12', text: '#fff4f2', muted: '#e2bcc0', line: 'rgba(255,190,190,.22)', hp: '#ff4d4d' },
-  sunset: { name: 'Закат', g1: '150,64,60', g2: '52,22,70', accent: '#ffd27a', accentFg: '#3a1a10', text: '#fff8f0', muted: '#e8c9c0', line: 'rgba(255,220,190,.24)', hp: '#ff4f6e' },
-  ocean: { name: 'Океан', g1: '14,60,120', g2: '6,20,46', accent: '#5fd0ff', accentFg: '#04182a', text: '#eef8ff', muted: '#a9c8e0', line: 'rgba(120,200,255,.24)', hp: '#ff5d73' },
-  aurora: { name: 'Аврора', g1: '16,104,104', g2: '58,26,100', accent: '#8dffc8', accentFg: '#062a1e', text: '#f0fffa', muted: '#b8e2d6', line: 'rgba(150,255,210,.24)', hp: '#ff6b8a' },
-  midnight: { name: 'Полночь', g1: '34,44,96', g2: '8,10,26', accent: '#b7cdff', accentFg: '#0c1430', text: '#f2f5ff', muted: '#b9c3e0', line: 'rgba(183,205,255,.22)', hp: '#ff5d73' },
-  amber: { name: 'Янтарь', g1: '128,82,26', g2: '36,20,14', accent: '#ffe08a', accentFg: '#2e1c06', text: '#fff8ec', muted: '#e6d2b0', line: 'rgba(255,224,160,.24)', hp: '#ff5a4f' },
-  sakura: { name: 'Сакура', g1: '150,80,130', g2: '50,30,70', accent: '#ffd1e8', accentFg: '#3a1630', text: '#fff6fb', muted: '#e6c6da', line: 'rgba(255,210,235,.26)', hp: '#ff5a7a' },
+  catppuccin: { name: 'Catppuccin Mocha', g1: '49,50,68', g2: '30,30,46', accent: '#cba6f7', accentFg: '#1e1e2e', text: '#cdd6f4', muted: '#a6adc8', line: 'rgba(205,214,244,.16)', hp: '#f38ba8', lay: ['cards', 'top', 'side'] },
+  tokyo: { name: 'Tokyo Night', g1: '41,46,66', g2: '26,27,38', accent: '#7aa2f7', accentFg: '#1a1b26', text: '#c0caf5', muted: '#9aa5ce', line: 'rgba(122,162,247,.22)', hp: '#f7768e', lay: ['list', 'top', 'top'] },
+  dracula: { name: 'Dracula', g1: '68,71,90', g2: '40,42,54', accent: '#bd93f9', accentFg: '#282a36', text: '#f8f8f2', muted: '#b9bccf', line: 'rgba(189,147,249,.24)', hp: '#ff5555', lay: ['big', 'top', 'right'] },
+  nord: { name: 'Nord', g1: '59,66,82', g2: '36,41,51', accent: '#88c0d0', accentFg: '#2e3440', text: '#eceff4', muted: '#aab4c6', line: 'rgba(136,192,208,.22)', hp: '#bf616a', lay: ['ticker', 'bottom', 'rail'] },
+  rosepine: { name: 'Rosé Pine', g1: '38,35,58', g2: '25,23,36', accent: '#ebbcba', accentFg: '#191724', text: '#e0def4', muted: '#908caa', line: 'rgba(235,188,186,.2)', hp: '#eb6f92', lay: ['cards', 'bottom', 'dock'] },
+  gruvbox: { name: 'Gruvbox Dark', g1: '60,56,54', g2: '40,40,40', accent: '#fabd2f', accentFg: '#282828', text: '#ebdbb2', muted: '#bdae93', line: 'rgba(250,189,47,.22)', hp: '#fb4934', lay: ['list', 'side', 'top'] },
+  kanagawa: { name: 'Kanagawa', g1: '54,54,70', g2: '31,31,40', accent: '#e6c384', accentFg: '#1f1f28', text: '#dcd7ba', muted: '#a6a69c', line: 'rgba(230,195,132,.22)', hp: '#e46876', lay: ['columns', 'top', 'side'] },
+  onedark: { name: 'One Dark', g1: '50,56,66', g2: '33,37,43', accent: '#61afef', accentFg: '#21252b', text: '#d7dae0', muted: '#9aa2b1', line: 'rgba(97,175,239,.22)', hp: '#e06c75', lay: ['list', 'bottom', 'side'] },
+  everforest: { name: 'Everforest', g1: '52,63,68', g2: '35,42,46', accent: '#a7c080', accentFg: '#232a2e', text: '#d3c6aa', muted: '#9da9a0', line: 'rgba(167,192,128,.22)', hp: '#e67e80', lay: ['big', 'side', 'right'] },
+  solarized: { name: 'Solarized Dark', g1: '7,54,66', g2: '0,43,54', accent: '#2aa198', accentFg: '#002b36', text: '#eee8d5', muted: '#93a1a1', line: 'rgba(42,161,152,.28)', hp: '#dc322f', lay: ['ticker', 'top', 'dock'] },
 };
+
 const CLASS_RU = { Gladiator: 'Гладиатор', Templar: 'Страж', Ranger: 'Стрелок', Assassin: 'Убийца', Sorcerer: 'Волшебник', Elementalist: 'Заклинатель', Cleric: 'Целитель', Chanter: 'Чародей', Brawler: 'Боец', Unknown: 'Класс неизвестен' };
 const CLASS_COLOR = { Gladiator: '31,162,200', Templar: '59,124,230', Ranger: '28,174,126', Assassin: '70,184,78', Sorcerer: '134,76,224', Elementalist: '194,63,196', Cleric: '216,162,42', Chanter: '234,125,44', Brawler: '214,51,62', Unknown: '94,107,132' };
 const MODES = [['boss', 'Данж: Босс'], ['world', 'Мир: Босс'], ['mob', 'Моб']];
 
+
 function applyTheme(s, opacityOverride) {
   STREAMER = !!s.streamer;
-  const t = THEMES[s.theme] || THEMES.amethyst;
+  const t = THEMES[s.theme] || THEMES.catppuccin;
   const r = document.documentElement.style;
   r.setProperty('--g1', t.g1); r.setProperty('--g2', t.g2);
   r.setProperty('--accent', t.accent); r.setProperty('--accentFg', t.accentFg);
   r.setProperty('--text', t.text); r.setProperty('--muted', t.muted);
   r.setProperty('--line', t.line); r.setProperty('--hp', t.hp);
   r.setProperty('--a', String((opacityOverride ?? 92) / 100));
+  if (document.body) {
+    const k = THEMES[s.theme] ? s.theme : 'catppuccin', L = (THEMES[k].lay) || ['list', 'top', 'side'], d = document.body.dataset;
+    d.skin = k; d.ov = L[0]; d.hd = L[1]; d.app = L[2];
+  }
 }
 // Ротация: по строке на навык, по оси — время боя; золотые штрихи — криты. rot = { names, c: [[мс, навык, урон, флаги]], dur }.
 function rotationHtml(rot, maxRows) {
@@ -93,7 +98,7 @@ const ICON = {
 
 // Всплывающее меню выбора оформления.
 function themeButton(current) {
-  const t = THEMES[current] || THEMES.amethyst;
+  const t = THEMES[current] || THEMES.catppuccin;
   return `<button type="button" class="themeBtn" aria-haspopup="listbox" data-theme-btn><span class="sw" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}))"></span><span class="tn">${t.name}</span>${ICON.chevDown}</button>`;
 }
 function bindThemeButton(root, current, onPick) {
@@ -137,7 +142,7 @@ function bindDropList(root, id, onPick) {
   dd.querySelectorAll('.dd-opt').forEach(b => b.onclick = e => { e.stopPropagation(); onPick(b.dataset.v, b, dd); });
 }
 function closeDropList(id) { DD_OPEN.delete(id); const dd = document.getElementById(id); if (dd) { dd.classList.remove('open'); dd.querySelector('.dd-head')?.setAttribute('aria-expanded', 'false'); } }
-const themeSwatch = k => { const t = THEMES[k] || THEMES.amethyst; return `<span class="sw" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}));box-shadow:inset 0 0 0 2px ${t.accent}"></span>`; };
+const themeSwatch = k => { const t = THEMES[k] || THEMES.catppuccin; return `<span class="sw" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}));box-shadow:inset 0 0 0 2px ${t.accent}"></span>`; };
 
 // Изменение размера окна уголком (прозрачные окна Windows не тянутся за край) и развёртывание на весь экран.
 function windowControls(gripId, maxId) {

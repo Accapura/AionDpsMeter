@@ -27,7 +27,7 @@ const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 
 // ---------------------------------------------------------------- настройки
 const DEFAULTS = {
-  theme: 'amethyst',
+  theme: 'catppuccin',
   opacity: 85,
   scale: 100,
   count: 10,
