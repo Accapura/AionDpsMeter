@@ -953,7 +953,7 @@ ipcMain.on('toast-close', (_e, key) => closeToast(key));
 ipcMain.on('toast-action', (_e, key, id) => {
   if (id === 'upd-go') updater.download();
   else if (id === 'upd-later') closeToast(key);
-  else if (id === 'upd-notes') { openMain('about'); }
+  else if (id === 'upd-notes') { const v = updateInfo().version; if (v) shell.openExternal('https://github.com/Accapura/AionDpsMeter/releases/tag/v' + v); else openMain('about'); }
   else if (id === 'death') { closeToast(key); openMain('stats:death'); }
 });
 
