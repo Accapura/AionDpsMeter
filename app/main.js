@@ -1039,6 +1039,26 @@ function classMedian(f, cls) {
   for (const x of loadFights()) if (x.id !== f.id && x.boss === f.boss && !x.partial) for (const p of x.players || []) if (p.cls === cls && p.dps > 0) v.push(p.dps);
   return v.length >= 5 ? { med: medianOf(v), n: v.length } : null;
 }
+// Палитры тем берём из renderer/common.js (один источник на оверлей и на картинку «Поделиться»).
+let _themes = null;
+function themePalette() {
+  if (!_themes) { try { _themes = new Function(fs.readFileSync(path.join(ROOT, 'renderer', 'common.js'), 'utf8').match(/const THEMES = \{[\s\S]*?\n\};/)[0].replace('const THEMES =', 'return') )(); } catch { _themes = {}; } }
+  return _themes[settings.theme] || _themes.onedark || null;
+}
+const hexRgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h); const n = m ? parseInt(m[1], 16) : 0; return `${n >> 16},${(n >> 8) & 255},${n & 255}`; };
+// Цвета карточки: из сиреневой гаммы по умолчанию — в цвета выбранной темы.
+function themeCard(html) {
+  const t = themePalette(); if (!t) return html;
+  const A = hexRgb(t.accent), M = t.muted, X = t.text;
+  const mRgb = hexRgb(M);
+  return html
+    .replace('linear-gradient(135deg,#1b1233,#2b1a4f 60%,#1a1030)', `linear-gradient(135deg,rgb(${t.g2}),rgb(${t.g1}) 60%,rgb(${t.g2}))`)
+    .replaceAll('rgba(255,198,107,', `rgba(${A},`).replaceAll('#ffc66b', t.accent)
+    .replaceAll('rgba(155,108,255,.22)', `rgba(${mRgb},.18)`)
+    .replaceAll('rgba(170,150,255,.9)', M).replaceAll('rgba(150,120,255,.18)', `rgba(${mRgb},.18)`)
+    .replaceAll('#9b6cff', M).replaceAll('#b9a9e6', M).replaceAll('#8f7fc0', M).replaceAll('#efe9ff', X)
+    .replaceAll('#7fe0a8', '#a6e3a1').replaceAll('#ff9a8a', t.hp);
+}
 function cardHtml(f) {
   const ps = (f.players || []).filter(p => p.dmg > 0).slice(0, 8);
   const top = Math.max(1, ...ps.map(p => p.dps));
@@ -1095,7 +1115,7 @@ async function cardPng(f) {
   const file = path.join(app.getPath('userData'), 'card.html');
   let win;
   try {
-    fs.writeFileSync(file, cardHtml(f));
+    fs.writeFileSync(file, themeCard(cardHtml(f)));
     win = new BrowserWindow({ show: false, width: 1520, height: 800, useContentSize: true, webPreferences: { zoomFactor: 2, backgroundThrottling: false } });
     await win.loadFile(file);
     await new Promise(r => setTimeout(r, 250));
