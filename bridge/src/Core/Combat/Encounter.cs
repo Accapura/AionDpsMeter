@@ -175,6 +175,9 @@ public sealed class Encounter
     /// <summary>Damage dealt to each NPC actor, used to pick the most relevant target as the encounter title.</summary>
     public Dictionary<uint, long> DamageByTarget { get; } = new();
 
+    /// <summary>AionDps: цель, по которой свой персонаж бил последней — её имя и HP показываем вместо «Несколько целей».</summary>
+    public uint SelfTargetId { get; set; }
+
     /// <summary>AionDps: имена целей, узнанные в этом бою (не теряются при смене зоны / забытом NPC).</summary>
     public Dictionary<uint, string> TargetNames { get; } = new();
 

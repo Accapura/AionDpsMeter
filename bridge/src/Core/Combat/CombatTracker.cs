@@ -252,6 +252,7 @@ public sealed partial class CombatTracker
 
         enc.TotalDamage += d.Damage;
         enc.DamageByTarget[target] = enc.DamageByTarget.GetValueOrDefault(target) + d.Damage;
+        if (_entities.SelfId == source) enc.SelfTargetId = target;
         if (d.TimeMs > enc.LastDamageMs) enc.LastDamageMs = d.TimeMs;
     }
 
@@ -719,7 +720,8 @@ public sealed partial class CombatTracker
         {
             var enc = Find(segmentId);
             if (enc is null || enc.DamageByTarget.Count == 0) return null;
-            var top = enc.DamageByTarget.MaxBy(kv => kv.Value).Key;
+            var top = enc.SelfTargetId != 0 && enc.DamageByTarget.ContainsKey(enc.SelfTargetId)
+                ? enc.SelfTargetId : enc.DamageByTarget.MaxBy(kv => kv.Value).Key;
             var name = TargetName(enc, top);
             if (_entities.TryGetNpc(top, out var npc) && npc.MaxHp > 0)
                 enc.TargetHp[top] = (Math.Max(0, npc.Hp), npc.MaxHp, npc.MaxHpKnown);
