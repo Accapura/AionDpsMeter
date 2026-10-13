@@ -1,151 +1,151 @@
 {
- "version": 4,
- "updated": "2026-10-13",
- "note": "Расписание AION 2 Global. Часы сервера Global — GMT+9; в программе время показывается по вашим местным часам.",
- "serverTz": {
-  "default": "Asia/Seoul"
- },
- "events": [
-  {
-   "id": "reset-daily",
-   "name": "Ежедневный сброс",
-   "type": "reset",
-   "duration": 0,
-   "confirmed": true,
-   "bell": false,
-   "rule": {
-    "kind": "weekly",
-    "days": [
-     0,
-     1,
-     2,
-     3,
-     4,
-     5,
-     6
-    ],
-    "time": "07:00",
-    "tz": "utc"
-   }
+  "version": 4,
+  "updated": "2026-10-13",
+  "note": "Расписание AION 2 Global. Часы сервера Global — GMT+9; в программе время показывается по вашим местным часам.",
+  "serverTz": {
+    "default": "Asia/Seoul"
   },
-  {
-   "id": "reset-weekly",
-   "name": "Еженедельный сброс",
-   "type": "reset",
-   "duration": 0,
-   "confirmed": true,
-   "bell": true,
-   "rule": {
-    "kind": "weekly",
-    "days": [
-     2
-    ],
-    "time": "07:00",
-    "tz": "utc"
-   }
-  },
-  {
-   "id": "rift",
-   "name": "Пространственный разлом",
-   "type": "pvp",
-   "duration": 60,
-   "confirmed": true,
-   "bell": true,
-   "rule": {
-    "kind": "interval",
-    "everyMin": 180,
-    "anchorUtc": "00:00"
-   }
-  },
-  {
-   "id": "kaira",
-   "name": "Дозорщик Кайра",
-   "type": "world",
-   "duration": 30,
-   "confirmed": true,
-   "bell": true,
-   "rule": {
-    "kind": "interval",
-    "everyMin": 180,
-    "anchorUtc": "01:00"
-   },
-   "note": "Нижний уровень Арэшурата хаоса"
-  },
-  {
-   "id": "executors",
-   "name": "Исполнители: Агро, Кайра, Тамаса",
-   "type": "world",
-   "duration": 30,
-   "confirmed": true,
-   "bell": true,
-   "rule": {
-    "kind": "weekly",
-    "days": [
-     0,
-     3,
-     5
-    ],
-    "time": "12:30",
-    "tz": "utc"
-   },
-   "note": "Нижний уровень Арэшурата хаоса"
-  },
-  {
-   "id": "siege-boss",
-   "name": "Босс осады Бездны",
-   "type": "world",
-   "duration": 30,
-   "confirmed": true,
-   "bell": true,
-   "rule": {
-    "kind": "weekly",
-    "days": [
-     4,
-     6
-    ],
-    "time": "12:00",
-    "tz": "utc"
-   }
-  },
-  {
-   "id": "field-events",
-   "name": "Фестиваль шуго",
-   "type": "pve",
-   "duration": 10,
-   "confirmed": true,
-   "bell": false,
-   "rule": {
-    "kind": "interval",
-    "everyMin": 60,
-    "anchorUtc": "00:00"
-   },
-   "note": "Вход открыт первые 3 минуты"
-  },
-  {
-   "id": "beritra",
-   "name": "Налёт Беритры",
-   "type": "world",
-   "duration": 10,
-   "confirmed": true,
-   "bell": false,
-   "rule": {
-    "kind": "interval",
-    "everyMin": 60,
-    "anchorUtc": "00:30"
-   }
+  "events": [
+    {
+      "id": "reset-daily",
+      "name": "Ежедневный сброс",
+      "type": "reset",
+      "duration": 0,
+      "confirmed": true,
+      "bell": false,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "time": "07:00",
+        "tz": "utc"
+      }
+    },
+    {
+      "id": "reset-weekly",
+      "name": "Еженедельный сброс",
+      "type": "reset",
+      "duration": 0,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          2
+        ],
+        "time": "07:00",
+        "tz": "utc"
+      }
+    },
+    {
+      "id": "rift",
+      "name": "Пространственный разлом",
+      "type": "pvp",
+      "duration": 60,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 180,
+        "anchorUtc": "00:00"
+      }
+    },
+    {
+      "id": "kaira",
+      "name": "Дозорщик Кайра",
+      "type": "world",
+      "duration": 30,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 180,
+        "anchorUtc": "01:00"
+      },
+      "note": "Нижний уровень Арэшурата хаоса"
+    },
+    {
+      "id": "executors",
+      "name": "Исполнители: Агро, Кайра, Тамаса",
+      "type": "world",
+      "duration": 30,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          0,
+          3,
+          5
+        ],
+        "time": "12:30",
+        "tz": "utc"
+      },
+      "note": "Нижний уровень Арэшурата хаоса"
+    },
+    {
+      "id": "siege-boss",
+      "name": "Босс осады Бездны",
+      "type": "world",
+      "duration": 30,
+      "confirmed": true,
+      "bell": true,
+      "rule": {
+        "kind": "weekly",
+        "days": [
+          4,
+          6
+        ],
+        "time": "12:00",
+        "tz": "utc"
+      }
+    },
+    {
+      "id": "field-events",
+      "name": "Фестиваль шуго",
+      "type": "pve",
+      "duration": 10,
+      "confirmed": true,
+      "bell": false,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 60,
+        "anchorUtc": "00:00"
+      },
+      "note": "Вход открыт первые 3 минуты"
+    },
+    {
+      "id": "beritra",
+      "name": "Налёт Беритры",
+      "type": "world",
+      "duration": 10,
+      "confirmed": true,
+      "bell": false,
+      "rule": {
+        "kind": "interval",
+        "everyMin": 60,
+        "anchorUtc": "00:30"
+      }
+    }
+  ],
+  "app": {
+    "version": "1.2.5",
+    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.5/AionDpsMeter.v1.2.5.exe",
+    "sha256": "6921a589af3824ffd8d259dd1166e85289302176ceaf50a567a990746e992570",
+    "size": 86266416,
+    "notes": "• Настоящий живой пинг — из ответа самой игры, по всему маршруту с ускорителем или VPN\n• Пинг в истории боёв и в разборе смерти, предупреждение о скачке пинга\n• Простои в бою: доля без урона и самая долгая пауза\n• Красивая карточка боя для Discord и буфера обмена, сравнение с медианой класса\n• Автозапуск с Windows и закрытие вместе с игрой\n• Отправка в Discord теперь работает через системный прокси и VPN\n• Время до убийства босса и уведомления о фазах 75 / 50 / 25 %\n• История: поиск, фильтры, удаление и экспорт боёв, сравнение с прошлым боем\n• График роста DPS по боссу и статистика смертей\n• Вкладка «Персонажи»: экипировка, характеристики и все данные сайта\n• Режим стримера, строка итога для чата игры (Ctrl+Shift+T), eDPS и aDPS\n• Уведомление «Новый рекорд», вкладка «Дела» (ежедневные и недельные дела)\n• Ротация: лента ударов по навыкам, больше долей ударов, гир-скор и боевая мощь в оверлее",
+    "patch": {
+      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.2.5.gz",
+      "sha256": "c2a9a60ef11481c9e91006b07b31638f9b6def50b969a802982da75965ee6ca9",
+      "size": 1380382,
+      "shell": "e33-net10"
+    }
   }
- ],
- "app": {
-  "version": "1.2.4",
-  "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.4/AionDpsMeter.v1.2.4.exe",
-  "sha256": "fce422f1b2755d3a00805e0ccb682b0df66afa74268531dbe0161245e10f8e58",
-  "size": 86240467,
-  "notes": "• Пинг персонажа — по вашим навыкам, по всему маршруту с ускорителем\n• До первых навыков показывается примерное значение «~»",
-  "patch": {
-   "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.2.4.gz",
-   "sha256": "1c58f540d1203ef8761c8e0a94935dbb0c8ab4c29c17075d12dc5c07e53beb6b",
-   "size": 1348138,
-   "shell": "e33-net10"
-  }
- }
 }
