@@ -4,6 +4,8 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Скачок пинга': 'Ping spike', 'Пинг на панели вспыхивает красным и приходит уведомление, когда связь с сервером резко ухудшилась': 'The ping on the panel flashes red and a notification appears when the connection to the server suddenly gets worse',
+    'Простой (без вашего урона)': 'Idle time (no damage from you)', 'Самая долгая пауза': 'Longest pause', 'Пауз от 3 секунд': 'Pauses of 3 s or more', 'пауз от 3 с нет': 'no pauses of 3 s or more', 'Пинг в момент смерти': 'Ping at the moment of death',
     'Настоящий живой пинг': 'The real live ping', 'Пинг берётся из ответа самой игры на её служебный пинг-запрос: это полный путь до сервера, в том числе через ускоритель или VPN. Точный замер приходит раз в 10 секунд, а между ними число обновляется каждые 3 секунды вместе с задержкой соединения. Первое значение — в течение 10 секунд после входа в игру': 'Ping is taken from the game’s own reply to its service ping request: the full route to the server, booster or VPN included. The exact reading arrives every 10 seconds; in between the number updates every 3 seconds along with the connection delay. The first value appears within 10 seconds after entering the game',
     'Пинг заработал с ускорителем': 'Ping now works with boosters', 'Раньше замер по навыкам не запускался, если программу открыли после входа в игру. Теперь он работает всегда: пинг персонажа появляется после первых навыков. В подсказке к пингу видно, сколько навыков увидено и сопоставлено': 'Skill-based measuring did not start if the app was opened after entering the game. Now it always works: your character’s ping appears after the first skills. The ping tooltip shows how many skills were seen and matched',
     'Пинг персонажа, а не до адреса сервера': 'Your character’s ping, not the server address', 'Пинг теперь считается по вашим навыкам — от нажатия до ответа игрового сервера, по всему маршруту с ускорителем. До первых навыков показывается примерное значение со знаком «~»': 'Ping is now measured from your skills — from the press to the game server’s reply, along the whole route including the booster. Until the first skills an approximate value marked “~” is shown',
@@ -253,6 +255,8 @@
   };
   // Кусочки внутри составных строк — длинные раньше коротких.
   const PARTS = [
+    [' · пинг ', ' · ping '], [' мс)', ' ms)'], ['максимум рядом: ', 'peak nearby: '], [' из ', ' of '],
+    [' Затемнённые участки — паузы в вашем уроне от 3 секунд (они бывают и из-за механик босса).', ' Shaded areas are pauses in your damage of 3 seconds or more (they can also come from boss mechanics).'],
     ['Игра идёт через ускоритель или VPN — пинг появится после первого ответа игры (до 10 секунд)', 'The game goes through a booster or VPN — ping appears after the game’s first reply (up to 10 seconds)'],
     ['Пинг до сервера игры:', 'Ping to the game server:'],
     ['Ответов игры на пинг', 'Game ping replies'],

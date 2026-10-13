@@ -179,7 +179,7 @@ api.on('snap', s => { snap = s; render(); });
 api.on('records', r => { records = r || {}; });
 // Пинг до игрового сервера (считается по трафику игры): полоски сигнала и миллисекунды.
 function showPing(ms, est, dbg) {
-  const dt = dbg && dbg.n ? '\nОтветов игры на пинг: ' + dbg.n : '';
+  const dt = dbg ? '\nОтветов игры на пинг: ' + (dbg.n | 0) : '';
   const el = $('ping');
   if (ms === -2) {
     // игра идёт через ускоритель/VPN: он сам подтверждает пакеты, настоящий пинг знает только он
@@ -196,5 +196,6 @@ function showPing(ms, est, dbg) {
   el.title = est ? 'Примерный пинг до адреса сервера: ' + ms + ' мс. Точный — по ответу игры на её пинг-запрос — появится в течение 10 секунд' + dt : 'Пинг до игрового сервера (весь путь, с ускорителем): ' + ms + ' мс. Точный замер игра даёт раз в 10 секунд, между ними число меняется вместе с задержкой соединения' + dt;
   el.hidden = false;
 }
-api.on('ping', (ms, est, dbg) => showPing(ms, est, dbg));
+api.on('ping', p => showPing(p && p.ms, p && p.est, p && p.dbg));
+api.on('lag', () => { const el = $('ping'); if (!el) return; el.classList.add('spike'); setTimeout(() => el.classList.remove('spike'), 9000); });
 api.state().then(st => { showPing(st.ping, st.pingEst, st.pingDbg); records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });

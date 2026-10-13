@@ -138,7 +138,8 @@ const pages = {
         return dropList('ddSnd', `<span class="pl">${ICON.play}</span><span class="dd-v"${cur === 'beep' ? '' : ' data-notr'}>${n}</span>`, SOUNDS.map(([k, t]) => ({ v: k, on: k === cur, html: `<span class="pl">${ICON.play}</span><span${k === 'beep' ? '' : ' data-notr'}>${t}</span><span class="ck">${ICON.check}</span>` })), { label: 'Звук уведомления' }); })()}</div>
       <div class="sl vol"><label for="nVol">Громкость</label><b id="nVolV">${S.notify.volume ?? 50}%</b><input type="range" id="nVol" min="0" max="100" step="5" value="${S.notify.volume ?? 50}"></div>
       <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
-      <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — уведомление, кто и чем добил персонажа, с кнопкой «Разбор»</span></label></div>
+      <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — уведомление, кто и чем добил персонажа, с кнопкой «Разбор»</span></label>
+      <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nLag" ${S.lagAlert !== false ? 'checked' : ''}> <span><b>Скачок пинга</b> — пинг на панели вспыхивает красным и приходит уведомление, когда связь с сервером резко ухудшилась</span></label></div>
     <div class="card field center"><span class="lbl">Итог боя в Discord-канал</span>
       <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkLabel(hkText('share')))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
       <div class="whrow"><input type="password" id="whUrl" value="${esc(S.webhook?.url || '')}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false"><button type="button" id="whTest">Проверить</button></div>
@@ -236,7 +237,7 @@ function statsBody() {
         const canCmp = f.boss && meOf(f) && list.filter(x => x.boss === f.boss && meOf(x)).length > 1;
         return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
           <div style="font-size:20px;font-weight:700">${nt(f.boss || f.title)}</div>
-          <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
+          <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${pingStat(f.ping)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
           <div class="scroll"><table class="ft"><tr><th>#</th><th>Игрок</th><th>Класс</th><th class="r">DPS</th><th class="r">Урон</th><th class="r">%</th><th class="r">Крит</th><th class="r">Макс. удар</th>${hasHeal ? '<th class="r">HPS</th>' : ''}</tr>
           ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nt(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
           ${fightChart(f)}
@@ -303,6 +304,7 @@ function chartSvg(series, opts = {}) {
     }
   }
   let body = '';
+  for (const [a, b] of opts.gaps || []) body += `<rect x="${X(a).toFixed(1)}" y="${PT}" width="${Math.max(1, X(b) - X(a)).toFixed(1)}" height="${H - PT - PB}" class="gap"/>`;
   for (const sr of series) {
     if (!sr.data.length) continue;
     if (sr.fill) body += `<path d="${line(sr.data)}L${X(sr.data.length - 1)} ${H - PB}L${X(0)} ${H - PB}Z" fill="${sr.fill}"/>`;
@@ -314,14 +316,43 @@ function chartSvg(series, opts = {}) {
   const data = esc(JSON.stringify({ n, series: series.map(x => ({ l: x.label, c: x.color, d: x.data.map(Math.round) })), boss: opts.boss || null }));
   return `<div class="chart" data-chart="${data}" data-pl="${PL}" data-pr="${PR}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="aspect-ratio:${W}/${H}">${g}${body}<line class="cur" x1="0" x2="0" y1="${PT}" y2="${H - PB}" style="display:none"/></svg><div class="tip" style="display:none"></div></div><div class="legend">${legend}</div>`;
 }
+// простои: серии секунд без вашего урона (>= 3 с) между первым и последним ударом
+function idleOf(tl) {
+  const a = tl && tl.self;
+  if (!a || a.length < 5) return null;
+  let first = a.findIndex(v => v > 0), last = a.length - 1;
+  while (last > 0 && !(a[last] > 0)) last--;
+  if (first < 0 || last - first < 4) return null;
+  const gaps = [];
+  for (let i = first; i <= last;) {
+    if (a[i] > 0) { i++; continue; }
+    let j = i; while (j <= last && !(a[j] > 0)) j++;
+    if (j - i >= 3) gaps.push([i, j]);
+    i = j;
+  }
+  const span = last - first + 1, idle = gaps.reduce((t, g) => t + g[1] - g[0], 0);
+  const longest = gaps.reduce((m, g) => (!m || g[1] - g[0] > m[1] - m[0] ? g : m), null);
+  return { span, idle, pct: Math.round(idle / span * 100), gaps, longest };
+}
 function fightChart(f) {
   const tl = f.timeline;
   if (!tl || !((tl.party && tl.party.length > 2) || (tl.self && tl.self.length > 2))) return '';
+  const idle = idleOf(tl);
   const series = [];
   if (tl.party?.length) series.push({ data: smooth(tl.party), color: 'rgba(170,150,255,.9)', fill: 'rgba(150,120,255,.16)', width: 1.5, label: 'Группа' });
   if (tl.self?.length) series.push({ data: smooth(tl.self), color: 'var(--accent)', width: 2.4, label: 'Вы' });
-  return `<div class="card field"><span class="lbl">График боя · DPS по секундам</span>${chartSvg(series, { boss: tl.boss && tl.boss.length > 2 ? tl.boss : null })}
-    <div class="muted" style="font-size:12px">Сглажено за 5 секунд. Пунктир — HP босса, вертикальные линии — фазы 75 / 50 / 25 %.</div></div>`;
+  return `<div class="card field"><span class="lbl">График боя · DPS по секундам</span>${idleStat(idle)}${chartSvg(series, { boss: tl.boss && tl.boss.length > 2 ? tl.boss : null, gaps: idle ? idle.gaps : null })}
+    <div class="muted" style="font-size:12px">Сглажено за 5 секунд. Пунктир — HP босса, вертикальные линии — фазы 75 / 50 / 25 %.${idle && idle.gaps.length ? ' Затемнённые участки — паузы в вашем уроне от 3 секунд (они бывают и из-за механик босса).' : ''}</div></div>`;
+}
+function idleStat(i) {
+  if (!i) return '';
+  return `<div class="dchips"><div><span>Простой (без вашего урона)</span><b class="num ${i.pct >= 25 ? 'bad' : ''}">${i.pct}%</b><small>${i.idle} из ${i.span} с</small></div>
+    <div><span>Самая долгая пауза</span><b class="num">${i.longest ? (i.longest[1] - i.longest[0]) + ' с' : '—'}</b><small>${i.longest ? 'на ' + clock(i.longest[0] * 1000) : 'пауз от 3 с нет'}</small></div>
+    <div><span>Пауз от 3 секунд</span><b class="num">${i.gaps.length}</b></div></div>`;
+}
+function pingStat(p) {
+  if (!p || !(p.n > 0)) return '';
+  return ` · пинг ${Math.round(p.avg)} мс (${Math.round(p.min)}–${Math.round(p.max)})`;
 }
 // подсказка при наведении на график
 function bindCharts(root) {
@@ -432,6 +463,7 @@ function deathsBody() {
         <div><span>Получено урона за 12 с</span><b class="num bad">${fmt(taken)}</b></div>
         <div><span>Лечение за 12 с</span><b class="num good">${fmt(healed)}</b></div>
         <div><span>Добивающий удар</span><b class="num bad">${k ? fmt(k.amt) : '—'}</b><small>${k ? `<span data-notr>${esc(k.skill)}</span> · ${nt(k.src)}` : ''}</small></div>
+        ${d.ping && d.ping.at > 0 ? `<div><span>Пинг в момент смерти</span><b class="num ${d.ping.at >= 150 ? 'bad' : ''}">${Math.round(d.ping.at)} мс</b><small>${d.ping.max > 0 ? 'максимум рядом: ' + Math.round(d.ping.max) + ' мс' : ''}</small></div>` : ''}
         <div><span>Самый сильный удар</span><b class="num bad">${big ? fmt(big.amt) : '—'}</b><small>${big ? `<span data-notr>${esc(big.skill)}</span> · ${nt(big.src)}` : ''}</small></div>
       </div>
       <svg class="dtl" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="16" x2="${W - 16}" y1="34" y2="34" class="gl"/><line x1="16" x2="${W - 16}" y1="64" y2="64" class="gl"/>${dots}${ticks}</svg>
@@ -559,6 +591,7 @@ function render() {
   on('tt', 'onclick', () => api.testToast());
   on('nSound', 'onchange', e => api.set({ notify: { sound: e.target.checked } }));
   on('nDeath', 'onchange', e => api.set({ deathToast: e.target.checked }));
+  on('nLag', 'onchange', e => api.set({ lagAlert: e.target.checked }));
   on('report', 'onclick', async () => { const b = $('report'); b.disabled = true; b.textContent = T('Собираю…'); await api.report(); b.disabled = false; b.textContent = T('Отчёт об ошибке'); });
   const whValid = v => /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(v.trim());
   on('whUrl', 'onchange', e => { const v = e.target.value.trim(); if (!v || whValid(v)) api.set({ webhook: { url: v, on: v ? (S.webhook?.on || true) : false } }); else { WHN = { text: T('Это не ссылка вебхука Discord'), cls: 'bad' }; render(); } });

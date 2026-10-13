@@ -60,6 +60,7 @@ const DEFAULTS = {
   whatsNewSeen: '',             // версия, для которой уже показали «Что нового»
   whatsNewFrom: '',             // с какой версии обновлялись (для списка изменений)
   deathToast: true,             // уведомление с разбором смерти
+  lagAlert: true,               // предупреждение о скачке пинга
   webhook: { url: '', on: false }, // отправка итога боя в Discord-канал
   winBounds: {},                // место и размер окон (главное, расписание, разбивка), как их оставил пользователь
 };
@@ -207,7 +208,7 @@ function openOverlay() {
     alwaysOnTop: true, skipTaskbar: true, maximizable: false, minimizable: false, fullscreenable: false,
   }, 'overlay.html');
   w.setAlwaysOnTop(true, 'screen-saver');
-  w.on('show', () => { w.webContents.send('snap', lastSnap); w.webContents.send('ping', lastPing, lastPingEst, lastPingDbg); }); // пока оверлей скрыт, снимки ему не шлём
+  w.on('show', () => { w.webContents.send('snap', lastSnap); w.webContents.send('ping', { ms: lastPing, est: lastPingEst, dbg: lastPingDbg }); }); // пока оверлей скрыт, снимки ему не шлём
   // Место и размер оверлея запоминаются сразу после перетаскивания или изменения размера (и своей ручкой тоже).
   let kt = null;
   const keepNow = () => {
@@ -310,7 +311,7 @@ const bridge = {
     p.stderr.on('data', d => { errText += d; logLine('bridge: ' + String(d).trim().slice(0, 500)); });
     p.on('exit', code => {
       if (this.proc !== p) return;
-      lastPing = -1; lastPingEst = false; lastPingDbg = null; { const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', -1, false); }
+      lastPing = -1; lastPingEst = false; lastPingDbg = null; { const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', { ms: -1, est: false, dbg: null }); }
       this.proc = null;
       if (/install or update \.NET|framework.*not found|Microsoft\.NETCore\.App/i.test(errText)) setStatus({ state: 'no-dotnet', msg: 'Нужен .NET 10 Runtime' });
       else setStatus({ state: 'error', msg: 'Модуль чтения остановился (код ' + code + ')' });
@@ -342,7 +343,7 @@ const bridge = {
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') addFight(m);
       else if (m.t === 'death') addDeath(m);
-      else if (m.t === 'ping') { lastPing = m.ms; lastPingEst = !!m.est; lastPingDbg = { n: m.n | 0 }; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', lastPing, lastPingEst, lastPingDbg); }
+      else if (m.t === 'ping') onPing(m);
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
       else if (m.t === 'boss') { bossLog.unshift({ ...m, at: Date.now() }); bossLog.length = Math.min(bossLog.length, 40); broadcast('boss-log', bossLog); }
     });
@@ -361,12 +362,44 @@ const bridge = {
 };
 
 // ---------------------------------------------------------------- история боёв (для статистики)
+// ---------------------------------------------------------------- пинг: журнал, статистика боя, предупреждение о скачке
+const pingLog = []; // { t, ms } — только точные замеры (без пометки «~»)
+let lastLagAt = 0;
+function onPing(m) {
+  lastPing = m.ms; lastPingEst = !!m.est; lastPingDbg = { n: m.n | 0 };
+  const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', { ms: lastPing, est: lastPingEst, dbg: lastPingDbg });
+  if (lastPingEst || !(m.ms > 0)) return;
+  const now = Date.now();
+  pingLog.push({ t: now, ms: m.ms });
+  while (pingLog.length && now - pingLog[0].t > 45 * 60000) pingLog.shift();
+  // скачок: заметно выше обычного уровня за последние минуты (и не меньше 120 мс), не чаще раза в 90 секунд
+  const base = pingLog.filter(p => p.t < now - 6000 && p.t > now - 180000).map(p => p.ms).sort((a, b) => a - b);
+  if (settings.lagAlert === false || base.length < 6 || now - lastLagAt < 90000) return;
+  const usual = base[Math.floor(base.length / 2)];
+  if (m.ms >= 120 && m.ms >= Math.max(usual * 2, usual + 80)) {
+    lastLagAt = now;
+    if (ov && !ov.isDestroyed()) ov.webContents.send('lag', { ms: m.ms, usual });
+    showToast({ key: 'lag' + now, type: 'info', icon: 'info', start: null, name: T('Скачок пинга'), text: `${usual} → ${m.ms} ${T('мс')}` });
+  }
+}
+function pingStats(from, to) {
+  const a = pingLog.filter(p => p.t >= from && p.t <= to).map(p => p.ms);
+  if (!a.length) return null;
+  return { avg: Math.round(a.reduce((x, y) => x + y, 0) / a.length), min: Math.min(...a), max: Math.max(...a), n: a.length };
+}
+function pingAt(t) { // ближайший точный замер к моменту t (не дальше 20 с)
+  let best = null;
+  for (const p of pingLog) if (Math.abs(p.t - t) < 20000 && (!best || Math.abs(p.t - t) < Math.abs(best.t - t))) best = p;
+  return best ? best.ms : null;
+}
+
 const FIGHTS_FILE = () => path.join(app.getPath('userData'), 'fights.json');
 let fights = null;
 function loadFights() { if (!fights) { try { fights = JSON.parse(fs.readFileSync(FIGHTS_FILE(), 'utf8')); } catch { fights = []; } } return fights; }
 function addFight(f) {
   loadFights();
   if (fights.some(x => x.id === f.id)) return;
+  if (!f.ping) { const ps = pingStats(f.at, Date.now()); if (ps) f.ping = ps; }
   fights.unshift(f);
   fights.length = Math.min(fights.length, 500);
   try { fs.writeFileSync(FIGHTS_FILE(), JSON.stringify(fights)); } catch { /* не критично */ }
@@ -394,6 +427,7 @@ function addDeath(m) {
   loadDeaths();
   const d = { id: 'd' + m.at, at: m.at, zone: m.zone || '', boss: m.boss || '', hits: (m.hits || []).slice(0, 300) };
   if (deaths.some(x => x.id === d.id)) return;
+  { const pv = pingAt(d.at), ps = pingStats(d.at - 12000, d.at + 2000); if (pv != null) d.ping = { at: pv, max: ps ? ps.max : pv }; }
   deaths.unshift(d);
   deaths.length = Math.min(deaths.length, 50);
   try { fs.writeFileSync(DEATHS_FILE(), JSON.stringify(deaths)); } catch { /* не критично */ }
