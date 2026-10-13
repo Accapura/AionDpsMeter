@@ -450,6 +450,8 @@ function loadRot(id) {
 function addFight(f) {
   loadFights();
   if (fights.some(x => x.id === f.id)) return;
+  // мусор: секундная возня с безымянной целью (например, один тик по мобу) — ни в историю, ни в «поделиться»
+  if ((f.combatMs || 0) < 3000 && (f.partyDps || 0) * Math.max(1, (f.combatMs || 0) / 1000) < 2000) return;
   if (!f.ping) { const ps = pingStats(f.at, Date.now()); if (ps) f.ping = ps; }
   const pb = personalBest(f);
   fights.unshift(f);
