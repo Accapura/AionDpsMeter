@@ -18,8 +18,8 @@ function nav() {
   const st = status.state;
   $('dot').style.background = st === 'Capturing' ? '#5ccf8a' : (st === 'WaitingForGame' || st === 'Starting' || st === 'starting') ? '#ffc66b' : '#ff8a7a';
   $('stText').textContent = splitStatus(status.msg)[0];
-  $('charLine').innerHTML = S.character ? `Персонаж: <b>${esc(S.character)}</b>` : 'Персонаж: зайдите в игру';
-  $('charLine').title = S.character || '';
+  $('charLine').innerHTML = S.character ? `Персонаж: <b>${esc(aliasOf(S.character))}</b>` : 'Персонаж: зайдите в игру';
+  $('charLine').title = aliasOf(S.character) || '';
   document.querySelector('nav button[data-p=about]').classList.toggle('upd', !!U?.available);
   sideSet();
 }
@@ -46,8 +46,8 @@ const NOTIFY_POS = [['tl', 'Слева вверху'], ['tc', 'Сверху по
 const DISCORD_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19.3 5.3A16.6 16.6 0 0 0 15.2 4l-.5 1a15.4 15.4 0 0 0-5.4 0l-.5-1a16.6 16.6 0 0 0-4.1 1.3C2 9.2 1.3 13 1.6 16.8a16.8 16.8 0 0 0 5 2.5l1.1-1.7a10.8 10.8 0 0 1-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.7a16.7 16.7 0 0 0 5-2.5c.4-4.4-.7-8.2-3.1-11.5zM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2s1.8.9 1.8 2s-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2s1.8.9 1.8 2s-.8 2-1.8 2z"/></svg>';
 
 // Горячие клавиши: id, описание.
-const HOTKEYS = [['overlay', 'показать / скрыть оверлей'], ['lock', 'закрепить: клики проходят сквозь оверлей'], ['reset', 'начать подсчёт заново'], ['share', 'скопировать итог боя (картинка и текст)'], ['modeBoss', 'режим «Данж: Босс»'], ['modeWorld', 'режим «Мир: Босс»'], ['modeMob', 'режим «Моб»'], ['modeNext', 'следующий режим по кругу']];
-const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' };
+const HOTKEYS = [['overlay', 'показать / скрыть оверлей'], ['lock', 'закрепить: клики проходят сквозь оверлей'], ['reset', 'начать подсчёт заново'], ['share', 'скопировать итог боя (картинка и текст)'], ['chat', 'скопировать одну строку итога для чата игры'], ['streamer', 'режим стримера: скрыть ники'], ['modeBoss', 'режим «Данж: Босс»'], ['modeWorld', 'режим «Мир: Босс»'], ['modeMob', 'режим «Моб»'], ['modeNext', 'следующий режим по кругу']];
+const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' };
 let hkWait = null, hkErr = {};
 const hkText = id => ((S.hotkeys || {})[id] || HOTKEY_DEFAULTS[id]);
 // Клавиши → имена ускорителей Electron. Можно назначить любую клавишу клавиатуры, включая цифровой блок (Num).
@@ -88,7 +88,44 @@ document.addEventListener('keydown', e => {
 // Заголовок страницы: по центру, с описанием под ним.
 const head = (title, lead, rawLead) => `<header class="ph"><h1>${esc(title)}</h1><p>${rawLead ? lead : esc(lead)}</p></header>`;
 
+// ---------------------------------------------------------------- «Дела»: ручной список с авто-сбросом
+const TODO_DEF = [
+  { id: 'd1', name: 'Ежедневные задания', kind: 'daily', max: 1 },
+  { id: 'd2', name: 'Энергия Odyle', kind: 'daily', max: 1 },
+  { id: 'd3', name: 'Дневной лимит магазина', kind: 'daily', max: 1 },
+  { id: 'w1', name: 'Недельные задания', kind: 'weekly', max: 1 },
+  { id: 'w2', name: 'Коридоры Бездны', kind: 'weekly', max: 1 },
+  { id: 'w3', name: 'Недельный лимит магазина', kind: 'weekly', max: 1 },
+];
+let TDR = null, TDRat = 0;
+const todoItems = () => (Array.isArray(S.checklist) ? S.checklist : TODO_DEF);
+// Сколько отмечено сейчас: отметка старше последнего сброса не считается.
+const todoN = it => { const r = TDR && TDR[it.kind]; return r && (it.at || 0) >= r.last ? Math.min(it.n || 0, it.max || 1) : 0; };
+const untilText = ms => { const m = Math.max(0, Math.round(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return (d ? d + ' д ' : '') + h + ' ч ' + (m % 60) + ' мин'; };
+function todoRow(it) {
+  const n = todoN(it), max = it.max || 1, done = n >= max;
+  return `<div class="td${done ? ' done' : ''}"><button type="button" class="tdb" data-tick="${esc(it.id)}" aria-label="Отметить">${done ? '✓' : max > 1 ? n + '/' + max : ''}</button>
+    <span class="tdn">${esc(it.name)}</span>${max > 1 && !done ? `<span class="muted">${n}/${max}</span>` : ''}<button type="button" class="icon tdx" data-tddel="${esc(it.id)}" title="Удалить из списка">✕</button></div>`;
+}
+function todoBody() {
+  const items = todoItems(), left = k => items.filter(i => i.kind === k && todoN(i) < (i.max || 1)).length;
+  const sec = (k, title) => {
+    const list = items.filter(i => i.kind === k), r = TDR && TDR[k];
+    return `<div class="card field"><span class="lbl">${title}${list.length ? ` · осталось ${left(k)}` : ''}</span>
+      ${r ? `<div class="muted" style="font-size:12px"><span data-cd="${k}" data-at="${r.next}">Сброс через ${untilText(r.next - Date.now())}</span></div>` : ''}
+      ${list.length ? list.map(todoRow).join('') : '<div class="muted">Пусто — добавьте дело ниже.</div>'}</div>`;
+  };
+  return `${head('Дела', 'Ежедневные и недельные дела персонажа: отметки сбрасываются сами в момент сброса')}
+    ${sec('daily', 'Ежедневные')}${sec('weekly', 'Еженедельные')}
+    <div class="card field"><span class="lbl">Добавить своё</span>
+      <div class="fbar"><input type="text" id="tdName" maxlength="60" placeholder="Например: билеты на подземелье" autocomplete="off" spellcheck="false">
+        <select id="tdKind"><option value="daily">Ежедневное</option><option value="weekly">Еженедельное</option></select>
+        <input type="number" id="tdMax" min="1" max="20" value="1" title="Сколько раз нужно сделать" style="width:70px!important"><button type="button" id="tdAdd">Добавить</button></div>
+      <div class="muted" style="font-size:12px">Игра эти счётчики по сети не присылает, поэтому отмечаете вы сами. Если число раз больше 1 — каждое нажатие добавляет единицу, последнее закрывает дело, следующее сбрасывает.</div>
+      <div class="row"><button type="button" id="tdDef">Вернуть стандартный список</button></div></div>`;
+}
 const pages = {
+  todo: todoBody,
   overlay: () => `${head('Оверлей', 'Внешний вид и поведение окна урона поверх игры')}
     <div class="card field"><span class="lbl">Режим подсчёта</span><div class="seg" id="mModes">${MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('')}</div>
       <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Мир: Босс» — только мировые боссы, «Моб» — весь урон по всем целям.</div>
@@ -100,6 +137,8 @@ const pages = {
         <label class="row" style="gap:7px"><input type="checkbox" data-mcol="hits" ${S.columns?.hits ? 'checked' : ''}> Удары</label>
         <label class="row" style="gap:7px"><input type="checkbox" data-mcol="maxHit" ${S.columns?.maxHit ? 'checked' : ''}> Макс. удар</label>
         <label class="row" style="gap:7px"><input type="checkbox" data-mcol="hps" ${S.columns?.hps ? 'checked' : ''}> Лечение (HPS)</label>
+        <label class="row" style="gap:7px" title="Известен у игроков вашей группы"><input type="checkbox" data-mcol="gs" ${S.columns?.gs ? 'checked' : ''}> Гир-скор</label>
+        <label class="row" style="gap:7px" title="Известна у игроков вашей группы"><input type="checkbox" data-mcol="cp" ${S.columns?.cp ? 'checked' : ''}> Боевая мощь</label>
       </div>
       <div class="muted" style="font-size:12px">Наведите курсор на название колонки в оверлее — появится подсказка, что она показывает.</div></div>
     <div class="card field"><span class="lbl">Поведение</span>
@@ -107,6 +146,7 @@ const pages = {
       <label class="opt"><input type="checkbox" id="oAuto" ${S.autoHide !== false ? 'checked' : ''}> <span><b>Прятать оверлей</b>, когда игра свёрнута или открыто другое окно</span></label>
       <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
       <label class="opt"><input type="checkbox" id="oQuit" ${S.quitWithGame ? 'checked' : ''}> <span><b>Закрываться вместе с игрой</b> — через 20 секунд после выхода из игры</span></label>
+      <label class="opt"><input type="checkbox" id="oStream" ${S.streamer ? 'checked' : ''}> <span><b>Режим стримера</b> — ники игроков заменяются на «Игрок NN» в оверлее и приложении (Ctrl+Shift+H)</span></label>
       <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Мир: Босс» и «Моб»</span></label></div>
     <div class="card field"><span class="lbl">Список, прозрачность и масштаб</span>
       <div class="sliders">
@@ -142,6 +182,7 @@ const pages = {
       <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
       <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — уведомление, кто и чем добил персонажа, с кнопкой «Разбор»</span></label>
       <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nPhase" ${S.phaseToast !== false ? 'checked' : ''}> <span><b>Фазы босса</b> — уведомление и звук на 75 / 50 / 25 % HP босса</span></label>
+      <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nPb" ${S.pbToast !== false ? 'checked' : ''}> <span><b>Новый рекорд</b> — уведомление после боя, если побит ваш лучший DPS или самое быстрое убийство босса</span></label>
       <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nLag" ${S.lagAlert !== false ? 'checked' : ''}> <span><b>Скачок пинга</b> — пинг на панели вспыхивает красным и приходит уведомление, когда связь с сервером резко ухудшилась</span></label></div>
     <div class="card field center"><span class="lbl">Итог боя в Discord-канал</span>
       <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkLabel(hkText('share')))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
@@ -283,6 +324,15 @@ const dt = ms => new Date(ms).toLocaleString(LOC(), { day: '2-digit', month: '2-
 const meOf = f => (f.players || []).find(p => p.self);
 const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
+// Ротация: лента ударов по навыкам; грузится по кнопке (хранятся последние 40 боёв).
+function rotCard(f) {
+  if (!f.hasRot) return '';
+  if (FX.rot && FX.rot.id === f.id) {
+    const h = FX.rot.data ? rotationHtml(FX.rot.data) : '';
+    return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span>${h || '<div class="muted">Лента ударов этого боя больше не хранится.</div>'}</div>`;
+  }
+  return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span><div><button type="button" id="rotLoad" data-id="${esc(f.id)}">Показать ротацию</button></div></div>`;
+}
 function statsBody() {
   const list = F.list;
   if (statTab === 'history') {
@@ -297,8 +347,9 @@ function statsBody() {
           <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${pingStat(f.ping)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
           ${prevLine(f)}${classLine(f)}${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}
           <div class="scroll"><table class="ft"><tr><th>#</th><th>Игрок</th><th>Класс</th><th class="r">DPS</th><th class="r">Урон</th><th class="r">%</th><th class="r">Крит</th><th class="r">Макс. удар</th>${hasHeal ? '<th class="r">HPS</th>' : ''}</tr>
-          ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nt(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
+          ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nk(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
           ${fightChart(f)}
+          ${rotCard(f)}
           ${me && me.skills?.length ? `<div class="card field"><span class="lbl">Ваши навыки в этом бою</span><div class="scroll"><table class="ft"><tr><th>Навык</th><th class="r">Урон</th><th class="r">%</th><th class="r">Удары</th><th class="r">Крит</th><th class="r">Макс.</th></tr>
           ${me.skills.map(k => `<tr><td data-notr>${esc(k.name)}</td><td class="r num">${fmt(k.dmg)}</td><td class="r num">${(k.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${k.hits}</td><td class="r num">${k.crit != null ? Math.round(k.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(k.max)}</td></tr>`).join('')}</table></div></div>` : ''}`;
       }
@@ -323,7 +374,7 @@ function statsBody() {
     }).sort((a, b) => b.n - a.n);
     if (!rows.length) return '<div class="card emptyBox">Боёв с боссами пока не было.</div>';
     return bossGrowth(by) + `<div class="card scroll"><table class="ft"><tr><th>Босс</th><th class="r">Боёв</th><th class="r">Побед</th><th class="r">Ваш лучший DPS</th><th class="r">Ваш средний</th><th class="r">Быстрейшая победа</th><th>Лучший DPS в группе</th></tr>
-      ${rows.map(r => `<tr><td><b>${nt(r.boss)}</b></td><td class="r num">${r.n}</td><td class="r num">${r.kills}</td><td class="r num">${r.best ? '<b>' + fmt(r.best.me.dps) + '</b><div class="muted" style="font-size:11px">' + dt(r.best.f.at) + '</div>' : '—'}</td><td class="r num">${r.avg ? fmt(r.avg) : '—'}</td><td class="r num">${r.fastest ? clock(r.fastest.combatMs) : '—'}</td><td>${r.topAny ? '<b class="num">' + fmt(r.topAny.dps) + '</b><div class="muted" style="font-size:11px">' + nt(r.topAny.name) + ', <span>' + esc(CLASS_RU[r.topAny.cls] || '') + '</span></div>' : '—'}</td></tr>`).join('')}</table></div>`;
+      ${rows.map(r => `<tr><td><b>${nt(r.boss)}</b></td><td class="r num">${r.n}</td><td class="r num">${r.kills}</td><td class="r num">${r.best ? '<b>' + fmt(r.best.me.dps) + '</b><div class="muted" style="font-size:11px">' + dt(r.best.f.at) + '</div>' : '—'}</td><td class="r num">${r.avg ? fmt(r.avg) : '—'}</td><td class="r num">${r.fastest ? clock(r.fastest.combatMs) : '—'}</td><td>${r.topAny ? '<b class="num">' + fmt(r.topAny.dps) + '</b><div class="muted" style="font-size:11px">' + nk(r.topAny.name) + ', <span>' + esc(CLASS_RU[r.topAny.cls] || '') + '</span></div>' : '—'}</td></tr>`).join('')}</table></div>`;
   }
   // classes
   const per = {};
@@ -400,7 +451,7 @@ function fightChart(f) {
   const series = [];
   if (tl.party?.length) series.push({ data: smooth(tl.party), color: 'rgba(170,150,255,.9)', fill: 'rgba(150,120,255,.16)', width: 1.5, label: 'Группа' });
   if (tl.self?.length) series.push({ data: smooth(tl.self), color: 'var(--accent)', width: 2.4, label: 'Вы' });
-  return `<div class="card field"><span class="lbl">График боя · DPS по секундам</span>${idleStat(idle)}${chartSvg(series, { boss: tl.boss && tl.boss.length > 2 ? tl.boss : null, gaps: idle ? idle.gaps : null })}
+  return `<div class="card field"><span class="lbl">График боя · DPS по секундам</span>${idleStat(idle, f)}${chartSvg(series, { boss: tl.boss && tl.boss.length > 2 ? tl.boss : null, gaps: idle ? idle.gaps : null })}
     <div class="muted" style="font-size:12px">Сглажено за 5 секунд. Пунктир — HP босса, вертикальные линии — фазы 75 / 50 / 25 %.${idle && idle.gaps.length ? ' Затемнённые участки — паузы в вашем уроне от 3 секунд (они бывают и из-за механик босса).' : ''}</div></div>`;
 }
 // медиана DPS класса на этом боссе по всем записанным боям (без текущего); нужно не меньше 5 игроков
@@ -413,11 +464,14 @@ function classLine(f) {
   const med = median(v), d = Math.round((me.dps / med - 1) * 100);
   return `<div class="muted">Ваш DPS ${d >= 0 ? 'выше' : 'ниже'} медианы класса «${esc(CLASS_RU[me.cls] || '')}» на ${Math.abs(d)}% · медиана ${fmt(med)} (по ${v.length} игрокам из ваших записанных боёв с этим боссом)</div>`;
 }
-function idleStat(i) {
+function idleStat(i, f) {
   if (!i) return '';
+  const me = f && meOf(f), act = i.span - i.idle;
+  const adps = me && me.dmg > 0 && act > 0 ? me.dmg / act : 0;
+  const dps2 = adps ? `<div><span>eDPS · за весь бой</span><b class="num">${fmt(me.dps)}</b></div><div><span>aDPS · только в активные секунды</span><b class="num good">${fmt(adps)}</b><small>без пауз от 3 с</small></div>` : '';
   return `<div class="dchips"><div><span>Простой (без вашего урона)</span><b class="num ${i.pct >= 25 ? 'bad' : ''}">${i.pct}%</b><small>${i.idle} из ${i.span} с</small></div>
     <div><span>Самая долгая пауза</span><b class="num">${i.longest ? (i.longest[1] - i.longest[0]) + ' с' : '—'}</b><small>${i.longest ? 'на ' + clock(i.longest[0] * 1000) : 'пауз от 3 с нет'}</small></div>
-    <div><span>Пауз от 3 секунд</span><b class="num">${i.gaps.length}</b></div></div>`;
+    <div><span>Пауз от 3 секунд</span><b class="num">${i.gaps.length}</b></div>${dps2}</div>`;
 }
 function pingStat(p) {
   if (!p || !(p.n > 0)) return '';
@@ -710,6 +764,18 @@ function render() {
   const m = $('main');
   m.innerHTML = `<div class="page">${(pages[page] || pages.overlay)()}</div>${whatsNewModal()}`;
   bindCharts(m);
+  if (page === 'todo' && Date.now() - TDRat > 30000) { TDRat = Date.now(); api.resets().then(r => { TDR = r; render(); }); }
+  m.querySelectorAll('[data-tick]').forEach(b => b.onclick = () => {
+    const id = b.dataset.tick, now = Date.now();
+    api.set({ checklist: todoItems().map(it => (it.id === id ? { ...it, n: todoN(it) >= (it.max || 1) ? 0 : todoN(it) + 1, at: now } : it)) });
+  });
+  m.querySelectorAll('[data-tddel]').forEach(b => b.onclick = () => api.set({ checklist: todoItems().filter(it => it.id !== b.dataset.tddel) }));
+  { const add = () => {
+      const name = ($('tdName').value || '').trim(); if (!name) return;
+      api.set({ checklist: [...todoItems(), { id: 'u' + Date.now(), name, kind: $('tdKind').value === 'weekly' ? 'weekly' : 'daily', max: Math.max(1, Math.min(20, +$('tdMax').value || 1)) }] });
+    };
+    const ab = $('tdAdd'); if (ab) { ab.onclick = add; $('tdName').onkeydown = e => { if (e.key === 'Enter') add(); }; }
+    const df = $('tdDef'); if (df) df.onclick = () => api.set({ checklist: TODO_DEF.map(x => ({ ...x })) }); }
   if (WN) { const close = () => { WN = null; api.whatsNewSeen(); const b = $('wnBack'); if (b) { b.classList.add('out'); setTimeout(render, 220); } else render(); }; on2('wnOk', close); }
   enhanceSelects(m);
   paintRanges(m);
@@ -735,6 +801,7 @@ function render() {
   on('oAuto', 'onchange', e => api.set({ autoHide: e.target.checked }));
   on('oStart', 'onchange', e => api.set({ autoStart: e.target.checked }));
   on('oQuit', 'onchange', e => api.set({ quitWithGame: e.target.checked }));
+  on('oStream', 'onchange', e => api.set({ streamer: e.target.checked }));
   on('oProf', 'onchange', e => api.set({ profilesOn: e.target.checked }));
   on('rpcOn', 'onchange', e => api.set({ discordRpc: e.target.checked }));
   on('fShare', 'onclick', e => api.share(e.currentTarget.dataset.share));
@@ -748,6 +815,7 @@ function render() {
   on('nDeath', 'onchange', e => api.set({ deathToast: e.target.checked }));
   on('nLag', 'onchange', e => api.set({ lagAlert: e.target.checked }));
   on('nPhase', 'onchange', e => api.set({ phaseToast: e.target.checked }));
+  on('nPb', 'onchange', e => api.set({ pbToast: e.target.checked }));
   on('report', 'onclick', async () => { const b = $('report'); b.disabled = true; b.textContent = T('Собираю…'); await api.report(); b.disabled = false; b.textContent = T('Отчёт об ошибке'); });
   const whValid = v => /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(v.trim());
   on('whUrl', 'onchange', e => { const v = e.target.value.trim(); if (!v || whValid(v)) api.set({ webhook: { url: v, on: v ? (S.webhook?.on || true) : false } }); else { WHN = { text: T('Это не ссылка вебхука Discord'), cls: 'bad' }; render(); } });
@@ -788,6 +856,7 @@ function render() {
     m.querySelectorAll('[data-death]').forEach(r => r.onclick = () => { D.open = r.dataset.death; render(); });
     on('dBack', 'onclick', () => { D.open = null; render(); });
     on('dClear', 'onclick', () => { if (D.clearArmed) { api.deathsClear(); D.clearArmed = false; } else { D.clearArmed = true; $('dClear').textContent = 'Нажмите ещё раз, чтобы удалить'; } });
+    on('rotLoad', 'onclick', async e => { const id = e.currentTarget.dataset.id; FX.rot = { id, data: await api.fightRot(id) }; render(); });
     on('fCmp', 'onclick', e => { C.a = e.currentTarget.dataset.cmp; C.b = null; statTab = 'compare'; F.open = null; render(); });
     on('cA', 'onchange', e => { C.a = e.target.value; C.b = null; render(); });
     on('cB', 'onchange', e => { C.b = e.target.value; render(); });
@@ -805,6 +874,20 @@ function render() {
 }
 
 api.on('settings', s => { S = s; render(); });
+function sysDraw(m) {
+  const el = $('sysLine'); if (!el) return;
+  if (!m) { el.innerHTML = ''; return; }
+  const pts = (m.ping || []), vals = pts.filter(v => v != null);
+  let svg = '';
+  if (vals.length >= 3) {
+    const mx = Math.max(...vals, 60), n = pts.length;
+    const d = pts.map((v, i) => v == null ? null : `${(i / (n - 1) * 100).toFixed(1)},${(22 - v / mx * 20 - 1).toFixed(1)}`).filter(Boolean).join(' ');
+    svg = `<svg viewBox="0 0 100 22" preserveAspectRatio="none" aria-label="Пинг за 10 минут"><polyline points="${d}" fill="none" stroke="var(--accent)" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>`;
+  }
+  el.innerHTML = `CPU <b>${m.cpu}%</b> · ОЗУ <b>${m.ram} МБ</b>${m.accel ? `<br>Ускоритель: <b>${esc(m.accel)}</b>` : ''}${svg ? `<br>Пинг за 10 минут${svg}` : ''}`;
+}
+api.on('sys', m => sysDraw(m));
+setInterval(() => { if (page !== 'todo') return; document.querySelectorAll('[data-cd]').forEach(el => { el.textContent = 'Сброс через ' + untilText(+el.dataset.at - Date.now()); }); }, 30000);
 api.on('status', s => { status = s; if (!S) return; if (page === 'connect') render(); else nav(); });
 api.on('page', p => {
   if (p === 'stats:death') { page = 'stats'; statTab = 'deaths'; D.list = null; api.deaths().then(l => { D.list = l || []; D.open = D.list[0]?.id || null; render(); }); }
@@ -815,4 +898,4 @@ api.on('deaths', l => { D.list = l; if (page === 'stats' && statTab === 'deaths'
 api.on('hotkey-errors', e => { hkErr = { ...hkErr, ...e }; for (const k of Object.keys(hkErr)) if (!e[k] && hkErr[k] && hkErr[k].startsWith('Сочетание')) hkErr[k] = ''; if (page === 'overlay') render(); });
 api.on('fights', l => { F.list = l; if (page === 'stats') render(); });
 api.on('update', u => { const was = U?.available; U = u; if (page === 'about' || was !== u.available) render(); });
-api.state().then(st => { S = st.settings; status = st.status; version = st.version; U = st.update; rpcAvailable = !!st.rpcAvailable; WN = st.whatsNew || null; render(); });
+api.state().then(st => { sysDraw(st.sys); S = st.settings; status = st.status; version = st.version; U = st.update; rpcAvailable = !!st.rpcAvailable; WN = st.whatsNew || null; render(); });

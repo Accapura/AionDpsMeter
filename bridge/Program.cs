@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AionMeter.Core.Capture;
 using AionMeter.Core.Combat;
+using AionMeter.Core.Events;
 using AionMeter.Core.Game;
 
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -117,7 +118,23 @@ if (!LiveCapture.IsNpcapInstalled())
 }
 
 // Разбивка по навыкам для одного игрока текущего (или последнего) боя.
-void EmitDetail(uint actor)
+// Лента ударов для вида «Ротация»: [мс от начала боя, номер навыка в names, урон, флаги]; тики DoT не включаем.
+object RotationOf(CombatantDetail d, long durMs, int max)
+{
+    var names = new List<string>();
+    var index = new Dictionary<int, int>();
+    var list = new List<long[]>();
+    foreach (var c in d.Casts)
+    {
+        if ((c.Flags & HitFlags.Dot) != 0) continue;
+        if (!index.TryGetValue(c.SkillCode, out var ix)) { ix = names.Count; index[c.SkillCode] = ix; names.Add(data.SkillName(c.SkillCode)); }
+        list.Add(new long[] { c.OffsetMs, ix, c.Damage, (long)c.Flags });
+        if (list.Count >= max) break;
+    }
+    return new { names, c = list, dur = durMs };
+}
+
+void EmitDetail(uint actor, bool withCasts = false)
 {
     var d = tracker.Detail(null, actor);
     if (d is null) { Emit(new { t = "detail", id = actor, missing = true }); return; }
@@ -142,15 +159,21 @@ void EmitDetail(uint actor)
             back = d.Quality.BackRate,
             perfect = d.Quality.PerfectRate,
             heavy = d.Quality.HeavyRate,
+            front = d.Quality.FrontRate,
+            multi = d.Quality.MultiRate,
+            dbl = d.Quality.DoubleRate,
+            parry = d.Quality.ParryRate,
             maxHit = d.Quality.MaxHit,
             maxHitSkill = d.Quality.MaxHitSkill,
         },
         skills = d.Skills.Select(k => new
         {
             name = k.Name, hits = k.Hits, dots = k.DotTicks, dmg = k.Damage, dps = Math.Round(k.Dps), share = Math.Round(k.Share, 4),
-            avg = k.Average, max = k.Max, crit = k.CritRate,
+            avg = k.Average, max = k.Max, crit = k.CritRate, back = k.BackRate, front = k.FrontRate, perfect = k.PerfectRate,
+            heavy = k.HeavyRate, multi = k.MultiRate, dbl = k.DoubleRate, parry = k.ParryRate,
         }),
         perSecond = d.PerSecond,
+        rot = withCasts ? RotationOf(d, d.CombatMs, 6000) : null,
     });
 }
 
@@ -215,6 +238,7 @@ tracker.EncounterFinished += rec =>
             party = PartyPerSecond(rec.Details),
             boss = bossHpLine.Remove(s.Id, out var hpLine) ? hpLine : null,
         },
+        rot = rec.Details.Where(d => d.IsSelf && d.Casts.Count > 0).Select(d => RotationOf(d, s.CombatMs, 4000)).FirstOrDefault(),
         details = rec.Details.Where(d => d.IsSelf).Select(d => new
         {
             name = d.Name,
@@ -267,7 +291,7 @@ new Thread(() =>
         if (parts[0] == "mode") options.TargetMode = parts.Length > 1 && parts[1] == "all" ? TargetMode.All : TargetMode.BossOnly;
         else if (parts[0] == "reset") tracker.Reset();
         else if (parts[0] == "lang" && parts.Length > 1) data.ReloadNames(dataDir, parts[1] == "en" ? "en" : "ru");
-        else if (parts[0] == "detail" && parts.Length > 1 && uint.TryParse(parts[1], out var actor)) EmitDetail(actor);
+        else if (parts[0] == "detail" && parts.Length > 1) { var dp = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries); if (uint.TryParse(dp[0], out var actor)) EmitDetail(actor, dp.Length > 1 && dp[1] == "c"); }
         else if (parts[0] == "quit") break;
     }
     running = false; // приложение закрыло stdin — выходим вместе с ним
@@ -353,6 +377,8 @@ while (running)
                     share = Math.Round(c.Share, 4),
                     heal = c.Healing,
                     hps = s.CombatMs > 0 ? Math.Round(c.Healing / (s.CombatMs / 1000.0)) : 0,
+                    gs = c.GearScore,
+                    cp = c.CombatPower,
                 }),
         });
     }

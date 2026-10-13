@@ -17,6 +17,7 @@ const CLASS_COLOR = { Gladiator: '31,162,200', Templar: '59,124,230', Ranger: '2
 const MODES = [['boss', 'Данж: Босс'], ['world', 'Мир: Босс'], ['mob', 'Моб']];
 
 function applyTheme(s, opacityOverride) {
+  STREAMER = !!s.streamer;
   const t = THEMES[s.theme] || THEMES.amethyst;
   const r = document.documentElement.style;
   r.setProperty('--g1', t.g1); r.setProperty('--g2', t.g2);
@@ -24,6 +25,27 @@ function applyTheme(s, opacityOverride) {
   r.setProperty('--text', t.text); r.setProperty('--muted', t.muted);
   r.setProperty('--line', t.line); r.setProperty('--hp', t.hp);
   r.setProperty('--a', String((opacityOverride ?? 92) / 100));
+}
+// Ротация: по строке на навык, по оси — время боя; золотые штрихи — криты. rot = { names, c: [[мс, навык, урон, флаги]], dur }.
+function rotationHtml(rot, maxRows) {
+  if (!rot || !rot.c || rot.c.length < 3) return '';
+  const dur = Math.max(1000, rot.dur || rot.c[rot.c.length - 1][0]);
+  const by = new Map();
+  for (const [ms, ix, dmg, fl] of rot.c) {
+    let r = by.get(ix); if (!r) by.set(ix, r = { ix, dmg: 0, n: 0, hits: [] });
+    r.dmg += dmg; r.n++; r.hits.push([ms, fl]);
+  }
+  const rows = [...by.values()].sort((a, b) => b.dmg - a.dmg).slice(0, maxRows || 14);
+  const tick = ([ms, fl]) => {
+    const x = Math.min(999, ms / dur * 1000).toFixed(1);
+    const c = fl & 1 ? 'var(--accent)' : (fl & 8 ? 'rgba(130,230,200,.95)' : 'rgba(176,156,255,.9)');
+    return `<line x1="${x}" x2="${x}" y1="${fl & 1 ? 1 : 3}" y2="${fl & 1 ? 15 : 13}" stroke="${c}" stroke-width="${fl & 1 ? 2.4 : 1.8}" vector-effect="non-scaling-stroke"/>`;
+  };
+  const tm = k => clock(dur * k);
+  return `<div class="rot">${rows.map(r => `<div class="rrow"><span class="rn" data-notr title="${esc(rot.names[r.ix])}: ${r.n} × · ${fmt(r.dmg)}">${esc(rot.names[r.ix])}<small>${r.n}×</small></span>
+    <svg viewBox="0 0 1000 16" preserveAspectRatio="none">${r.hits.map(tick).join('')}</svg></div>`).join('')}
+    <div class="rax"><span></span><div><span>${tm(0)}</span><span>${tm(.25)}</span><span>${tm(.5)}</span><span>${tm(.75)}</span><span>${tm(1)}</span></div></div>
+    <div class="rleg"><span><i style="background:var(--accent)"></i>критический удар</span><span><i style="background:rgba(130,230,200,.95)"></i>идеальный</span><span><i style="background:rgba(176,156,255,.9)"></i>обычный</span></div></div>`;
 }
 function fmt(n) {
   if (n == null || !isFinite(n)) return '—';
@@ -34,7 +56,15 @@ function fmt(n) {
   else s = String(Math.round(n));
   return typeof getLang === 'function' && getLang() === 'en' ? s : s.replace('.', ',');
 }
+// Режим стримера: ник заменяется на «Игрок NN» (число зависит от ника, везде одно и то же).
+let STREAMER = false;
+const aliasOf = n => {
+  if (!STREAMER || !n) return n;
+  let h = 7; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return 'Игрок ' + (10 + h % 90);
+};
 const nt = s => `<span data-notr>${esc(s)}</span>`; // имена из игры не переводим
+const nk = s => `<span data-notr>${esc(aliasOf(s))}</span>`; // ник игрока: в режиме стримера скрывается
 function clock(ms) { const s = Math.floor((ms || 0) / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function classIcon(cls) {

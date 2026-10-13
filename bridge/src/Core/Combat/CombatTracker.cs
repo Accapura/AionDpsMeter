@@ -796,7 +796,8 @@ public sealed partial class CombatTracker
                     st.Damage / Math.Max(1, st.Hits + st.DotTicks),
                     st.Hits > 0 ? st.Min : 0, st.Max,
                     Rate(st.Crits, st.Hits), Rate(st.Back, st.Hits), Rate(st.Front, st.Hits),
-                    Rate(st.Perfect, st.Hits), Rate(st.Heavy, st.Hits), Rate(st.Multi, st.Hits));
+                    Rate(st.Perfect, st.Hits), Rate(st.Heavy, st.Hits), Rate(st.Multi, st.Hits),
+                    Rate(st.Double, st.Hits), Rate(st.Parry, st.Hits));
             })
             .OrderByDescending(s => s.Damage)
             .ToList();
@@ -805,7 +806,8 @@ public sealed partial class CombatTracker
         var quality = new HitQuality(
             t.Hits, t.DotTicks, Rate(t.Crits, t.Hits), Rate(t.Back, t.Hits), Rate(t.Front, t.Hits),
             Rate(t.Perfect, t.Hits), Rate(t.Heavy, t.Hits), Rate(t.Multi, t.Hits),
-            t.Max, c.MaxHitSkill != 0 ? _data.SkillName(c.MaxHitSkill) : null);
+            t.Max, c.MaxHitSkill != 0 ? _data.SkillName(c.MaxHitSkill) : null,
+            Rate(t.Double, t.Hits), Rate(t.Parry, t.Hits));
 
         var casts = c.Casts.Count <= maxCasts ? c.Casts.ToArray() : c.Casts.GetRange(0, maxCasts).ToArray();
         return new CombatantDetail(

@@ -7,6 +7,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 const fs = require('fs');
 const { spawn } = require('child_process');
+const zlib = require('zlib');
 const readline = require('readline');
 const Sched = require('./renderer/schedule-core.js');
 
@@ -34,7 +35,7 @@ const DEFAULTS = {
   overlay: { x: null, y: null, width: null, height: null, visible: true },
   compact: false,
   showHeader: true,             // строка с названиями колонок в оверлее
-  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
+  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
   clickThrough: false,
   autoStart: false,             // запускать вместе с Windows (свёрнутой в трей)
   quitWithGame: false,          // закрываться вместе с игрой
@@ -58,13 +59,16 @@ const DEFAULTS = {
   detectedServer: '',           // сервер, на котором игра видела персонажа
   feedUrl: 'https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/schedule-feed.json',
   bells: {},                    // включённые/выключенные напоминания ивентов из расписания
-  columns: { crit: false, hits: false, maxHit: false, hps: false }, // доп. колонки оверлея
+  columns: { crit: false, hits: false, maxHit: false, hps: false, gs: false, cp: false }, // доп. колонки оверлея
   seenFeedIds: [],
   whatsNewSeen: '',             // версия, для которой уже показали «Что нового»
   whatsNewFrom: '',             // с какой версии обновлялись (для списка изменений)
   deathToast: true,             // уведомление с разбором смерти
-  lagAlert: true,
-  phaseToast: true,             // уведомление на 75 / 50 / 25 % HP босса               // предупреждение о скачке пинга
+  lagAlert: true,               // предупреждение о скачке пинга
+  phaseToast: true,             // уведомление на 75 / 50 / 25 % HP босса
+  checklist: null,              // свой список дел (null — стандартный), см. renderer: страница «Дела»
+  streamer: false,              // режим стримера: ники заменяются на «Игрок NN»
+  pbToast: true,                // уведомление о новом рекорде после боя
   webhook: { url: '', on: false }, // отправка итога боя в Discord-канал
   winBounds: {},                // место и размер окон (главное, расписание, разбивка), как их оставил пользователь
 };
@@ -131,6 +135,7 @@ function patchSettings(patch) {
     else if (PROFILE_KEYS.some(k => k in patch)) settings.profiles[settings.mode] = profileOf();
   }
   if (Array.isArray(patch.events)) settings.events = patch.events;
+  if (Array.isArray(patch.checklist)) settings.checklist = patch.checklist;
   save();
   broadcast('settings', settings);
   if (settings.mode !== prevMode) bridge.setMode(settings.mode);
@@ -371,7 +376,7 @@ const bridge = {
       else if (m.t === 'fg') { fgState = m.state; applyOverlayVisibility(); watchGameExit(); }
       else if (m.t === 'fieldbosses') onFieldBosses(m);
       else if (m.t === 'detail') broadcast('detail', m);
-      else if (m.t === 'fight') addFight(m);
+      else if (m.t === 'fight') { saveRot(m); addFight(m); }
       else if (m.t === 'death') addDeath(m);
       else if (m.t === 'ping') onPing(m);
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
@@ -426,15 +431,76 @@ function pingAt(t) { // ближайший точный замер к момен
 const FIGHTS_FILE = () => path.join(app.getPath('userData'), 'fights.json');
 let fights = null;
 function loadFights() { if (!fights) { try { fights = JSON.parse(fs.readFileSync(FIGHTS_FILE(), 'utf8')); } catch { fights = []; } } return fights; }
+// Ротация (лента ударов) занимает много места, поэтому лежит отдельными сжатыми файлами; хранятся последние 40 боёв.
+const ROT_DIR = () => path.join(app.getPath('userData'), 'rotations');
+function saveRot(m) {
+  const rot = m.rot; delete m.rot;
+  if (!rot || !rot.c || rot.c.length < 5 || !m.id) return;
+  try {
+    fs.mkdirSync(ROT_DIR(), { recursive: true });
+    fs.writeFileSync(path.join(ROT_DIR(), String(m.id).replace(/[^\w-]/g, '') + '.json.gz'), zlib.gzipSync(JSON.stringify(rot)));
+    m.hasRot = true;
+    const files = fs.readdirSync(ROT_DIR()).map(n => ({ n, t: fs.statSync(path.join(ROT_DIR(), n)).mtimeMs })).sort((x, y) => y.t - x.t);
+    for (const x of files.slice(40)) { try { fs.unlinkSync(path.join(ROT_DIR(), x.n)); } catch { /* не критично */ } }
+  } catch { /* не критично */ }
+}
+function loadRot(id) {
+  try { return JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(ROT_DIR(), String(id).replace(/[^\w-]/g, '') + '.json.gz'))).toString('utf8')); } catch { return null; }
+}
 function addFight(f) {
   loadFights();
   if (fights.some(x => x.id === f.id)) return;
   if (!f.ping) { const ps = pingStats(f.at, Date.now()); if (ps) f.ping = ps; }
+  const pb = personalBest(f);
   fights.unshift(f);
   fights.length = Math.min(fights.length, 500);
+  if (pb) showToast(pb);
   try { fs.writeFileSync(FIGHTS_FILE(), JSON.stringify(fights)); } catch { /* не критично */ }
   broadcast('fights', fights);
   broadcast('records', records());
+}
+// Системная строка в боковой панели: нагрузка программы, ускоритель, график пинга за последние минуты.
+const ACCEL = [['exitlag', 'ExitLag'], ['gearup', 'GearUP'], ['lagofast', 'LagoFast'], ['wtfast', 'WTFast'], ['mudfish', 'Mudfish'], ['noping', 'NoPing'], ['haste', 'Haste'], ['uu.exe', 'UU'], ['uuinterface', 'UU'], ['rzgcm', 'Razer'], ['clash', 'Clash']];
+let lastSys = null, accelName = '', accelAt = 0;
+function detectAccel(done) {
+  if (process.platform !== 'win32') return done();
+  let out = '';
+  const p = spawn('tasklist', ['/FO', 'CSV', '/NH'], { windowsHide: true });
+  p.stdout.on('data', c => { out += c; });
+  p.on('error', () => done());
+  p.on('close', () => { const low = out.toLowerCase(); accelName = (ACCEL.find(([k]) => low.includes(k)) || [])[1] || ''; done(); });
+}
+function sysTick() {
+  const w = wins.main;
+  if (!w || w.isDestroyed() || !w.isVisible() || w.isMinimized()) return;
+  const send = () => {
+    let cpu = 0, ram = 0;
+    for (const m of app.getAppMetrics()) { cpu += m.cpu?.percentCPUUsage || 0; ram += (m.memory?.workingSetSize || 0) / 1024; }
+    const now = Date.now(), from = now - 10 * 60000, n = 40, arr = new Array(n).fill(null), cnt = new Array(n).fill(0);
+    for (const q of pingLog) if (q.t >= from) { const i = Math.min(n - 1, Math.floor((q.t - from) / (10 * 60000) * n)); arr[i] = (arr[i] || 0) + q.ms; cnt[i]++; }
+    lastSys = { cpu: Math.round(cpu * 10) / 10, ram: Math.round(ram), accel: accelName, ping: arr.map((v, i) => (v == null ? null : Math.round(v / cnt[i]))) };
+    broadcast('sys', lastSys);
+  };
+  if (Date.now() - accelAt > 30000) { accelAt = Date.now(); detectAccel(send); } else send();
+}
+setInterval(sysTick, 5000);
+// Лучший результат побит: сравнение с прежними боями на этом боссе (до добавления нового).
+function personalBest(f) {
+  if (settings.pbToast === false || !f.boss || f.partial) return null;
+  const me = (f.players || []).find(p => p.self);
+  if (!me || !(me.dps > 0)) return null;
+  const prev = fights.filter(x => x.boss === f.boss && !x.partial);
+  const prevMe = prev.map(x => (x.players || []).find(p => p.self)).filter(Boolean);
+  const bestPrev = prevMe.reduce((a, p) => Math.max(a, p.dps || 0), 0);
+  const kill = f.result === 'Kill';
+  const fastPrev = prev.filter(x => x.result === 'Kill' && x.combatMs > 0).reduce((a, x) => Math.min(a, x.combatMs), Infinity);
+  const newDps = bestPrev > 0 && me.dps > bestPrev;
+  const newFast = kill && isFinite(fastPrev) && f.combatMs > 0 && f.combatMs < fastPrev;
+  if (!newDps && !newFast) return null;
+  const parts = [];
+  if (newDps) parts.push(`${nf(me.dps)} DPS (+${((me.dps / bestPrev - 1) * 100).toFixed(1)}%)`);
+  if (newFast) parts.push(`${T('быстрейшая победа')} ${mmss(f.combatMs)}`);
+  return { key: 'pb' + f.id, name: T('Новый рекорд') + ' · ' + f.boss, type: 'info', icon: 'app', start: null, text: parts.join(' · ') };
 }
 // Рекорды: лучший свой DPS на каждом боссе (для сравнения прямо в бою).
 function records() {
@@ -626,12 +692,14 @@ async function openDiscord(how) {
 }
 
 // ---------------------------------------------------------------- горячие клавиши
-const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' };
+const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' };
 const HOTKEY_ACTIONS = {
   overlay: () => toggleOverlay(),
   lock: () => patchSettings({ clickThrough: !settings.clickThrough }),
   reset: () => bridge.reset(),
   share: () => shareFight(),
+  chat: () => shareChat(),
+  streamer: () => patchSettings({ streamer: !settings.streamer }),
   modeBoss: () => setMode('boss'),
   modeWorld: () => setMode('world'),
   modeMob: () => setMode('mob'),
@@ -655,7 +723,7 @@ function registerHotkeys() {
 ipcMain.on('hotkeys-pause', (_e, on) => { if (on) globalShortcut.unregisterAll(); else registerHotkeys(); });
 
 // ---------------------------------------------------------------- IPC
-ipcMain.handle('get-state', () => ({ settings, status, snap: lastSnap, bossLog, version: APP_VERSION, ping: lastPing, pingEst: lastPingEst, pingDbg: lastPingDbg, records: records(), whatsNew: whatsNew(), update: updateInfo(), rpcAvailable: !!DISCORD_APP_ID }));
+ipcMain.handle('get-state', () => ({ sys: lastSys, settings, status, snap: lastSnap, bossLog, version: APP_VERSION, ping: lastPing, pingEst: lastPingEst, pingDbg: lastPingDbg, records: records(), whatsNew: whatsNew(), update: updateInfo(), rpcAvailable: !!DISCORD_APP_ID }));
 ipcMain.handle('schedule-data', () => scheduleData());
 ipcMain.handle('fights', () => loadFights());
 ipcMain.handle('deaths', () => loadDeaths());
@@ -669,6 +737,7 @@ ipcMain.on('fight-delete', (_e, id) => {
   loadFights();
   const n = fights.length;
   fights = fights.filter(x => x.id !== id);
+  try { fs.unlinkSync(path.join(ROT_DIR(), String(id).replace(/[^\w-]/g, '') + '.json.gz')); } catch { /* нет ленты */ }
   if (fights.length === n) return;
   try { fs.writeFileSync(FIGHTS_FILE(), JSON.stringify(fights)); } catch { /* не критично */ }
   broadcast('fights', fights);
@@ -709,7 +778,25 @@ ipcMain.on('copy-text', (_e, t) => { if (typeof t === 'string' && t) clipboard.w
 ipcMain.handle('update-check', async () => { await updateFeed(true); return updateInfo(); });
 ipcMain.on('update-install', () => updater.download());
 ipcMain.on('update-skip', (_e, v) => patchSettings({ updateSkip: String(v || '') }));
-ipcMain.on('detail', (_e, id) => bridge.send('detail ' + (Number(id) >>> 0)));
+ipcMain.on('detail', (_e, id, casts) => bridge.send('detail ' + (Number(id) >>> 0) + (casts ? ' c' : '')));
+// Время ближайших и прошедших сбросов (ежедневный и еженедельный) из расписания.
+ipcMain.handle('resets', () => {
+  const now = Date.now(), out = {};
+  for (const [kind, id] of [['daily', 'reset-daily'], ['weekly', 'reset-weekly']]) {
+    const r = feed.events.find(x => x.id === id)?.rule;
+    if (!r || r.kind !== 'weekly') continue;
+    const [hh, mm] = String(r.time || '07:00').split(':').map(Number);
+    const days = r.days && r.days.length ? r.days : [0, 1, 2, 3, 4, 5, 6];
+    const b = new Date(now), c = [];
+    for (let d = -8; d <= 8; d++) {
+      const t = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate() + d, hh || 0, mm || 0);
+      if (days.includes((new Date(t).getUTCDay() + 6) % 7)) c.push(t);
+    }
+    out[kind] = { last: Math.max(...c.filter(t => t <= now)), next: Math.min(...c.filter(t => t > now)) };
+  }
+  return out;
+});
+ipcMain.handle('fight-rot', (_e, id) => loadRot(id));
 
 // Официальный сайт персонажей AION 2 (те же запросы, что делает страница aion2.plaync.com/characters).
 const https = require('https');
@@ -880,6 +967,22 @@ function fightText(f) {
   const head = `⚔ ${f.boss || f.title || T('Бой')} · ${mmss(f.combatMs)} · ${T('DPS группы')} ${nf(f.partyDps)}`;
   const rows = ps.map((p, i) => `${i + 1}. ${p.name}${p.self ? ' ★' : ''} — ${nf(p.dps)} DPS · ${nf(p.dmg)} · ${((p.share || 0) * 100).toFixed(1)}%${p.hps > 0 ? ` · ${nf(p.hps)} HPS` : ''}`);
   return [head, ...rows, '— Aion DPS Meter'].join('\n');
+}
+// Одна короткая строка для чата игры (в чате игры нет переносов строк).
+function chatLine(f) {
+  const ps = (f.players || []).filter(p => p.dmg > 0);
+  const i = ps.findIndex(p => p.self);
+  const me = i >= 0 ? ps[i] : null;
+  const head = `${f.boss || f.title || T('Бой')} ${mmss(f.combatMs)}`;
+  const mine = me ? ` · ${T('Я')} ${nf(me.dps)} DPS (#${i + 1}/${ps.length}, ${((me.share || 0) * 100).toFixed(0)}%)` : '';
+  return `${head}${mine} · ${T('группа')} ${nf(f.partyDps)}`;
+}
+function shareChat() {
+  let f = (lastSnap && lastSnap.players?.length) ? { boss: lastSnap.boss?.name || lastSnap.target?.name, title: lastSnap.title, combatMs: lastSnap.combatMs, partyDps: lastSnap.partyDps, players: lastSnap.players } : (loadFights()[0] || null);
+  if (!f) { showToast({ key: 'chat' + Date.now(), name: 'Нечем поделиться', type: 'info', icon: 'info', start: null, text: 'Сначала проведите бой' }); return; }
+  const line = chatLine(f);
+  clipboard.writeText(line);
+  showToast({ key: 'chat' + Date.now(), name: T('Строка для чата скопирована'), type: 'info', icon: 'app', start: null, text: line });
 }
 // ---------------------------------------------------------------- карточка боя (картинка)
 const escH = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

@@ -45,7 +45,7 @@ function flashMode() {
 function chrome() {
   flashMode();
   applyTheme(S, S.opacity);
-  $('nick').textContent = S.character || '';
+  $('nick').textContent = aliasOf(S.character) || '';
   document.body.classList.toggle('hasnick', !!S.character);
   document.body.classList.toggle('locked', !!S.clickThrough);
   document.body.classList.toggle('compact', !!S.compact);
@@ -131,6 +131,8 @@ function render() {
     S.columns?.hits && { h: 'Удары', t: 'Количество ударов', w: '40px', v: p => p.hits ?? '—' },
     S.columns?.maxHit && { h: 'Макс', t: 'Самый сильный удар', w: '46px', v: p => p.maxHit ? fmt(p.maxHit) : '—' },
     S.columns?.hps && { h: 'HPS', t: 'Лечение в секунду', w: '44px', v: p => p.hps ? fmt(p.hps) : '—' },
+    S.columns?.gs && { h: 'ГС', t: 'Гир-скор (уровень экипировки): известен у игроков вашей группы', w: '40px', v: p => p.gs ? p.gs : '—' },
+    S.columns?.cp && { h: 'БМ', t: 'Боевая мощь: известна у игроков вашей группы', w: '50px', v: p => p.cp ? fmt(p.cp) : '—' },
   ].filter(Boolean);
   const narrow = innerWidth < 300;
   document.body.style.setProperty('--cols', (narrow ? '14px 20px minmax(0,1fr) 48px' : '16px 20px minmax(0,1fr) 50px 50px') + extra.map(c => ' ' + c.w).join('') + ' 38px');
@@ -156,14 +158,14 @@ function render() {
   if (S.solo && !me) {
     // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
     // ни HP моба, ни таймер, ни суммы чужого боя не показываем: бой «начинается» для оверлея, когда урон нанёс сам персонаж
-    body.innerHTML = `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(S.character)}</b>` : ''}</div></div></div>`;
+    body.innerHTML = `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(aliasOf(S.character))}</b>` : ''}</div></div></div>`;
     $('stats').innerHTML = '';
     return;
   }
   if (S.solo && me) {
     const place = ps.indexOf(me) + 1;
     body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню">${classIcon(me.cls)}
-      <div class="who"><span class="name" data-notr>${esc(nm(me))}</span><span class="bigdps num">${fmt(me.dps)}<small>DPS</small></span></div>
+      <div class="who"><span class="name" data-notr>${esc(aliasOf(nm(me)))}</span><span class="bigdps num">${fmt(me.dps)}<small>DPS</small></span></div>
       <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
       <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
       <div><span>Крит</span><b>${me.crit != null ? Math.round(me.crit * 100) + '%' : '—'}</b></div><div><span>Макс. удар</span><b>${fmt(me.maxHit)}</b></div>
@@ -177,7 +179,7 @@ function render() {
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
       return `<div class="row${p === me ? ' me' : ''}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
-      <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(nm(p))}">${esc(nm(p))}</span>
+      <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
       <span class="r dps">${fmt(p.dps)}</span><span class="r muted c-total">${fmt(p.dmg)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${((p.share || 0) * 100).toFixed(1).replace('.', ',')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;
   body.querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
