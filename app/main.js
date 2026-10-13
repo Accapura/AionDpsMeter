@@ -498,8 +498,8 @@ function personalBest(f) {
   const newFast = kill && isFinite(fastPrev) && f.combatMs > 0 && f.combatMs < fastPrev;
   if (!newDps && !newFast) return null;
   const parts = [];
-  if (newDps) parts.push(`${nf(me.dps)} DPS (+${((me.dps / bestPrev - 1) * 100).toFixed(1)}%)`);
-  if (newFast) parts.push(`${T('быстрейшая победа')} ${mmss(f.combatMs)}`);
+  if (newDps) parts.push(`${nf(me.dps)} DPS +${((me.dps / bestPrev - 1) * 100).toFixed(1)}%`);
+  if (newFast) parts.push(`${T('убийство')} ${mmss(f.combatMs)}`);
   return { key: 'pb' + f.id, name: T('Новый рекорд') + ' · ' + f.boss, type: 'info', icon: 'app', start: null, text: parts.join(' · ') };
 }
 // Рекорды: лучший свой DPS на каждом боссе (для сравнения прямо в бою).
@@ -783,8 +783,8 @@ ipcMain.on('detail', (_e, id, casts) => bridge.send('detail ' + (Number(id) >>> 
 ipcMain.handle('resets', () => {
   const now = Date.now(), out = {};
   for (const [kind, id] of [['daily', 'reset-daily'], ['weekly', 'reset-weekly']]) {
-    const r = feed.events.find(x => x.id === id)?.rule;
-    if (!r || r.kind !== 'weekly') continue;
+    let r = feed.events.find(x => x.id === id)?.rule;
+    if (!r || r.kind !== 'weekly') r = { kind: 'weekly', days: kind === 'daily' ? [0, 1, 2, 3, 4, 5, 6] : [2], time: '07:00' }; // в фиде нет сброса — берём обычный
     const [hh, mm] = String(r.time || '07:00').split(':').map(Number);
     const days = r.days && r.days.length ? r.days : [0, 1, 2, 3, 4, 5, 6];
     const b = new Date(now), c = [];

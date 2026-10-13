@@ -33,10 +33,10 @@ function render() {
       ${met('Макс. удар', fmt(q.maxHit))}${met('Получено урона', fmt(D.taken))}${D.heal ? met('Лечение', fmt(D.heal)) + met('HPS', fmt(D.heal / Math.max(1, D.combatMs / 1000))) : ''}</div>
     ${q.maxHitSkill ? `<div class="muted" style="font-size:12px">Самый сильный удар: ${nt(q.maxHitSkill)}</div>` : ''}
     ${D.perSecond && D.perSecond.length > 1 ? `<div class="spark">${spark(D.perSecond)}</div>` : ''}
-    <table><thead><tr>${COLS.map(([k, n]) => `<th data-k="${k}" class="${sortKey === k ? 'on' : ''}">${n}${sortKey === k ? (sortDir < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead>
+    <div class="tw"><table><thead><tr>${COLS.map(([k, n]) => `<th data-k="${k}" class="${sortKey === k ? 'on' : ''}">${n}${sortKey === k ? (sortDir < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead>
     <tbody>${skills.map(k => `<tr><td class="sk" data-notr title="${esc(k.name)}">${esc(k.name)}</td><td class="num">${fmt(k.dmg)}</td>
       <td class="bar num"><i style="width:${((k.share || 0) / top * 100).toFixed(1)}%"></i><span>${pct(k.share)}</span></td>
-      <td class="num">${fmt(k.dps)}</td><td class="num">${k.hits}${k.dots ? ' +' + k.dots : ''}</td><td class="num">${fmt(k.avg)}</td><td class="num">${fmt(k.max)}</td><td class="num">${pct(k.crit)}</td><td class="num">${pct(k.back)}</td><td class="num">${pct(k.perfect)}</td><td class="num">${pct(k.heavy)}</td><td class="num">${pct(k.multi)}</td><td class="num">${pct(k.dbl)}</td></tr>`).join('')}</tbody></table>
+      <td class="num">${fmt(k.dps)}</td><td class="num">${k.hits}${k.dots ? ' +' + k.dots : ''}</td><td class="num">${fmt(k.avg)}</td><td class="num">${fmt(k.max)}</td><td class="num">${pct(k.crit)}</td><td class="num">${pct(k.back)}</td><td class="num">${pct(k.perfect)}</td><td class="num">${pct(k.heavy)}</td><td class="num">${pct(k.multi)}</td><td class="num">${pct(k.dbl)}</td></tr>`).join('')}</tbody></table></div>
     <div class="rotbox"><button type="button" id="rotBtn" class="btn">${showRot ? 'Скрыть ротацию' : 'Показать ротацию (лента ударов по навыкам)'}</button>${showRot ? (D.rot ? rotationHtml(D.rot) : '<div class="muted">Собираю ленту ударов…</div>') : ''}</div>`;
   const rb = $('rotBtn'); if (rb) rb.onclick = () => { showRot = !showRot; rotAt = 0; if (showRot) api.detail(actor, true); render(); };
   $('body').querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {

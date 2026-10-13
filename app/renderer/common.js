@@ -61,7 +61,7 @@ let STREAMER = false;
 const aliasOf = n => {
   if (!STREAMER || !n) return n;
   let h = 7; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return 'Игрок ' + (10 + h % 90);
+  return (typeof getLang === 'function' && getLang() === 'en' ? 'Player ' : 'Игрок ') + (10 + h % 90);
 };
 const nt = s => `<span data-notr>${esc(s)}</span>`; // имена из игры не переводим
 const nk = s => `<span data-notr>${esc(aliasOf(s))}</span>`; // ник игрока: в режиме стримера скрывается

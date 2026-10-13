@@ -124,13 +124,16 @@ object RotationOf(CombatantDetail d, long durMs, int max)
     var names = new List<string>();
     var index = new Dictionary<int, int>();
     var list = new List<long[]>();
+    var cut = d.Casts.Count >= 5_000; // в записанном бое хранятся первые 5000 ударов: дальше ленты нет
     foreach (var c in d.Casts)
     {
         if ((c.Flags & HitFlags.Dot) != 0) continue;
         if (!index.TryGetValue(c.SkillCode, out var ix)) { ix = names.Count; index[c.SkillCode] = ix; names.Add(data.SkillName(c.SkillCode)); }
         list.Add(new long[] { c.OffsetMs, ix, c.Damage, (long)c.Flags });
-        if (list.Count >= max) break;
+        if (list.Count >= max) { cut = true; break; }
     }
+    // Если лента обрезана, ось времени кончается там, где кончились удары, а не растягивается на весь бой.
+    if (cut && list.Count > 0) durMs = Math.Min(durMs, list[^1][0] + 1000);
     return new { names, c = list, dur = durMs };
 }
 
