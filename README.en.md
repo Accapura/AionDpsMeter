@@ -12,6 +12,8 @@
 
 [Русский](README.md) · **English**
 
+<sub>[Features](#-features) · [Screenshots](#-screenshots) · [Install](#-install) · [Hotkeys](#️-hotkeys) · [How it works](#️-how-it-works)</sub>
+
 </div>
 
 ---
@@ -20,31 +22,29 @@
 
 | | |
 |---|---|
-| ⚔️ **In-game overlay** | Live DPS, damage, share, crit and healing of every group member. Boss HP, fight timer, comparison with your record. Modes: Dungeon: Boss, World: Boss, Mobs. |
-| 🎯 **“Only me”** | Your own DPS, rank, damage, share and crit — big, instead of the list. |
-| 📅 **Schedule** | Events, rifts and world bosses in the selected server’s time, reminders 15 / 5 / 1 min before, custom events, field boss timers straight from the game. |
-| 📈 **Statistics** | Fight history, DPS-per-second chart with boss phases, fight comparison, boss records, DPS by class. |
-| ☠️ **Death recap** | Who hit you and with what in the last 12 seconds before death. |
-| 💬 **Discord** | “Boss fight” status in your profile and the fight summary posted to your guild channel with one button. |
-| ⚡ **Light updates** | New versions (~1.5 MB) download and install themselves in seconds. |
-| 🎨 **Look** | 11 themes, 5 notification styles, English and Russian. |
+| ⚔️ **In-game overlay** | DPS, damage, share, crit and healing for every player. Boss HP, fight timer, phases and kill ETA, your place and the gap to your record. Dungeon: Boss, World: Boss and Mobs modes. Gear score and combat power columns, eDPS / aDPS, ping indicator and lag alert. |
+| 🎯 **Solo view** | Your own DPS, place in the group, damage, share and crit in big numbers instead of the group list. |
+| 🏆 **Records** | A “New record” toast right after the fight, personal bests per boss, comparison with your previous fight and with your class median. |
+| 📈 **Statistics** | Fight history with search and export, DPS chart with boss phases, growth chart, two-fight comparison, DPS by class. |
+| 🎼 **Rotation and hit quality** | A skill timeline over the fight and crit, back, perfect, heavy, multi and double hit rates for every skill. |
+| ☠️ **Death recap** | Who hit you with what in the last 12 seconds before dying, death statistics. |
+| 💬 **Share a fight** | Result card image, a line for the in-game chat (`Ctrl+Shift+T`) and one-click posting to a guild Discord channel; “Boss fight” status in your Discord profile. |
+| 📅 **Schedule and checklist** | Events, rifts and world bosses in the selected server time, reminders, custom events, field boss timers from the game. A daily and weekly checklist that resets by itself. |
+| 🎥 **Streamer mode** | Player nicknames become “Player NN” in the overlay and the app (`Ctrl+Shift+H`). |
+| ⚡ **Light updates** | New versions (~1.5 MB) download and install in seconds. Start with Windows is optional. |
+| 🎨 **Look** | 11 themes, 5 notification styles, Russian and English. |
 
 ## 📸 Screenshots
 
 <table>
-<tr>
-<td width="50%"><img src="docs/screenshots/en-overlay.png" alt="Overlay"><br><sub><b>Overlay</b> — group damage in a fight</sub></td>
-<td width="50%"><img src="docs/screenshots/en-solo.png" alt="Only me"><br><sub><b>“Only me”</b> — your DPS and rank</sub><br><br><img src="docs/screenshots/en-toast.png" alt="Update"><br><sub><b>Update</b> — one button</sub></td>
-</tr>
-<tr>
-<td><img src="docs/screenshots/en-chart.png" alt="Fight chart"><br><sub><b>Fight chart</b> — DPS per second, boss HP and phases</sub></td>
-<td><img src="docs/screenshots/en-compare.png" alt="Fight comparison"><br><sub><b>Fight comparison</b> — where damage was lost</sub></td>
-</tr>
-<tr>
-<td><img src="docs/screenshots/en-death.png" alt="Death recap"><br><sub><b>Death recap</b> — the last 12 seconds</sub></td>
-<td><img src="docs/screenshots/en-schedule.png" alt="Schedule"><br><sub><b>Schedule</b> — events in server time</sub></td>
-</tr>
+<tr><td width="33%" align="center"><img src="docs/screenshots/en-overlay.png" alt="Overlay"><br><sub><b>Overlay</b> — group damage, GS and CP, ping</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-solo.png" alt="Solo view"><br><sub><b>Solo view</b> — your DPS and place</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-toast.png" alt="Record"><br><sub><b>Record</b> — toast after the fight</sub></td></tr>
+<tr><td width="33%" align="center"><img src="docs/screenshots/en-fight.png" alt="Fight history"><br><sub><b>Fight history</b> — class, previous fight, ping</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-chart.png" alt="Fight chart"><br><sub><b>Fight chart</b> — DPS per second and phases</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-rotation.png" alt="Rotation"><br><sub><b>Rotation</b> — skill timeline and hit quality</sub></td></tr>
+<tr><td width="33%" align="center"><img src="docs/screenshots/en-history.png" alt="History"><br><sub><b>History</b> — search, filters, export</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-bosses.png" alt="Records"><br><sub><b>Records</b> — DPS growth per boss</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-compare.png" alt="Compare"><br><sub><b>Compare</b> — where damage was lost</sub></td></tr>
+<tr><td width="33%" align="center"><img src="docs/screenshots/en-death.png" alt="Death recap"><br><sub><b>Death recap</b> — the last 12 seconds</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-card.png" alt="Result card"><br><sub><b>Result card</b> — for Discord and chat</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-todo.png" alt="Checklist"><br><sub><b>Checklist</b> — daily and weekly</sub></td></tr>
+<tr><td width="33%" align="center"><img src="docs/screenshots/en-schedule.png" alt="Schedule"><br><sub><b>Schedule</b> — events in server time</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-settings.png" alt="Settings"><br><sub><b>Settings</b> — columns, behavior, streamer mode</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-whatsnew.png" alt="What’s new"><br><sub><b>What’s new</b> — after an update</sub></td></tr>
 </table>
+
+<p align="center"><img src="docs/screenshots/ru-installer.png" alt="Installer" width="70%"><br><sub><b>Installer</b> in the app’s style</sub></p>
 
 ## 📥 Install
 
@@ -69,6 +69,8 @@ After that the app updates itself: when “Update available” appears, click **
 | `Ctrl+Shift+C` | share the fight summary (image and text, or to a Discord channel) |
 | `Ctrl+Shift+1` / `2` / `3` | Dungeon: Boss / World: Boss / Mobs mode |
 | `Ctrl+Shift+M` | next mode (cycle) |
+| `Ctrl+Shift+T` | fight summary as a line for the in-game chat |
+| `Ctrl+Shift+H` | streamer mode (hide nicknames) |
 
 Every combination can be changed in Overlay → Hotkeys.
 
