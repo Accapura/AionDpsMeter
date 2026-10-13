@@ -18,6 +18,7 @@ body.hasnick .title .full,body.hasnick .title .short{display:none}
 .trow{display:flex;align-items:center;gap:8px;min-width:0}
 .tname{flex:1;min-width:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hpp{font-weight:700;color:var(--hp)}
+.eta{font-weight:600;color:var(--muted);font-size:12px}
 .timer{display:flex;align-items:center;gap:3px;font-weight:600;color:var(--muted)}
 .timer svg.i{width:12px;height:12px;color:var(--accent)}
 .hpbar{position:relative;height:15px;border-radius:8px;background:rgba(255,255,255,.14);overflow:hidden}

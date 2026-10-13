@@ -95,6 +95,25 @@ function empty() {
   return `<div class="empty"><div>${esc(text)}</div>${bad ? '<button type="button" class="primary" data-a="conn">Подробнее</button>' : ''}</div>`;
 }
 
+// Время до убийства: по скорости падения HP за последние ~15 секунд, а пока её не видно — по DPS группы.
+let etaS = [], etaKey = '';
+function etaText(snap, src) {
+  if (!src || !(src.max > 0) || !(src.hp > 0)) { etaS = []; return ''; }
+  const key = (snap.boss?.name || '') + '|' + (snap.target?.name || ''), now = Date.now();
+  if (key !== etaKey || (etaS.length && src.hp > etaS[etaS.length - 1].hp * 1.05)) { etaS = []; etaKey = key; }
+  if (!etaS.length || now - etaS[etaS.length - 1].t >= 900) etaS.push({ t: now, hp: src.hp });
+  etaS = etaS.filter(x => now - x.t <= 15000);
+  if ((snap.combatMs || 0) < 8000) return '';
+  let rate = 0; // HP в секунду
+  const a = etaS[0], b = etaS[etaS.length - 1];
+  if (etaS.length >= 4 && b.t - a.t >= 5000 && a.hp > b.hp) rate = (a.hp - b.hp) / ((b.t - a.t) / 1000);
+  else if (snap.partyDps > 0 && snap.boss?.maxHp) rate = snap.partyDps;
+  if (!(rate > 0)) return '';
+  const sec = Math.round(src.hp / rate);
+  if (sec < 1 || sec > 3600) return '';
+  return `<span class="eta num" title="Примерное время до убийства: по скорости падения HP босса">≈${clock(sec * 1000)}</span>`;
+}
+
 function render() {
   if (!S) return;
   const body = $('body');
@@ -130,7 +149,7 @@ function render() {
   const targetHtml = `
     <div class="target" title="${esc(snap.zone || '')}">
       <div class="trow"><div class="tname">${boss?.name || tg?.name ? nt(tName) : esc(tName)}${more}</div>
-        ${hp != null ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>` : ''}
+        ${hp != null ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}` : ''}
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
       ${hp != null ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;

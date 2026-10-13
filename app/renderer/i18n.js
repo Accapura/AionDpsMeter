@@ -4,6 +4,9 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Рост вашего DPS по боссу': 'Your DPS progress by boss', 'Нужно хотя бы два боя с этим боссом, чтобы построить график.': 'At least two fights with this boss are needed for the chart.', 'Чем добивали чаще всего': 'Most common killers', 'Где умирали чаще всего': 'Where you died most often',
+    'К прошлому бою': 'Versus last fight', 'Поиск по боссу или зоне': 'Search by boss or zone', 'Все итоги': 'All results', 'За всё время': 'All time', '7 дней': '7 days', '30 дней': '30 days', 'Ничего не найдено — измените поиск или фильтры.': 'Nothing found — change the search or filters.', 'Экспорт истории (CSV)': 'Export history (CSV)', 'Нажмите ещё раз': 'Click again', 'Не удалось сохранить файл': 'Could not save the file', 'Сохранено: ': 'Saved: ',
+    'Фазы босса': 'Boss phases', ' — уведомление и звук на 75 / 50 / 25 % HP босса': ' — a notification and sound at 75 / 50 / 25 % boss HP', 'Примерное время до убийства: по скорости падения HP босса': 'Estimated time to kill, from how fast the boss HP drops',
     'Скопировать ник': 'Copy nickname', 'Скопировано ✓': 'Copied ✓', 'Ник пока неизвестен': 'Nickname not known yet',
     'Нажмите — разбивка по навыкам, правая кнопка — меню': 'Click — skill breakdown, right click — menu',
     'Запускать вместе с Windows': 'Start with Windows', ' — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра': ' — the app starts minimized to the tray, the overlay appears when the game opens',

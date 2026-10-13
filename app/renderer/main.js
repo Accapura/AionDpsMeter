@@ -141,6 +141,7 @@ const pages = {
       <div class="sl vol"><label for="nVol">Громкость</label><b id="nVolV">${S.notify.volume ?? 50}%</b><input type="range" id="nVol" min="0" max="100" step="5" value="${S.notify.volume ?? 50}"></div>
       <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
       <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — уведомление, кто и чем добил персонажа, с кнопкой «Разбор»</span></label>
+      <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nPhase" ${S.phaseToast !== false ? 'checked' : ''}> <span><b>Фазы босса</b> — уведомление и звук на 75 / 50 / 25 % HP босса</span></label>
       <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nLag" ${S.lagAlert !== false ? 'checked' : ''}> <span><b>Скачок пинга</b> — пинг на панели вспыхивает красным и приходит уведомление, когда связь с сервером резко ухудшилась</span></label></div>
     <div class="card field center"><span class="lbl">Итог боя в Discord-канал</span>
       <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkLabel(hkText('share')))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
@@ -223,6 +224,54 @@ function updateCard() {
 // ---------------------------------------------------------------- статистика
 const F = { list: null, open: null };
 let statTab = 'history';
+const FQ = { q: '', res: '', when: '' }, FX = { msg: '' };
+function histFiltered() {
+  const q = FQ.q.trim().toLowerCase(), since = !FQ.when ? 0 : FQ.when === '1' ? new Date().setHours(0, 0, 0, 0) : Date.now() - +FQ.when * 86400000;
+  return (F.list || []).filter(f => (!q || (f.boss || f.title || '').toLowerCase().includes(q) || (f.zone || '').toLowerCase().includes(q) || (RES[f.result] || '').toLowerCase().includes(q))
+    && (!FQ.res || f.result === FQ.res) && (!FQ.when || f.at >= since));
+}
+function histList() {
+  const rows = histFiltered();
+  if (!rows.length) return '<div class="card emptyBox">Ничего не найдено — измените поиск или фильтры.</div>';
+  return `<div class="card scroll"><table class="ft"><tr><th>Когда</th><th>Бой</th><th>Итог</th><th class="r">Время</th><th class="r">DPS группы</th><th class="r">Ваш DPS</th><th class="r">Ваше место</th></tr>
+      ${rows.map(f => { const me = meOf(f); const place = me ? f.players.indexOf(me) + 1 : null;
+        return `<tr class="click" data-f="${esc(f.id)}"><td>${dt(f.at)}</td><td>${nt(f.boss || f.title)}</td><td><span class="res ${f.result}">${RES[f.result] || f.result}</span></td><td class="r num">${clock(f.combatMs)}</td><td class="r num">${fmt(f.partyDps)}</td><td class="r num">${me ? fmt(me.dps) : '—'}</td><td class="r num">${place ? place + ' из ' + f.players.length : '—'}</td></tr>`; }).join('')}</table></div>${FQ.q || FQ.res || FQ.when ? `<div class="muted">Показано ${rows.length} из ${F.list.length}</div>` : ''}`;
+}
+// рост вашего DPS по выбранному боссу: точка на каждый бой, лучший отмечен
+const BG = { boss: '' };
+function bossGrowth(by) {
+  const names = Object.keys(by).filter(b => by[b].filter(f => meOf(f)).length >= 1).sort((a, b) => by[b].length - by[a].length);
+  if (!names.length) return '';
+  if (!names.includes(BG.boss)) BG.boss = names[0];
+  const pts = by[BG.boss].filter(f => meOf(f) && !f.partial).sort((a, b) => a.at - b.at).map(f => ({ f, v: meOf(f).dps }));
+  const sel = `<select id="bgBoss" class="bgsel">${names.map(n => `<option value="${esc(n)}"${n === BG.boss ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+  if (pts.length < 2) return `<div class="card field"><span class="lbl">Рост вашего DPS по боссу</span>${sel}<div class="muted">Нужно хотя бы два боя с этим боссом, чтобы построить график.</div></div>`;
+  const W = 760, H = 200, PL = 52, PR = 16, PT = 16, PB = 26, max = niceMax(Math.max(...pts.map(p => p.v)));
+  const X = i => PL + i / (pts.length - 1) * (W - PL - PR), Y = v => PT + (1 - v / max) * (H - PT - PB);
+  const bi = pts.reduce((b, p, i) => (p.v > pts[b].v ? i : b), 0);
+  const avg = pts.reduce((a, p) => a + p.v, 0) / pts.length;
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join('');
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = max * k / 4, y = Y(v); g += `<line x1="${PL}" x2="${W - PR}" y1="${y}" y2="${y}" class="gl"/><text x="${PL - 8}" y="${y + 4}" class="ax" text-anchor="end">${fmt(v)}</text>`; }
+  g += `<line x1="${PL}" x2="${W - PR}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="rgba(170,150,255,.7)" stroke-dasharray="5 4"/>`;
+  g += `<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  g += pts.map((p, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${i === bi ? 6 : 3.4}" fill="${i === bi ? '#ffc66b' : 'var(--accent)'}"><title>${dt(p.f.at)} · ${fmt(p.v)} DPS${i === bi ? ' · лучший' : ''}</title></circle>`).join('');
+  g += `<text x="${X(bi)}" y="${Y(pts[bi].v) - 10}" class="ax" text-anchor="middle" fill="#ffc66b">${fmt(pts[bi].v)}</text>`;
+  g += `<text x="${PL}" y="${H - 8}" class="ax">${dt(pts[0].f.at)}</text><text x="${W - PR}" y="${H - 8}" class="ax" text-anchor="end">${dt(pts[pts.length - 1].f.at)}</text>`;
+  const first = pts[0].v, last = pts[pts.length - 1].v, tr = first > 0 ? Math.round((last / first - 1) * 100) : 0;
+  return `<div class="card field"><span class="lbl">Рост вашего DPS по боссу</span>${sel}<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;aspect-ratio:${W}/${H}">${g}</svg>
+    <div class="muted" style="font-size:12px">Боёв: ${pts.length} · лучший ${fmt(pts[bi].v)} · средний ${fmt(avg)} (пунктир) · последний к первому: <b class="${tr >= 0 ? 'good' : 'bad'}">${tr >= 0 ? '+' : ''}${tr}%</b></div></div>`;
+}
+// сравнение с предыдущим боем против того же босса
+function prevLine(f) {
+  const me = meOf(f);
+  if (!me || !f.boss || f.partial) return '';
+  const prev = (F.list || []).filter(x => x.id !== f.id && x.boss === f.boss && !x.partial && x.at < f.at && meOf(x)).sort((a, b) => b.at - a.at)[0];
+  if (!prev) return '';
+  const pm = meOf(prev), d = pm.dps > 0 ? Math.round((me.dps / pm.dps - 1) * 100) : null;
+  if (d == null) return '';
+  return `<div class="muted">К прошлому бою с этим боссом (${dt(prev.at)}): <b class="${d >= 0 ? 'good' : 'bad'}">${d >= 0 ? '+' : ''}${d}%</b> · было ${fmt(pm.dps)} DPS</div>`;
+}
 const RES = { Kill: 'Победа', Wipe: 'Поражение', Idle: 'Прервано', Manual: 'Сброшено', ZoneChange: 'Выход' };
 const dt = ms => new Date(ms).toLocaleString(LOC(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const meOf = f => (f.players || []).find(p => p.self);
@@ -237,10 +286,10 @@ function statsBody() {
         const me = (f.details || [])[0];
         const hasHeal = f.players.some(p => p.hps > 0);
         const canCmp = f.boss && meOf(f) && list.filter(x => x.boss === f.boss && meOf(x)).length > 1;
-        return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
+        return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<button type="button" id="fCsv" data-id="${esc(f.id)}">CSV</button><button type="button" id="fJson" data-id="${esc(f.id)}">JSON</button><button type="button" id="fDel" data-id="${esc(f.id)}">Удалить</button><span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
           <div style="font-size:20px;font-weight:700">${nt(f.boss || f.title)}</div>
           <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${pingStat(f.ping)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
-          ${classLine(f)}
+          ${prevLine(f)}${classLine(f)}${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}
           <div class="scroll"><table class="ft"><tr><th>#</th><th>Игрок</th><th>Класс</th><th class="r">DPS</th><th class="r">Урон</th><th class="r">%</th><th class="r">Крит</th><th class="r">Макс. удар</th>${hasHeal ? '<th class="r">HPS</th>' : ''}</tr>
           ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nt(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
           ${fightChart(f)}
@@ -248,10 +297,11 @@ function statsBody() {
           ${me.skills.map(k => `<tr><td data-notr>${esc(k.name)}</td><td class="r num">${fmt(k.dmg)}</td><td class="r num">${(k.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${k.hits}</td><td class="r num">${k.crit != null ? Math.round(k.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(k.max)}</td></tr>`).join('')}</table></div></div>` : ''}`;
       }
     }
-    return `<div class="card scroll"><table class="ft"><tr><th>Когда</th><th>Бой</th><th>Итог</th><th class="r">Время</th><th class="r">DPS группы</th><th class="r">Ваш DPS</th><th class="r">Ваше место</th></tr>
-      ${list.map(f => { const me = meOf(f); const place = me ? f.players.indexOf(me) + 1 : null;
-        return `<tr class="click" data-f="${esc(f.id)}"><td>${dt(f.at)}</td><td>${nt(f.boss || f.title)}</td><td><span class="res ${f.result}">${RES[f.result] || f.result}</span></td><td class="r num">${clock(f.combatMs)}</td><td class="r num">${fmt(f.partyDps)}</td><td class="r num">${me ? fmt(me.dps) : '—'}</td><td class="r num">${place ? place + ' из ' + f.players.length : '—'}</td></tr>`; }).join('')}</table></div>
-      <div class="row"><button type="button" id="fClear">Очистить историю</button></div>`;
+    return `<div class="card field"><div class="fbar"><input type="search" id="fQ" value="${esc(FQ.q)}" placeholder="Поиск по боссу или зоне" autocomplete="off" spellcheck="false">
+      <select id="fRes"><option value="">Все итоги</option>${Object.entries(RES).map(([k, v]) => `<option value="${k}"${FQ.res === k ? ' selected' : ''}>${v}</option>`).join('')}</select>
+      <select id="fWhen">${[['', 'За всё время'], ['1', 'Сегодня'], ['7', '7 дней'], ['30', '30 дней']].map(([k, v]) => `<option value="${k}"${FQ.when === k ? ' selected' : ''}>${v}</option>`).join('')}</select></div></div>
+      <div id="fList">${histList()}</div>
+      <div class="row"><button type="button" id="fAll">Экспорт истории (CSV)</button><button type="button" id="fClear">Очистить историю</button></div>${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}`;
   }
   if (statTab === 'compare') return compareBody();
   if (statTab === 'bosses') {
@@ -266,7 +316,7 @@ function statsBody() {
       return { boss, n: fs.length, kills: kills.length, best, avg: mine.length ? mine.reduce((a, x) => a + x.me.dps, 0) / mine.length : 0, fastest, topAny };
     }).sort((a, b) => b.n - a.n);
     if (!rows.length) return '<div class="card emptyBox">Боёв с боссами пока не было.</div>';
-    return `<div class="card scroll"><table class="ft"><tr><th>Босс</th><th class="r">Боёв</th><th class="r">Побед</th><th class="r">Ваш лучший DPS</th><th class="r">Ваш средний</th><th class="r">Быстрейшая победа</th><th>Лучший DPS в группе</th></tr>
+    return bossGrowth(by) + `<div class="card scroll"><table class="ft"><tr><th>Босс</th><th class="r">Боёв</th><th class="r">Побед</th><th class="r">Ваш лучший DPS</th><th class="r">Ваш средний</th><th class="r">Быстрейшая победа</th><th>Лучший DPS в группе</th></tr>
       ${rows.map(r => `<tr><td><b>${nt(r.boss)}</b></td><td class="r num">${r.n}</td><td class="r num">${r.kills}</td><td class="r num">${r.best ? '<b>' + fmt(r.best.me.dps) + '</b><div class="muted" style="font-size:11px">' + dt(r.best.f.at) + '</div>' : '—'}</td><td class="r num">${r.avg ? fmt(r.avg) : '—'}</td><td class="r num">${r.fastest ? clock(r.fastest.combatMs) : '—'}</td><td>${r.topAny ? '<b class="num">' + fmt(r.topAny.dps) + '</b><div class="muted" style="font-size:11px">' + nt(r.topAny.name) + ', <span>' + esc(CLASS_RU[r.topAny.cls] || '') + '</span></div>' : '—'}</td></tr>`).join('')}</table></div>`;
   }
   // classes
@@ -452,7 +502,7 @@ function deathsBody() {
   if (!D.list.length) return `<div class="card emptyBox">${eventIcon({ icon: 'skull' }, 34)}<div>Смертей пока не было — так держать!</div><div style="font-size:12px">Когда персонаж погибнет, здесь появится, кто и чем ударил за последние 12 секунд.</div></div>`;
   const d = D.list.find(x => x.id === D.open);
   if (!d) {
-    return `<div class="card scroll"><table class="ft"><tr><th>Когда</th><th>Где</th><th>Добивающий удар</th><th class="r">Урон за 12 с</th></tr>
+    return deathStats() + `<div class="card scroll"><table class="ft"><tr><th>Когда</th><th>Где</th><th>Добивающий удар</th><th class="r">Урон за 12 с</th></tr>
       ${D.list.map(x => { const k = killerOf(x), taken = x.hits.filter(h => !h.heal).reduce((a, h) => a + h.amt, 0);
         return `<tr class="click" data-death="${esc(x.id)}"><td>${dt(x.at)}</td><td>${nt(x.boss || x.zone || '—')}</td><td>${k ? `${nt(k.src)} · <span data-notr>${esc(k.skill)}</span>` : '—'}</td><td class="r num">${fmt(taken)}</td></tr>`; }).join('')}</table></div>
       <div class="row"><button type="button" id="dClear">Очистить</button></div>`;
@@ -484,6 +534,16 @@ function deathsBody() {
       ${srcTop.length ? `<div class="note">Больше всего урона: ${srcTop.map(([n, v]) => `<b data-notr>${esc(n)}</b> — ${fmt(v)} (${Math.round(v / taken * 100)}%)`).join(', ')}</div>` : ''}</div>
     <div class="card field"><span class="lbl">Удары по порядку</span><div class="scroll"><table class="ft"><tr><th class="r">До смерти</th><th>Кто</th><th>Навык</th><th class="r">Урон / лечение</th></tr>
       ${hits.map(h => `<tr><td class="r num muted">−${(h.ms / 1000).toFixed(1).replace('.', DEC())} с</td><td>${nt(h.src)}</td><td data-notr>${esc(h.skill)}</td><td class="r num ${h.heal ? 'good' : 'bad'}">${h.heal ? '+' : '−'}${fmt(h.amt)}${h.crit ? ' <span class="crit">крит</span>' : ''}</td></tr>`).join('')}</table></div></div>`;
+}
+// от кого и где вы умираете чаще всего
+function deathStats() {
+  if (D.list.length < 2) return '';
+  const cnt = (keyOf) => { const m = {}; for (const x of D.list) { const k = keyOf(x); if (k) m[k] = (m[k] || 0) + 1; } return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 5); };
+  const bySkill = cnt(x => { const k = killerOf(x); return k ? k.skill + ' · ' + k.src : ''; });
+  const byPlace = cnt(x => x.boss || x.zone);
+  const list = (rows) => { const top = rows[0] ? rows[0][1] : 1; return rows.map(([n, c]) => `<div class="drow"><span class="dn" data-notr>${esc(n)}</span><span class="dbar"><i style="width:${(c / top * 100).toFixed(0)}%"></i></span><b class="num">${c}</b></div>`).join(''); };
+  return `<div class="card field"><span class="lbl">Статистика смертей · записано ${D.list.length}</span>
+    <div class="dstat"><div><div class="muted">Чем добивали чаще всего</div>${list(bySkill)}</div><div><div class="muted">Где умирали чаще всего</div>${list(byPlace)}</div></div></div>`;
 }
 const killerOf = d => (d.hits || []).filter(h => !h.heal).sort((a, b) => a.ms - b.ms)[0];
 
@@ -607,6 +667,7 @@ function render() {
   on('nSound', 'onchange', e => api.set({ notify: { sound: e.target.checked } }));
   on('nDeath', 'onchange', e => api.set({ deathToast: e.target.checked }));
   on('nLag', 'onchange', e => api.set({ lagAlert: e.target.checked }));
+  on('nPhase', 'onchange', e => api.set({ phaseToast: e.target.checked }));
   on('report', 'onclick', async () => { const b = $('report'); b.disabled = true; b.textContent = T('Собираю…'); await api.report(); b.disabled = false; b.textContent = T('Отчёт об ошибке'); });
   const whValid = v => /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(v.trim());
   on('whUrl', 'onchange', e => { const v = e.target.value.trim(); if (!v || whValid(v)) api.set({ webhook: { url: v, on: v ? (S.webhook?.on || true) : false } }); else { WHN = { text: T('Это не ссылка вебхука Discord'), cls: 'bad' }; render(); } });
@@ -630,7 +691,18 @@ function render() {
     if (!F.list) api.fights().then(l => { F.list = l || []; if (page === 'stats') render(); });
     m.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { statTab = b.dataset.st; F.open = null; render(); });
     m.querySelectorAll('[data-f]').forEach(r => r.onclick = () => { F.open = r.dataset.f; render(); });
-    on('fBack', 'onclick', () => { F.open = null; render(); });
+    on('fBack', 'onclick', () => { F.open = null; FX.msg = ''; render(); });
+    const bindList = () => $('fList')?.querySelectorAll('[data-f]').forEach(r => r.onclick = () => { F.open = r.dataset.f; render(); });
+    const relist = () => { $('fList').innerHTML = histList(); bindList(); };
+    on('fQ', 'oninput', e => { FQ.q = e.target.value; relist(); });
+    on('fRes', 'onchange', e => { FQ.res = e.target.value; relist(); });
+    on('fWhen', 'onchange', e => { FQ.when = e.target.value; relist(); });
+    const exp = async (id, kind) => { const r = await api.fightExport(id, kind); FX.msg = r.ok ? 'Сохранено: ' + r.path : r.canceled ? '' : 'Не удалось сохранить файл' + (r.error ? ': ' + r.error : ''); render(); };
+    on('bgBoss', 'onchange', e => { BG.boss = e.target.value; render(); });
+    on('fCsv', 'onclick', e => exp(e.currentTarget.dataset.id, 'csv'));
+    on('fJson', 'onclick', e => exp(e.currentTarget.dataset.id, 'json'));
+    on('fAll', 'onclick', () => exp(null, 'all'));
+    on('fDel', 'onclick', e => { const b = e.currentTarget; if (b.dataset.armed) { api.fightDelete(b.dataset.id); F.open = null; FX.msg = ''; } else { b.dataset.armed = '1'; b.textContent = 'Нажмите ещё раз'; } });
     on('fClear', 'onclick', () => { if (F.clearArmed) { api.fightsClear(); F.clearArmed = false; } else { F.clearArmed = true; $('fClear').textContent = 'Нажмите ещё раз, чтобы удалить'; } });
     if (statTab === 'deaths' && !D.list) api.deaths().then(l => { D.list = l || []; if (page === 'stats') render(); });
     m.querySelectorAll('[data-death]').forEach(r => r.onclick = () => { D.open = r.dataset.death; render(); });

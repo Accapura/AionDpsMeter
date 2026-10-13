@@ -2,7 +2,7 @@
 // Главный процесс: окна, настройки, мост чтения трафика (Npcap), расписание и уведомления.
 'use strict';
 
-const { app, BrowserWindow, ipcMain, screen, globalShortcut, Tray, Menu, nativeImage, shell, net, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, globalShortcut, Tray, Menu, nativeImage, shell, net, clipboard, dialog } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const fs = require('fs');
@@ -63,7 +63,8 @@ const DEFAULTS = {
   whatsNewSeen: '',             // версия, для которой уже показали «Что нового»
   whatsNewFrom: '',             // с какой версии обновлялись (для списка изменений)
   deathToast: true,             // уведомление с разбором смерти
-  lagAlert: true,               // предупреждение о скачке пинга
+  lagAlert: true,
+  phaseToast: true,             // уведомление на 75 / 50 / 25 % HP босса               // предупреждение о скачке пинга
   webhook: { url: '', on: false }, // отправка итога боя в Discord-канал
   winBounds: {},                // место и размер окон (главное, расписание, разбивка), как их оставил пользователь
 };
@@ -296,6 +297,25 @@ function toggleOverlay() {
 // ---------------------------------------------------------------- мост чтения трафика
 const BRIDGE_DIR = () => global.__aionBoot?.bridge || (app.isPackaged ? path.join(process.resourcesPath, 'bridge') : path.join(ROOT, '..', 'bridge-out'));
 let lastSnap = null;
+// Фазы босса: одно уведомление на каждый порог 75 / 50 / 25 % за бой. Пороги, уже пройденные до того, как мы увидели босса, молчат.
+const phase = { boss: '', done: new Set(), min: 1 };
+function checkPhases(s) {
+  const b = s && s.boss;
+  if (!b || !(b.maxHp > 0) || !(b.hp >= 0)) { if (!s) { phase.boss = ''; phase.done = new Set(); } return; }
+  const frac = Math.max(0, Math.min(1, b.hp / b.maxHp));
+  if (b.name !== phase.boss || frac > phase.min + 0.15) { // новый босс или он восстановил HP — новая попытка
+    phase.boss = b.name; phase.done = new Set([75, 50, 25].filter(t => frac * 100 <= t)); phase.min = frac;
+    return;
+  }
+  phase.min = Math.min(phase.min, frac);
+  if (settings.phaseToast === false) return;
+  for (const t of [75, 50, 25]) {
+    if (frac * 100 <= t && !phase.done.has(t)) {
+      phase.done.add(t);
+      showToast({ key: 'phase' + t, type: 'info', icon: 'info', start: null, name: `${b.name || T('Босс')}: ${t}% HP`, text: `${T('Бой')} ${mmss(s.combatMs)}` });
+    }
+  }
+}
 let lastPing = -1; // пинг до игрового сервера, мс (-1 — неизвестен)
 let lastPingDbg = null; // сколько навыков увидено и сопоставлено (для подсказки)
 let lastPingEst = false; // true — это оценка (до адреса сервера), а не замер по навыкам персонажа
@@ -336,6 +356,7 @@ const bridge = {
         const ov = wins.overlay;
         if (ov && !ov.isDestroyed() && ov.isVisible()) ov.webContents.send('snap', lastSnap);
         rpc.update();
+        checkPhases(lastSnap);
         const me = lastSnap?.players?.find(x => x.self);
         if (me && me.name && !me.name.startsWith('#') && me.name !== settings.character) patchSettings({ character: me.name });
         if (me && me.cls && me.cls !== 'Unknown' && me.cls !== settings.characterClass) patchSettings({ characterClass: me.cls });
@@ -644,6 +665,46 @@ ipcMain.handle('report', () => saveReport());
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
 ipcMain.on('fights-clear', () => { fights = []; try { fs.writeFileSync(FIGHTS_FILE(), '[]'); } catch { /* ignore */ } broadcast('fights', fights); broadcast('records', {}); });
 ipcMain.on('share', (_e, fightId) => shareFight(fightId));
+ipcMain.on('fight-delete', (_e, id) => {
+  loadFights();
+  const n = fights.length;
+  fights = fights.filter(x => x.id !== id);
+  if (fights.length === n) return;
+  try { fs.writeFileSync(FIGHTS_FILE(), JSON.stringify(fights)); } catch { /* не критично */ }
+  broadcast('fights', fights);
+  broadcast('records', records());
+});
+// Экспорт: 'csv' / 'json' — один бой, 'all' — сводка по всей истории (CSV для Excel: «;» и BOM).
+const csvCell = v => { const t = String(v == null ? '' : v); return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+const csvRow = a => a.map(csvCell).join(';');
+const fnameSafe = t => String(t || 'fight').replace(/[\\/:*?"<>|]+/g, '_').slice(0, 60);
+ipcMain.handle('fight-export', async (_e, id, kind) => {
+  loadFights();
+  const dtf = ms => new Date(ms).toISOString().replace('T', ' ').slice(0, 19);
+  let text, name;
+  if (kind === 'all') {
+    const rows = [csvRow(['Дата', 'Босс / бой', 'Зона', 'Итог', 'Время боя, с', 'DPS группы', 'Ваш DPS', 'Ваше место', 'Игроков'])];
+    for (const f of fights) {
+      const me = (f.players || []).find(p => p.self);
+      rows.push(csvRow([dtf(f.at), f.boss || f.title || '', f.zone || '', f.result || '', Math.round((f.combatMs || 0) / 1000), Math.round(f.partyDps || 0), me ? Math.round(me.dps) : '', me ? f.players.indexOf(me) + 1 : '', (f.players || []).length]));
+    }
+    text = '\ufeff' + rows.join('\r\n') + '\r\n'; name = 'aion-dps-history.csv';
+  } else {
+    const f = fights.find(x => x.id === id);
+    if (!f) return { ok: false };
+    if (kind === 'json') { text = JSON.stringify(f, null, 2); name = fnameSafe((f.boss || f.title) + ' ' + dtf(f.at).slice(0, 10)) + '.json'; }
+    else {
+      const rows = [csvRow(['Бой', f.boss || f.title || '', 'Дата', dtf(f.at), 'Время боя, с', Math.round((f.combatMs || 0) / 1000), 'DPS группы', Math.round(f.partyDps || 0)]), '',
+        csvRow(['#', 'Игрок', 'Класс', 'DPS', 'Урон', 'Доля, %', 'Крит, %', 'Макс. удар', 'HPS'])];
+      (f.players || []).forEach((p, i) => rows.push(csvRow([i + 1, p.name, p.cls || '', Math.round(p.dps || 0), Math.round(p.dmg || 0), ((p.share || 0) * 100).toFixed(1), p.crit != null ? Math.round(p.crit * 100) : '', p.maxHit || '', Math.round(p.hps || 0)])));
+      text = '\ufeff' + rows.join('\r\n') + '\r\n'; name = fnameSafe((f.boss || f.title) + ' ' + dtf(f.at).slice(0, 10)) + '.csv';
+    }
+  }
+  const r = await dialog.showSaveDialog(wins.main && !wins.main.isDestroyed() ? wins.main : undefined, { defaultPath: path.join(app.getPath('documents'), name), filters: [{ name: name.endsWith('.json') ? 'JSON' : 'CSV', extensions: [name.endsWith('.json') ? 'json' : 'csv'] }] });
+  if (r.canceled || !r.filePath) return { ok: false, canceled: true };
+  try { fs.writeFileSync(r.filePath, text, 'utf8'); } catch (e) { return { ok: false, error: String(e.message || e) }; }
+  return { ok: true, path: r.filePath };
+});
 ipcMain.on('copy-text', (_e, t) => { if (typeof t === 'string' && t) clipboard.writeText(t.slice(0, 64)); });
 ipcMain.handle('update-check', async () => { await updateFeed(true); return updateInfo(); });
 ipcMain.on('update-install', () => updater.download());
@@ -835,6 +896,8 @@ function cardHtml(f) {
     const prev = Math.max(0, ...loadFights().filter(x => x.id !== f.id && x.boss === f.boss && !x.partial).map(x => (x.players || []).find(p => p.self)?.dps || 0));
     if (prev > 0 && me.dps > prev) badge = `<div class="b rec">★ ${escH(T('Новый рекорд по боссу'))}: ${nf(me.dps)} DPS <i>(${escH(T('было'))} ${nf(prev)})</i></div>`;
     else if (prev > 0) badge = `<div class="b">${escH(T('Ваш рекорд по боссу'))}: ${nf(Math.max(prev, me.dps))} DPS</div>`;
+    const last = loadFights().filter(x => x.id !== f.id && x.boss === f.boss && !x.partial && (x.at || 0) < (f.at || Date.now())).sort((a, b) => b.at - a.at).map(x => (x.players || []).find(p => p.self)).find(Boolean);
+    if (last && last.dps > 0) { const d = Math.round((me.dps / last.dps - 1) * 100); badge += `<div class="b ${d >= 0 ? 'up' : 'dn'}">${escH(T('К прошлому бою'))}: ${d >= 0 ? '+' : ''}${d}%</div>`; }
     const cm = classMedian(f, me.cls);
     if (cm && cm.med > 0) { const d = Math.round((me.dps / cm.med - 1) * 100); badge += `<div class="b ${d >= 0 ? 'up' : 'dn'}">${escH(T('К медиане класса'))}: ${d >= 0 ? '+' : ''}${d}%</div>`; }
   }
