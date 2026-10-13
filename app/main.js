@@ -27,7 +27,7 @@ const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 
 // ---------------------------------------------------------------- настройки
 const DEFAULTS = {
-  theme: 'catppuccin',
+  theme: 'onedark',
   opacity: 85,
   scale: 100,
   count: 10,
@@ -46,7 +46,7 @@ const DEFAULTS = {
   discordRpc: true,             // статус в Discord
   updateSkip: '',               // версия, о которой больше не напоминать
   lang: 'ru',                   // язык интерфейса: ru | en
-  notify: { m15: true, m5: true, m1: false, sound: true, soundName: 'clear-sky', volume: 50, position: 'br', style: 'glass', hideSec: 8, sounds: {} }, // position: tl tc tr bl bc br; style: glass solid accent minimal banner
+  notify: { m15: true, m5: true, m1: false, sound: true, soundName: 'beep', volume: 50, position: 'br', style: 'timer', hideSec: 7, sounds: { ev: 'marimba', fb: 'kark', feed: 'drop', phase: 'ma-bae', lag: 'drop' } }, // position: tl tc tr bl bc br; style: glass solid accent minimal banner
   events: [],
   character: '',               // ник персонажа — приходит из игры
   characterClass: '',
@@ -63,7 +63,7 @@ const DEFAULTS = {
   seenFeedIds: [],
   whatsNewSeen: '',             // версия, для которой уже показали «Что нового»
   whatsNewFrom: '',             // с какой версии обновлялись (для списка изменений)
-  deathToast: true,             // уведомление с разбором смерти
+  deathToast: false,            // уведомление с разбором смерти
   lagAlert: true,               // предупреждение о скачке пинга
   phaseToast: true,             // уведомление на 75 / 50 / 25 % HP босса
   checklist: null,              // свой список дел (null — стандартный), см. renderer: страница «Дела»
@@ -72,7 +72,7 @@ const DEFAULTS = {
   fbToast: true,                // возрождение полевых боссов
   feedToast: true,              // «Новые ивенты в расписании»
   miscToast: true,              // короткие подтверждения («скопировано» и т. п.)
-  pbToast: true,                // уведомление о новом рекорде после боя
+  pbToast: false,               // уведомление о новом рекорде после боя
   webhook: { url: '', on: false }, // отправка итога боя в Discord-канал
   winBounds: {},                // место и размер окон (главное, расписание, разбивка), как их оставил пользователь
 };
