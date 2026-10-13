@@ -111,8 +111,7 @@ public sealed record SkillRow(
     double? PerfectRate,
     double? HeavyRate,
     double? MultiRate,
-    double? DoubleRate = null,
-    double? ParryRate = null);
+    double? DoubleRate = null);
 
 public sealed record HitQuality(
     int Hits,
@@ -125,8 +124,7 @@ public sealed record HitQuality(
     double? MultiRate,
     long MaxHit,
     string? MaxHitSkill,
-    double? DoubleRate = null,
-    double? ParryRate = null);
+    double? DoubleRate = null);
 
 public sealed record CombatantDetail(
     uint ActorId,

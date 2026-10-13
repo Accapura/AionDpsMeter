@@ -165,7 +165,6 @@ void EmitDetail(uint actor, bool withCasts = false)
             front = d.Quality.FrontRate,
             multi = d.Quality.MultiRate,
             dbl = d.Quality.DoubleRate,
-            parry = d.Quality.ParryRate,
             maxHit = d.Quality.MaxHit,
             maxHitSkill = d.Quality.MaxHitSkill,
         },
@@ -173,7 +172,7 @@ void EmitDetail(uint actor, bool withCasts = false)
         {
             name = k.Name, hits = k.Hits, dots = k.DotTicks, dmg = k.Damage, dps = Math.Round(k.Dps), share = Math.Round(k.Share, 4),
             avg = k.Average, max = k.Max, crit = k.CritRate, back = k.BackRate, front = k.FrontRate, perfect = k.PerfectRate,
-            heavy = k.HeavyRate, multi = k.MultiRate, dbl = k.DoubleRate, parry = k.ParryRate,
+            heavy = k.HeavyRate, multi = k.MultiRate, dbl = k.DoubleRate,
         }),
         perSecond = d.PerSecond,
         rot = withCasts ? RotationOf(d, d.CombatMs, 6000) : null,

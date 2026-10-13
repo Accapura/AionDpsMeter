@@ -29,7 +29,7 @@ function render() {
   const top = Math.max(...skills.map(k => k.share || 0), 0.0001);
   $('body').innerHTML = `
     <div class="mets">${met('Урон', fmt(D.dmg))}${met('DPS', fmt(D.dps))}${met('Доля урона', pct(D.share))}${met('Время боя', clock(D.combatMs))}
-      ${met('Удары', q.hits ?? '—')}${met('Крит', pct(q.crit))}${met('В спину', pct(q.back))}${met('Идеальные', pct(q.perfect))}${q.heavy != null ? met('Тяжёлые', pct(q.heavy)) : ''}${q.multi != null ? met('Мульти-удар', pct(q.multi)) : ''}${q.dbl != null ? met('Двойной урон', pct(q.dbl)) : ''}${q.parry != null ? met('Парирование', pct(q.parry)) : ''}
+      ${met('Удары', q.hits ?? '—')}${met('Крит', pct(q.crit))}${met('В спину', pct(q.back))}${met('Идеальные', pct(q.perfect))}${q.heavy != null ? met('Тяжёлые', pct(q.heavy)) : ''}${q.multi != null ? met('Мульти-удар', pct(q.multi)) : ''}${q.dbl != null ? met('Двойной урон', pct(q.dbl)) : ''}
       ${met('Макс. удар', fmt(q.maxHit))}${met('Получено урона', fmt(D.taken))}${D.heal ? met('Лечение', fmt(D.heal)) + met('HPS', fmt(D.heal / Math.max(1, D.combatMs / 1000))) : ''}</div>
     ${q.maxHitSkill ? `<div class="muted" style="font-size:12px">Самый сильный удар: ${nt(q.maxHitSkill)}</div>` : ''}
     ${D.perSecond && D.perSecond.length > 1 ? `<div class="spark">${spark(D.perSecond)}</div>` : ''}

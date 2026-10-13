@@ -22,7 +22,6 @@ public sealed class HitStats
     public int Heavy;
     public int Multi;
     public int Double;
-    public int Parry;
     public int DotTicks;
     public long Damage;
     public long DotDamage;
@@ -49,7 +48,6 @@ public sealed class HitStats
         if ((flags & HitFlags.Heavy) != 0) Heavy++;
         if ((flags & HitFlags.Multi) != 0) Multi++;
         if ((flags & HitFlags.Double) != 0) Double++;
-        if ((flags & HitFlags.Parry) != 0) Parry++;
     }
 }
 

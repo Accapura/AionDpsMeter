@@ -11,12 +11,8 @@ public enum HitFlags : ushort
     Perfect = 1 << 3,
     Heavy = 1 << 4,      // "Smite" in AionFlex terms
     Multi = 1 << 5,
-    Block = 1 << 6,
     Parry = 1 << 7,
-    Endure = 1 << 8,     // Iron Wall
-    Evade = 1 << 9,
     Dot = 1 << 10,
-    Restore = 1 << 11,
     Double = 1 << 12,
 }
 
