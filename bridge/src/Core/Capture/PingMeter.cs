@@ -10,13 +10,14 @@ public sealed class PingMeter
     private readonly object _gate = new();
     private readonly Dictionary<FlowKey, List<(uint End, long Us, bool Retx)>> _pending = new();
     private readonly List<(long Us, int Ms)> _samples = new();
-    // Пинг «игры»: наш запрос навыка → объявление сервером, что мы этот навык применили (для своих навыков).
-    // Работает и через ускорители/VPN: время замеряется между пакетами самой игры.
-    private readonly List<(long Us, byte[] Data)> _client = new();
-    private readonly List<(long Ms, int Rtt)> _app = new();
-    private int _castsSeen, _castsMatched, _clientSeen;
-    /// <summary>Для подсказки в оверлее: навыков увидено / сопоставлено с нашими запросами / пакетов клиента.</summary>
-    public (int Seen, int Matched, int Client) Debug { get { lock (_gate) return (_castsSeen, _castsMatched, _clientSeen); } }
+    // Пинг самой игры: клиент раз в ~10 с шлёт серверу запрос со своим временем, сервер возвращает его в ответе (опкод 03 36).
+    // Время отправки — счётчик Windows (QPC) в мс + 16 777 216 000 (смещение Unreal). Разница «сейчас − отправлено» — полный
+    // путь туда и обратно, в том числе через ускоритель/VPN. В игру мы ничего не отправляем — только читаем ответ.
+    private const long UnrealOffsetMs = 16_777_216_000L;
+    private const long DotnetToUnixMs = 62_135_596_800_000L;
+    private readonly List<int> _echoes = new(); // последние замеры; показываем медиану, чтобы одиночный всплеск не дёргал число
+    private long _echoAtMs;
+    private int _echoCount, _echoLast;
 
     /// <summary>Пинг в мс; -1, пока нет замеров (или они устарели).</summary>
     public int PingMs
@@ -34,38 +35,39 @@ public sealed class PingMeter
     }
     public long LastSampleUs { get { lock (_gate) return _samples.Count == 0 ? 0 : _samples[^1].Us; } }
 
-    /// <summary>Сервер объявил, что наш персонаж применил навык: ищем наш запрос с этим навыком за последние 2 с.</summary>
-    public void MatchCast(long castMs, int skill)
+    /// <summary>Пинг по ответам игры (мс); -1, если замеров нет или они старше 45 с.</summary>
+    public int EchoPingMs(long nowMs)
     {
-        Span<byte> key = stackalloc byte[4];
-        BitConverter.TryWriteBytes(key, skill);
-        lock (_gate)
-        {
-            _castsSeen++;
-            for (var i = _client.Count - 1; i >= 0; i--)
-            {
-                var (us, data) = _client[i];
-                var ms = us / 1000;
-                if (ms > castMs) continue;
-                if (castMs - ms > 2000) break;
-                if (data.AsSpan().IndexOf(key) < 0) continue;
-                var rtt = (int)(castMs - ms);
-                _client.RemoveAt(i);
-                if (rtt < 3 || rtt > 1500) return;
-                _castsMatched++;
-                _app.Add((castMs, rtt));
-                if (_app.Count > 20) _app.RemoveAt(0);
-                return;
-            }
-        }
+        lock (_gate) { if (_echoes.Count == 0 || nowMs - _echoAtMs >= 45_000) return -1; var a = _echoes.OrderBy(x => x).ToArray(); return a[a.Length / 2]; }
     }
-    /// <summary>Пинг по навыкам: нижняя четверть последних замеров (без ожидания такта сервера); замеры живут 15 минут; -1, если замеров мало.</summary>
-    public int AppPingMs(long nowMs)
+    /// <summary>Для подсказки в оверлее: сколько ответов игры получено и последний замер, мс.</summary>
+    public (int Count, int Last) EchoInfo { get { lock (_gate) return (_echoCount, _echoLast); } }
+
+    private static long CounterMs()
     {
-        lock (_gate)
+        var ts = System.Diagnostics.Stopwatch.GetTimestamp(); var f = System.Diagnostics.Stopwatch.Frequency;
+        return ts / f * 1000 + ts % f * 1000 / f;
+    }
+
+    /// <summary>Ищет в данных от сервера ответ на пинг: 03 36 00 00 + i64 «время отправки клиента».</summary>
+    private void ScanEcho(byte[] d, long arrivalUnixMs)
+    {
+        for (var i = 0; i + 12 <= d.Length; i++)
         {
-            var r = _app.Where(x => nowMs - x.Ms < 900_000).Select(x => x.Rtt).OrderBy(x => x).ToArray();
-            return r.Length < 3 ? -1 : r[r.Length / 4];
+            if (d[i] != 0x03 || d[i + 1] != 0x36 || d[i + 2] != 0 || d[i + 3] != 0) continue;
+            var v = BitConverter.ToInt64(d, i + 4);
+            var wallNow = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var counterNow = CounterMs();
+            long rtt = -1;
+            var sent = v - UnrealOffsetMs; // новый клиент: счётчик Windows в мс
+            if (sent >= 0 && sent <= counterNow) rtt = counterNow - (wallNow - arrivalUnixMs) - sent;
+            if (rtt < 1 || rtt > 2000) rtt = arrivalUnixMs - (v - DotnetToUnixMs); // старый клиент: часы в формате .NET
+            if (rtt < 1 || rtt > 2000) continue;
+            lock (_gate)
+            {
+                _echoes.Add((int)rtt); if (_echoes.Count > 5) _echoes.RemoveAt(0);
+                _echoAtMs = wallNow; _echoLast = (int)rtt; _echoCount++;
+            }
         }
     }
 
@@ -74,6 +76,7 @@ public sealed class PingMeter
     /// <param name="serverFlow">Поток сервер→клиент, признанный игровым.</param>
     public void Observe(in SegmentReader.Segment s, Func<FlowKey, bool> isGameFlow)
     {
+        if (s.Payload.Length >= 12 && isGameFlow(s.Key)) ScanEcho(s.Payload, s.TimeMs);
         var rev = new FlowKey(s.Key.Dst, s.Key.DstPort, s.Key.Src, s.Key.SrcPort);
         lock (_gate)
         {
@@ -86,12 +89,6 @@ public sealed class PingMeter
                 if (i >= 0) list[i] = (end, list[i].Us, true); // повтор — замер по нему неточен
                 else list.Add((end, s.Us, false));
                 if (list.Count > 128) list.RemoveRange(0, list.Count - 128);
-                _client.Add((s.Us, s.Payload)); _clientSeen++;
-                var cut = s.Us - 3_000_000;
-                var drop = 0;
-                while (drop < _client.Count && _client[drop].Us < cut) drop++;
-                if (drop > 0) _client.RemoveRange(0, drop);
-                if (_client.Count > 400) _client.RemoveRange(0, _client.Count - 400);
             }
             if (s.HasAck && isGameFlow(s.Key) && _pending.TryGetValue(s.Key, out var pend) && pend.Count > 0)
             {

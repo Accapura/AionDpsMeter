@@ -342,7 +342,7 @@ const bridge = {
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') addFight(m);
       else if (m.t === 'death') addDeath(m);
-      else if (m.t === 'ping') { lastPing = m.ms; lastPingEst = !!m.est; lastPingDbg = { seen: m.seen | 0, hit: m.hit | 0, tx: m.tx | 0 }; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', lastPing, lastPingEst, lastPingDbg); }
+      else if (m.t === 'ping') { lastPing = m.ms; lastPingEst = !!m.est; lastPingDbg = { n: m.n | 0 }; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', lastPing, lastPingEst, lastPingDbg); }
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
       else if (m.t === 'boss') { bossLog.unshift({ ...m, at: Date.now() }); bossLog.length = Math.min(bossLog.length, 40); broadcast('boss-log', bossLog); }
     });
