@@ -4,6 +4,9 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Запускать вместе с Windows': 'Start with Windows', ' — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра': ' — the app starts minimized to the tray, the overlay appears when the game opens',
+    'Закрываться вместе с игрой': 'Close together with the game', ' — через 20 секунд после выхода из игры': ' — 20 seconds after you leave the game',
+    'Новый рекорд по боссу': 'New boss record', 'было': 'was', 'Ваш рекорд по боссу': 'Your boss record', 'К медиане класса': 'Versus class median', 'бой': 'fight',
     'Скачок пинга': 'Ping spike', 'Пинг на панели вспыхивает красным и приходит уведомление, когда связь с сервером резко ухудшилась': 'The ping on the panel flashes red and a notification appears when the connection to the server suddenly gets worse',
     'Простой (без вашего урона)': 'Idle time (no damage from you)', 'Самая долгая пауза': 'Longest pause', 'Пауз от 3 секунд': 'Pauses of 3 s or more', 'пауз от 3 с нет': 'no pauses of 3 s or more', 'Пинг в момент смерти': 'Ping at the moment of death',
     'Настоящий живой пинг': 'The real live ping', 'Пинг берётся из ответа самой игры на её служебный пинг-запрос: это полный путь до сервера, в том числе через ускоритель или VPN. Точный замер приходит раз в 10 секунд, а между ними число обновляется каждые 3 секунды вместе с задержкой соединения. Первое значение — в течение 10 секунд после входа в игру': 'Ping is taken from the game’s own reply to its service ping request: the full route to the server, booster or VPN included. The exact reading arrives every 10 seconds; in between the number updates every 3 seconds along with the connection delay. The first value appears within 10 seconds after entering the game',
@@ -255,6 +258,7 @@
   };
   // Кусочки внутри составных строк — длинные раньше коротких.
   const PARTS = [
+    ['Ваш DPS выше медианы класса', 'Your DPS is above the class median'], ['Ваш DPS ниже медианы класса', 'Your DPS is below the class median'], [' · медиана ', ' · median '], ['(по ', '(across '], [' игрокам из ваших записанных боёв с этим боссом', ' players from your recorded fights with this boss'],
     [' · пинг ', ' · ping '], [' мс)', ' ms)'], ['максимум рядом: ', 'peak nearby: '], [' из ', ' of '],
     [' Затемнённые участки — паузы в вашем уроне от 3 секунд (они бывают и из-за механик босса).', ' Shaded areas are pauses in your damage of 3 seconds or more (they can also come from boss mechanics).'],
     ['Игра идёт через ускоритель или VPN — пинг появится после первого ответа игры (до 10 секунд)', 'The game goes through a booster or VPN — ping appears after the game’s first reply (up to 10 seconds)'],

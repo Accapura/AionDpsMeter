@@ -105,6 +105,8 @@ const pages = {
     <div class="card field"><span class="lbl">Поведение</span>
       <label class="opt"><input type="checkbox" id="oSolo" ${S.solo ? 'checked' : ''}> <span><b>Только я</b> — крупно свой DPS, место, урон и крит вместо списка группы</span></label>
       <label class="opt"><input type="checkbox" id="oAuto" ${S.autoHide !== false ? 'checked' : ''}> <span><b>Прятать оверлей</b>, когда игра свёрнута или открыто другое окно</span></label>
+      <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
+      <label class="opt"><input type="checkbox" id="oQuit" ${S.quitWithGame ? 'checked' : ''}> <span><b>Закрываться вместе с игрой</b> — через 20 секунд после выхода из игры</span></label>
       <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Мир: Босс» и «Моб»</span></label></div>
     <div class="card field"><span class="lbl">Список, прозрачность и масштаб</span>
       <div class="sliders">
@@ -238,6 +240,7 @@ function statsBody() {
         return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
           <div style="font-size:20px;font-weight:700">${nt(f.boss || f.title)}</div>
           <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${pingStat(f.ping)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
+          ${classLine(f)}
           <div class="scroll"><table class="ft"><tr><th>#</th><th>Игрок</th><th>Класс</th><th class="r">DPS</th><th class="r">Урон</th><th class="r">%</th><th class="r">Крит</th><th class="r">Макс. удар</th>${hasHeal ? '<th class="r">HPS</th>' : ''}</tr>
           ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nt(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
           ${fightChart(f)}
@@ -343,6 +346,16 @@ function fightChart(f) {
   if (tl.self?.length) series.push({ data: smooth(tl.self), color: 'var(--accent)', width: 2.4, label: 'Вы' });
   return `<div class="card field"><span class="lbl">График боя · DPS по секундам</span>${idleStat(idle)}${chartSvg(series, { boss: tl.boss && tl.boss.length > 2 ? tl.boss : null, gaps: idle ? idle.gaps : null })}
     <div class="muted" style="font-size:12px">Сглажено за 5 секунд. Пунктир — HP босса, вертикальные линии — фазы 75 / 50 / 25 %.${idle && idle.gaps.length ? ' Затемнённые участки — паузы в вашем уроне от 3 секунд (они бывают и из-за механик босса).' : ''}</div></div>`;
+}
+// медиана DPS класса на этом боссе по всем записанным боям (без текущего); нужно не меньше 5 игроков
+function classLine(f) {
+  const me = meOf(f);
+  if (!me || !f.boss || f.partial || !me.cls || me.cls === 'Unknown') return '';
+  const v = [];
+  for (const x of F.list) if (x.id !== f.id && x.boss === f.boss && !x.partial) for (const p of x.players || []) if (p.cls === me.cls && p.dps > 0) v.push(p.dps);
+  if (v.length < 5) return '';
+  const med = median(v), d = Math.round((me.dps / med - 1) * 100);
+  return `<div class="muted">Ваш DPS ${d >= 0 ? 'выше' : 'ниже'} медианы класса «${esc(CLASS_RU[me.cls] || '')}» на ${Math.abs(d)}% · медиана ${fmt(med)} (по ${v.length} игрокам из ваших записанных боёв с этим боссом)</div>`;
 }
 function idleStat(i) {
   if (!i) return '';
@@ -580,6 +593,8 @@ function render() {
   on('resetSize', 'onclick', () => api.overlayResetSize());
   on('oSolo', 'onchange', e => api.set({ solo: e.target.checked }));
   on('oAuto', 'onchange', e => api.set({ autoHide: e.target.checked }));
+  on('oStart', 'onchange', e => api.set({ autoStart: e.target.checked }));
+  on('oQuit', 'onchange', e => api.set({ quitWithGame: e.target.checked }));
   on('oProf', 'onchange', e => api.set({ profilesOn: e.target.checked }));
   on('rpcOn', 'onchange', e => api.set({ discordRpc: e.target.checked }));
   on('fShare', 'onclick', e => api.share(e.currentTarget.dataset.share));

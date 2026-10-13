@@ -4,6 +4,7 @@
 
 const { app, BrowserWindow, ipcMain, screen, globalShortcut, Tray, Menu, nativeImage, shell, net, clipboard } = require('electron');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const readline = require('readline');
@@ -35,6 +36,8 @@ const DEFAULTS = {
   showHeader: true,             // строка с названиями колонок в оверлее
   hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
   clickThrough: false,
+  autoStart: false,             // запускать вместе с Windows (свёрнутой в трей)
+  quitWithGame: false,          // закрываться вместе с игрой
   autoHide: true,               // прятать оверлей, когда игра не на экране
   solo: false,                  // режим «Только я»
   profilesOn: true,             // свои настройки оверлея для каждого режима
@@ -133,6 +136,7 @@ function patchSettings(patch) {
   if (settings.scale !== prevScale) for (const w of Object.values(wins)) if (w && !w.isDestroyed()) w.webContents.setZoomFactor(settings.scale / 100);
   if ('clickThrough' in patch) applyClickThrough();
   if ('autoHide' in patch) applyOverlayVisibility();
+  if ('autoStart' in patch) { try { app.setLoginItemSettings({ openAtLogin: !!settings.autoStart, args: ['--hidden'] }); } catch { /* не критично */ } }
   if ('discordRpc' in patch) rpc.update();
   if ('lang' in patch) { bridge.send('lang ' + settings.lang); buildTray(); broadcastSchedule(); }
   if (patch.hotkeys) registerHotkeys();
@@ -270,6 +274,13 @@ function applyClickThrough() {
 // Видимость оверлея: включён пользователем и (если включено автоскрытие) игра на экране.
 // fgState от моста: game — игра впереди, app — наше окно, other — другое окно, none — игра не запущена.
 let fgState = 'none';
+// «Закрываться вместе с игрой»: игра была запущена, а теперь её нет дольше 20 секунд (чтобы не закрыться при перезапуске клиента).
+let gameSeen = false, exitTimer = null;
+function watchGameExit() {
+  if (fgState !== 'none') { gameSeen = true; if (exitTimer) { clearTimeout(exitTimer); exitTimer = null; } return; }
+  if (!gameSeen || !settings.quitWithGame || exitTimer) return;
+  exitTimer = setTimeout(() => { exitTimer = null; if (fgState === 'none' && settings.quitWithGame) app.quit(); }, 20000);
+}
 function applyOverlayVisibility() {
   const w = wins.overlay;
   if (!w || w.isDestroyed()) return;
@@ -338,7 +349,7 @@ const bridge = {
         if (m.serverId && m.serverId !== settings.detectedServerId) patch.detectedServerId = m.serverId;
         if (Object.keys(patch).length) { patchSettings(patch); broadcastSchedule(); }
       }
-      else if (m.t === 'fg') { fgState = m.state; applyOverlayVisibility(); }
+      else if (m.t === 'fg') { fgState = m.state; applyOverlayVisibility(); watchGameExit(); }
       else if (m.t === 'fieldbosses') onFieldBosses(m);
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') addFight(m);
@@ -807,8 +818,79 @@ function fightText(f) {
   const rows = ps.map((p, i) => `${i + 1}. ${p.name}${p.self ? ' ★' : ''} — ${nf(p.dps)} DPS · ${nf(p.dmg)} · ${((p.share || 0) * 100).toFixed(1)}%${p.hps > 0 ? ` · ${nf(p.hps)} HPS` : ''}`);
   return [head, ...rows, '— Aion DPS Meter'].join('\n');
 }
+// ---------------------------------------------------------------- карточка боя (картинка)
+const escH = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const medianOf = a => { if (!a.length) return 0; const q = [...a].sort((x, y) => x - y), m = q.length >> 1; return q.length % 2 ? q[m] : (q[m - 1] + q[m]) / 2; };
+// медиана DPS класса на этом боссе по всем записанным боям (кроме текущего); нужно не меньше 5 игроков
+function classMedian(f, cls) {
+  if (!f.boss || !cls || cls === 'Unknown') return null;
+  const v = [];
+  for (const x of loadFights()) if (x.id !== f.id && x.boss === f.boss && !x.partial) for (const p of x.players || []) if (p.cls === cls && p.dps > 0) v.push(p.dps);
+  return v.length >= 5 ? { med: medianOf(v), n: v.length } : null;
+}
+function cardHtml(f) {
+  const ps = (f.players || []).filter(p => p.dmg > 0).slice(0, 8);
+  const top = Math.max(1, ...ps.map(p => p.dps));
+  const me = (f.players || []).find(p => p.self);
+  let badge = '';
+  if (me && f.boss && !f.partial) {
+    const prev = Math.max(0, ...loadFights().filter(x => x.id !== f.id && x.boss === f.boss && !x.partial).map(x => (x.players || []).find(p => p.self)?.dps || 0));
+    if (prev > 0 && me.dps > prev) badge = `<div class="b rec">★ ${escH(T('Новый рекорд по боссу'))}: ${nf(me.dps)} DPS <i>(${escH(T('было'))} ${nf(prev)})</i></div>`;
+    else if (prev > 0) badge = `<div class="b">${escH(T('Ваш рекорд по боссу'))}: ${nf(Math.max(prev, me.dps))} DPS</div>`;
+    const cm = classMedian(f, me.cls);
+    if (cm && cm.med > 0) { const d = Math.round((me.dps / cm.med - 1) * 100); badge += `<div class="b ${d >= 0 ? 'up' : 'dn'}">${escH(T('К медиане класса'))}: ${d >= 0 ? '+' : ''}${d}%</div>`; }
+  }
+  // график DPS по секундам (сглаживание за 5 с)
+  let chart = '';
+  const tl = f.timeline;
+  const sm = a => a.map((_, i) => { let t = 0, c = 0; for (let k = Math.max(0, i - 2); k <= Math.min(a.length - 1, i + 2); k++) { t += a[k]; c++; } return t / c; });
+  if (tl && tl.self && tl.self.length > 2) {
+    const W = 700, H = 120, series = [[tl.party, 'rgba(170,150,255,.9)', 'rgba(150,120,255,.18)'], [tl.self, '#ffc66b', null]].filter(x => x[0] && x[0].length > 2);
+    const mx = Math.max(1, ...series.flatMap(x => x[0]));
+    const n = Math.max(...series.map(x => x[0].length));
+    let g = '';
+    for (const [d, c, fill] of series) {
+      const q = sm(d), pts = q.map((v, i) => `${(i / (n - 1) * W).toFixed(1)},${(H - 6 - v / mx * (H - 14)).toFixed(1)}`).join(' ');
+      if (fill) g += `<polygon points="0,${H} ${pts} ${(q.length - 1) / (n - 1) * W},${H}" fill="${fill}"/>`;
+      g += `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    }
+    chart = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="none">${g}</svg>`;
+  }
+  const rows = ps.map((p, i) => `<div class="r ${p.self ? 'me' : ''}"><span class="n">${i + 1}</span>${p.cls && p.cls !== 'Unknown' ? `<img src="${pathToFileURL(path.join(ASSETS, 'classes', String(p.cls).toLowerCase() + '.png')).href}">` : '<img>'}<span class="nm">${escH(p.name)}</span><span class="bar"><i style="width:${(p.dps / top * 100).toFixed(1)}%"></i></span><b>${nf(p.dps)}</b><span class="pc">${((p.share || 0) * 100).toFixed(1)}%</span></div>`).join('');
+  const date = f.at ? new Date(f.at).toLocaleString(settings.lang === 'en' ? 'en-GB' : 'ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  return `<!doctype html><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}body{width:760px;background:linear-gradient(135deg,#1b1233,#2b1a4f 60%,#1a1030);font:14px 'Manrope','Segoe UI',sans-serif;color:#efe9ff;padding:22px}
+.h{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}.t{font-size:26px;font-weight:800;color:#ffc66b}.s{color:#b9a9e6;font-size:13px;margin-top:2px}
+.k{text-align:right}.k b{font-size:30px;color:#fff}.k span{display:block;color:#b9a9e6;font-size:12px}
+.bs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.b{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px}.b i{font-style:normal;color:#b9a9e6;font-weight:500}
+.rec{background:rgba(255,198,107,.18);border-color:#ffc66b;color:#ffc66b}.up{color:#7fe0a8}.dn{color:#ff9a8a}
+.c{background:rgba(0,0,0,.22);border-radius:14px;padding:10px;margin:8px 0}svg{display:block;width:100%}
+.r{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:9px}.r.me{background:rgba(255,198,107,.14)}
+.n{width:18px;color:#b9a9e6;text-align:right}.r img{width:22px;height:22px}.nm{width:150px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}
+.bar{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#9b6cff,#ffc66b)}
+.r b{width:70px;text-align:right}.pc{width:48px;text-align:right;color:#b9a9e6}.f{display:flex;justify-content:space-between;color:#8f7fc0;font-size:12px;margin-top:6px}
+</style><body><div class="h"><div><div class="t">${escH(f.boss || f.title || T('Бой'))}</div><div class="s">${escH(date)}${f.zone ? ' · ' + escH(f.zone) : ''} · ${escH(T('бой'))} ${mmss(f.combatMs)}</div></div>
+<div class="k"><b>${nf(f.partyDps)}</b><span>${escH(T('DPS группы'))}</span></div></div>
+<div class="bs">${badge}</div>${chart ? `<div class="c">${chart}</div>` : ''}<div class="c">${rows}</div>
+<div class="f"><span>Aion DPS Meter</span><span>${escH(settings.character || '')}</span></div></body>`;
+}
+async function cardPng(f) {
+  const file = path.join(app.getPath('userData'), 'card.html');
+  let win;
+  try {
+    fs.writeFileSync(file, cardHtml(f));
+    win = new BrowserWindow({ show: false, width: 760, height: 400, useContentSize: true, webPreferences: { offscreen: false, backgroundThrottling: false } });
+    await win.loadFile(file);
+    await new Promise(r => setTimeout(r, 250));
+    const h = await win.webContents.executeJavaScript('document.body.scrollHeight');
+    win.setContentSize(760, Math.max(200, h));
+    await new Promise(r => setTimeout(r, 150));
+    return await win.webContents.capturePage();
+  } catch { return null; } finally { try { if (win && !win.isDestroyed()) win.destroy(); } catch { /* ignore */ } try { fs.unlinkSync(file); } catch { /* ignore */ } }
+}
 async function shareFight(fightId) {
   let f = fightId ? loadFights().find(x => x.id === fightId) : null;
+  if (!f && !fightId && !(lastSnap && lastSnap.players?.length)) f = loadFights()[0] || null; // боя сейчас нет — делимся последним записанным
   if (!f && lastSnap && lastSnap.players?.length) {
     const s = lastSnap;
     f = { boss: s.boss?.name || s.target?.name, title: s.title, combatMs: s.combatMs, partyDps: s.partyDps, players: s.players };
@@ -816,7 +898,8 @@ async function shareFight(fightId) {
   if (!f) { showToast({ key: 'share' + Date.now(), name: 'Нечем поделиться', type: 'info', icon: 'info', start: null, text: 'Сначала проведите бой' }); return; }
   const data = { text: fightText(f) };
   const ov = wins.overlay;
-  if (!fightId && ov && !ov.isDestroyed() && ov.isVisible()) {
+  if (f.id) { const img = await cardPng(f); if (img && !img.isEmpty()) data.image = img; }
+  else if (ov && !ov.isDestroyed() && ov.isVisible()) {
     try { data.image = await ov.webContents.capturePage(); } catch { /* только текст */ }
   }
   clipboard.write(data);
@@ -1180,7 +1263,7 @@ function buildTray() {
 app.whenReady().then(() => {
   if (firstRun) patchSettings({ whatsNewSeen: APP_VERSION }); // при первой установке «Что нового» не нужно
   if (settings.overlay.visible !== false) openOverlay();
-  openMain();
+  if (!process.argv.includes('--hidden')) openMain();
   bridge.start();
 
   tray = new Tray(nativeImage.createFromPath(path.join(ASSETS, 'tray.png')));
