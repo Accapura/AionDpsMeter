@@ -783,6 +783,10 @@ ipcMain.handle('armory', async (_e, kind, p = {}) => {
         })),
       };
     }
+    if (kind === 'equipment') {
+      const d = await armoryGet('https://aion2.plaync.com/api/character/equipment?' + qs({ region, lang: 'en-US', characterId: p.id, serverId: p.serverId }));
+      return { ok: true, equipment: d };
+    }
     if (kind === 'info') {
       const d = await armoryGet('https://aion2.plaync.com/api/character/info?' + qs({ region, lang: 'en-US', characterId: p.id, serverId: p.serverId }));
       if (!d || !d.profile) return { ok: false, error: 'сайт не прислал данные персонажа' };

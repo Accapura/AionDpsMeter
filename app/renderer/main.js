@@ -605,7 +605,48 @@ async function openChar(c) {
   const r = await api.armory('info', { id: c.id, serverId: c.serverId, region: R.region });
   R.busy = false;
   if (r.ok) R.info = { ...r.info, page: r.page, image: c.image }; else R.error = r.error;
+  R.equip = null; R.equipErr = '';
   render();
+  if (!r.ok) return;
+  // экипировка отдельным запросом: основная карточка появляется сразу
+  const info = R.info, e = await api.armory('equipment', { id: c.id, serverId: c.serverId, region: R.region });
+  if (R.info !== info) return;
+  if (e.ok) R.equip = e.equipment || {}; else R.equipErr = e.error || 'ошибка';
+  if (page === 'chars') render();
+}
+// ---- экипировка и характеристики с официального сайта. Названия полей сайт может менять, поэтому читаем с запасом
+const listsIn = (o, out = [], path = '', depth = 0) => {
+  if (!o || typeof o !== 'object' || depth > 4) return out;
+  if (Array.isArray(o)) { if (o.length && o[0] && typeof o[0] === 'object') out.push({ path, arr: o }); return out; }
+  for (const [k, v] of Object.entries(o)) listsIn(v, out, path + '.' + k, depth + 1);
+  return out;
+};
+const GRADE_COLOR = { common: '#c9c9d6', rare: '#6fb7ff', heroic: '#b98cff', legend: '#ffb454', unique: '#ffd34d', epic: '#c77dff', mythic: '#ff6b6b', ultimate: '#ff6b6b', special: '#7fe0a8', superior: '#7fe0a8' };
+function gearItems(eq) {
+  const lists = listsIn(eq).filter(l => l.arr.some(x => x && (x.name || x.itemName)));
+  if (!lists.length) return [];
+  const best = lists.sort((a, b) => (/equip/i.test(b.path) - /equip/i.test(a.path)) || b.arr.length - a.arr.length)[0];
+  return best.arr.filter(x => x && (x.name || x.itemName)).map(x => {
+    const grade = String(x.grade ?? x.itemGrade ?? x.gradeName ?? ''), gl = grade.toLowerCase();
+    const icon = [x.icon, x.iconUrl, x.image, x.imageUrl].find(u => typeof u === 'string' && /^https?:\/\//.test(u)) || '';
+    return { slot: x.slotPosName ?? x.slotName ?? x.slot ?? x.slotPos ?? '', name: x.name || x.itemName, grade, color: GRADE_COLOR[Object.keys(GRADE_COLOR).find(k => gl.includes(k))] || '', ench: x.enchantLevel ?? x.enchant ?? 0, exceed: x.exceedLevel ?? x.exceed ?? 0, ilvl: x.itemLevel ?? x.level ?? '', icon };
+  });
+}
+function statRows(info) {
+  const lists = listsIn(info).filter(l => /stat/i.test(l.path) && l.arr.every(x => x && (x.name || x.statName) && x.value != null));
+  if (!lists.length) return [];
+  return lists.sort((a, b) => b.arr.length - a.arr.length)[0].arr.map(x => ({ name: x.name || x.statName, value: x.value }));
+}
+function gearHtml() {
+  if (R.equipErr) return `<div class="card field"><span class="lbl">Экипировка</span><div class="muted">Не получилось загрузить экипировку: ${esc(R.equipErr)}</div></div>`;
+  if (!R.equip) return '<div class="card field"><span class="lbl">Экипировка</span><div class="muted">Загружаю…</div></div>';
+  const items = gearItems(R.equip), stats = statRows(R.info);
+  const gear = items.length ? `<div class="gear">${items.map(i => `<div class="gi" ${i.color ? `style="border-color:${i.color}55"` : ''}>${i.icon ? `<img src="${esc(i.icon)}" loading="lazy" alt="">` : ''}<div style="min-width:0"><div class="gs">${esc(i.slot)}</div><div class="gn" data-notr ${i.color ? `style="color:${i.color}"` : ''}>${esc(i.name)}</div><div class="gm">${i.ench ? '+' + esc(i.ench) : ''}${i.exceed ? ' <span title="Превышение">(+' + esc(i.exceed) + ')</span>' : ''}${i.ilvl ? ' · ' + esc(i.ilvl) + ' ур.' : ''}${i.grade ? ' · ' + esc(i.grade) : ''}</div></div></div>`).join('')}</div>`
+    : '<div class="muted">Сайт не прислал список экипировки для этого персонажа (возможно, профиль скрыт).</div>';
+  const raw = JSON.stringify({ equipment: R.equip, info: R.info }, null, 1).slice(0, 40000);
+  return `<div class="card field"><span class="lbl">Экипировка</span>${gear}</div>
+    ${stats.length ? `<div class="card field"><span class="lbl">Характеристики</span><div class="kv stt">${stats.map(s => `<div><span>${esc(s.name)}</span><b>${esc(typeof s.value === 'number' ? s.value.toLocaleString(LOC()) : s.value)}</b></div>`).join('')}</div></div>` : ''}
+    <details class="card field rawd"><summary>Данные сайта (для проверки)</summary><pre>${esc(raw)}</pre></details>`;
 }
 function charsBody() {
   if (R.busy) return '<div class="card emptyBox">Загрузка…</div>';
@@ -619,7 +660,8 @@ function charsBody() {
         <div style="flex:1;min-width:240px"><div style="font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px">${esc(p.characterName)} ${classIcon(cls)}</div>
         <div class="muted">${esc(CLASS_RU[cls] || p.className || '')} · ${p.characterLevel || '?'} ур. · ${esc(p.serverNameRu || p.serverName || '')} · ${p.raceId === 1 ? 'Элийцы' : p.raceId === 2 ? 'Асмодиане' : ''}</div>
         <div class="kv" style="margin-top:10px">${kv('Боевая сила', p.combatPower != null ? Number(p.combatPower).toLocaleString(LOC()) : null)}${kv('Уровень предметов', p.itemLevel)}${kv('Легион', p.guildName || p.legionName)}${kv('Титул', p.titleName)}</div></div></div></div>
-      ${ranks.length ? `<div class="card field"><span class="lbl">Места в рейтингах</span><table class="rk"><tr><th>Рейтинг</th><th>Место</th><th>Очки</th><th>Ранг</th></tr>${ranks.map(r => `<tr><td>${esc(r.rankingContentsName || '')}</td><td class="num"><b>${r.rank ?? '—'}</b></td><td class="num">${r.point != null ? Number(r.point).toLocaleString(LOC()) : '—'}</td><td>${esc(r.gradeName || '')}</td></tr>`).join('')}</table></div>` : ''}`;
+      ${ranks.length ? `<div class="card field"><span class="lbl">Места в рейтингах</span><table class="rk"><tr><th>Рейтинг</th><th>Место</th><th>Очки</th><th>Ранг</th></tr>${ranks.map(r => `<tr><td>${esc(r.rankingContentsName || '')}</td><td class="num"><b>${r.rank ?? '—'}</b></td><td class="num">${r.point != null ? Number(r.point).toLocaleString(LOC()) : '—'}</td><td>${esc(r.gradeName || '')}</td></tr>`).join('')}</table></div>` : ''}
+      ${gearHtml()}`;
   }
   if (!R.list) return '<div class="card emptyBox">Выберите регион и сервер, введите ник персонажа и нажмите «Найти».</div>';
   if (!R.list.length) return '<div class="card emptyBox">Никого не нашлось. Проверьте ник, регион и сервер.</div>';
