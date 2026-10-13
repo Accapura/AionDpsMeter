@@ -346,7 +346,7 @@ public sealed class PacketParser
             hits += extra;
             cleanTail = true;
         }
-        else if ((sw & 0x20) != 0 && Wire.TryVarint(b, o, out var count, out var clen) && count is >= 1 and <= 25)
+        else if ((sw & 0x20) != 0 && Wire.TryVarint(b, o, out var count, out _) && count is >= 1 and <= 25)
         {
             hits += (int)count; // lenient: count is plausible but the hit list did not end cleanly
         }

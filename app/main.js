@@ -252,9 +252,7 @@ function openSchedule() {
 }
 
 // Окно разбивки по навыкам выбранного игрока.
-let breakdownActor = null;
 function openBreakdown(actor) {
-  breakdownActor = actor;
   const wa = screen.getPrimaryDisplay().workArea;
   const w = makeWindow('breakdown', {
     width: Math.round(clamp(wa.width * 0.42, 560, 760)), height: Math.round(clamp(wa.height * 0.66, 440, 640)),
@@ -641,7 +639,6 @@ ipcMain.handle('schedule-data', () => scheduleData());
 ipcMain.handle('fights', () => loadFights());
 ipcMain.handle('deaths', () => loadDeaths());
 ipcMain.on('deaths-clear', () => { deaths = []; try { fs.writeFileSync(DEATHS_FILE(), '[]'); } catch { /* ignore */ } broadcast('deaths', deaths); });
-ipcMain.handle('whats-new', () => whatsNew());
 ipcMain.on('whats-new-seen', () => patchSettings({ whatsNewSeen: APP_VERSION, whatsNewFrom: '' }));
 ipcMain.handle('report', () => saveReport());
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
