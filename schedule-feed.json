@@ -142,7 +142,7 @@
   "size": 86240467,
   "notes": "• Пинг персонажа — по вашим навыкам, по всему маршруту с ускорителем\n• До первых навыков показывается примерное значение «~»",
   "patch": {
-   "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.4/AionDpsMeter-patch-1.2.4.gz",
+   "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.2.4.gz",
    "sha256": "1c58f540d1203ef8761c8e0a94935dbb0c8ab4c29c17075d12dc5c07e53beb6b",
    "size": 1348138,
    "shell": "e33-net10"
