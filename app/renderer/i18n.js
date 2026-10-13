@@ -4,6 +4,8 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Скопировать ник': 'Copy nickname', 'Скопировано ✓': 'Copied ✓', 'Ник пока неизвестен': 'Nickname not known yet',
+    'Нажмите — разбивка по навыкам, правая кнопка — меню': 'Click — skill breakdown, right click — menu',
     'Запускать вместе с Windows': 'Start with Windows', ' — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра': ' — the app starts minimized to the tray, the overlay appears when the game opens',
     'Закрываться вместе с игрой': 'Close together with the game', ' — через 20 секунд после выхода из игры': ' — 20 seconds after you leave the game',
     'Новый рекорд по боссу': 'New boss record', 'было': 'was', 'Ваш рекорд по боссу': 'Your boss record', 'К медиане класса': 'Versus class median', 'бой': 'fight',

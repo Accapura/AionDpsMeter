@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('api', {
   resizeEnd: () => ipcRenderer.send('resize-end'),
   restartBridge: () => ipcRenderer.send('restart-bridge'),
   overlayResetSize: () => ipcRenderer.send('overlay-reset-size'),
+  copy: text => ipcRenderer.send('copy-text', String(text || '').slice(0, 64)),
   share: fightId => ipcRenderer.send('share', fightId),
   updateCheck: () => ipcRenderer.invoke('update-check'),
   updateInstall: () => ipcRenderer.send('update-install'),

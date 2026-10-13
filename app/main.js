@@ -644,6 +644,7 @@ ipcMain.handle('report', () => saveReport());
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
 ipcMain.on('fights-clear', () => { fights = []; try { fs.writeFileSync(FIGHTS_FILE(), '[]'); } catch { /* ignore */ } broadcast('fights', fights); broadcast('records', {}); });
 ipcMain.on('share', (_e, fightId) => shareFight(fightId));
+ipcMain.on('copy-text', (_e, t) => { if (typeof t === 'string' && t) clipboard.writeText(t.slice(0, 64)); });
 ipcMain.handle('update-check', async () => { await updateFeed(true); return updateInfo(); });
 ipcMain.on('update-install', () => updater.download());
 ipcMain.on('update-skip', (_e, v) => patchSettings({ updateSkip: String(v || '') }));

@@ -143,7 +143,7 @@ function render() {
   }
   if (S.solo && me) {
     const place = ps.indexOf(me) + 1;
-    body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" title="Нажмите — разбивка по навыкам">${classIcon(me.cls)}
+    body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню">${classIcon(me.cls)}
       <div class="who"><span class="name" data-notr>${esc(nm(me))}</span><span class="bigdps num">${fmt(me.dps)}<small>DPS</small></span></div>
       <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
       <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
@@ -157,7 +157,7 @@ function render() {
     <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="Урон в секунду">DPS</span><span class="r c-total" title="Общий урон за бой">Урон</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="Доля от урона всей группы">%</span></div>
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
-      return `<div class="row${p === me ? ' me' : ''}" data-id="${p.id ?? ''}" title="Нажмите — разбивка по навыкам"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
+      return `<div class="row${p === me ? ' me' : ''}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(nm(p))}">${esc(nm(p))}</span>
       <span class="r dps">${fmt(p.dps)}</span><span class="r muted c-total">${fmt(p.dmg)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${((p.share || 0) * 100).toFixed(1).replace('.', ',')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;
@@ -165,6 +165,37 @@ function render() {
   $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`;
   if (rec) $('stats').insertAdjacentHTML('beforeend', ' ' + rec);
 }
+
+// Меню игрока по правой кнопке: скопировать ник (вставить в игре в поиск друзей, приглашение или чат) и разбивка по навыкам.
+// Программа только читает трафик игры и ничего в неё не отправляет, поэтому «в друзья» и «пригласить» делаются в самой игре.
+let pmenu = null;
+function closeMenu() { if (pmenu) { pmenu.remove(); pmenu = null; } }
+document.addEventListener('mousedown', e => { if (pmenu && !pmenu.contains(e.target)) closeMenu(); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+window.addEventListener('blur', closeMenu);
+document.addEventListener('contextmenu', e => {
+  const r = e.target.closest && e.target.closest('.row[data-nick], .me1[data-nick]');
+  if (!r) return;
+  e.preventDefault();
+  closeMenu();
+  const nick = r.dataset.nick || '', known = nick && !nick.startsWith('#');
+  const m = document.createElement('div');
+  m.className = 'pmenu';
+  m.innerHTML = `<div class="pm-h" data-notr>${esc(nick)}</div>
+    <button type="button" data-a="copy"${known ? '' : ' disabled'}>${known ? 'Скопировать ник' : 'Ник пока неизвестен'}</button>
+    <button type="button" data-a="skills"${r.dataset.id ? '' : ' disabled'}>Разбивка по навыкам</button>`;
+  document.body.appendChild(m);
+  const x = Math.min(e.clientX, innerWidth - m.offsetWidth - 4), y = Math.min(e.clientY, innerHeight - m.offsetHeight - 4);
+  m.style.left = Math.max(2, x) + 'px'; m.style.top = Math.max(2, y) + 'px';
+  m.onclick = ev => {
+    const a = ev.target.closest('button[data-a]');
+    if (!a || a.disabled) return;
+    if (a.dataset.a === 'copy') { api.copy(nick); a.textContent = 'Скопировано ✓'; setTimeout(closeMenu, 700); }
+    else { api.open('breakdown', +r.dataset.id); closeMenu(); }
+  };
+  pmenu = m;
+  setTimeout(() => { if (pmenu === m) closeMenu(); }, 8000);
+});
 
 // Сравнение своего DPS с рекордом на этом боссе (после первых 20 секунд боя — раньше цифры скачут).
 function recordLine(me) {

@@ -99,3 +99,9 @@ body.locked .row{cursor:default}
 .solo .kv span{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .solo .kv b{font-size:14px}
 body.locked #bShare{display:none}
+
+.pmenu{position:fixed;z-index:50;min-width:150px;background:rgba(30,20,52,.97);border:1px solid rgba(255,198,107,.35);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:2px}
+.pmenu .pm-h{padding:4px 8px 5px;font-size:11px;color:var(--muted,#b9a9e6);border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.pmenu button{all:unset;cursor:pointer;padding:6px 8px;border-radius:7px;font-size:12.5px;color:#efe9ff}
+.pmenu button:hover:not(:disabled){background:rgba(255,198,107,.18)}
+.pmenu button:disabled{opacity:.4;cursor:default}
