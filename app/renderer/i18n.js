@@ -4,6 +4,7 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Пинг заработал с ускорителем': 'Ping now works with boosters', 'Раньше замер по навыкам не запускался, если программу открыли после входа в игру. Теперь он работает всегда: пинг персонажа появляется после первых навыков. В подсказке к пингу видно, сколько навыков увидено и сопоставлено': 'Skill-based measuring did not start if the app was opened after entering the game. Now it always works: your character’s ping appears after the first skills. The ping tooltip shows how many skills were seen and matched',
     'Пинг персонажа, а не до адреса сервера': 'Your character’s ping, not the server address', 'Пинг теперь считается по вашим навыкам — от нажатия до ответа игрового сервера, по всему маршруту с ускорителем. До первых навыков показывается примерное значение со знаком «~»': 'Ping is now measured from your skills — from the press to the game server’s reply, along the whole route including the booster. Until the first skills an approximate value marked “~” is shown',
     'Примерный пинг до адреса сервера: ': 'Approximate ping to the server address: ', ' мс. Точный — по вашим навыкам до ответа игрового сервера — появится после первых навыков в бою': ' ms. The exact one — from your skills to the game server’s reply — appears after your first skills in combat', 'Пинг до игрового сервера по вашим навыкам (весь путь, с ускорителем): ': 'Ping to the game server from your skills (the whole route, booster included): ',
     'Окна запоминают место и размер': 'Windows remember their position and size', 'Оверлей, главное окно, расписание и разбивка по навыкам открываются там и такого размера, как вы их оставили — и после перезапуска программы': 'The overlay, main window, schedule and skill breakdown open where and at the size you left them — even after restarting the app',
@@ -253,6 +254,7 @@
   const PARTS = [
     ['Игра идёт через ускоритель или VPN — пинг появится после первых навыков в бою', 'The game goes through a booster or VPN — ping appears after your first skills in combat'],
     ['Пинг до сервера игры:', 'Ping to the game server:'],
+    ['Навыков увидено', 'Skills seen'], ['сопоставлено', 'matched'],
     ['Счётчик урона для AION 2 · версия', 'Damage meter for AION 2 · version'],
     ['бесплатная программа с открытым исходным кодом для игроков. Она', 'a free open-source program for players. It'],
     ['зайдите в игру', 'log into the game'],

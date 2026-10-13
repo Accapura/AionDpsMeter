@@ -14,6 +14,9 @@ public sealed class PingMeter
     // Работает и через ускорители/VPN: время замеряется между пакетами самой игры.
     private readonly List<(long Us, byte[] Data)> _client = new();
     private readonly List<(long Ms, int Rtt)> _app = new();
+    private int _castsSeen, _castsMatched, _clientSeen;
+    /// <summary>Для подсказки в оверлее: навыков увидено / сопоставлено с нашими запросами / пакетов клиента.</summary>
+    public (int Seen, int Matched, int Client) Debug { get { lock (_gate) return (_castsSeen, _castsMatched, _clientSeen); } }
 
     /// <summary>Пинг в мс; -1, пока нет замеров (или они устарели).</summary>
     public int PingMs
@@ -38,6 +41,7 @@ public sealed class PingMeter
         BitConverter.TryWriteBytes(key, skill);
         lock (_gate)
         {
+            _castsSeen++;
             for (var i = _client.Count - 1; i >= 0; i--)
             {
                 var (us, data) = _client[i];
@@ -47,7 +51,8 @@ public sealed class PingMeter
                 if (data.AsSpan().IndexOf(key) < 0) continue;
                 var rtt = (int)(castMs - ms);
                 _client.RemoveAt(i);
-                if (rtt < 3) return;
+                if (rtt < 3 || rtt > 1500) return;
+                _castsMatched++;
                 _app.Add((castMs, rtt));
                 if (_app.Count > 20) _app.RemoveAt(0);
                 return;
@@ -81,7 +86,7 @@ public sealed class PingMeter
                 if (i >= 0) list[i] = (end, list[i].Us, true); // повтор — замер по нему неточен
                 else list.Add((end, s.Us, false));
                 if (list.Count > 128) list.RemoveRange(0, list.Count - 128);
-                _client.Add((s.Us, s.Payload));
+                _client.Add((s.Us, s.Payload)); _clientSeen++;
                 var cut = s.Us - 3_000_000;
                 var drop = 0;
                 while (drop < _client.Count && _client[drop].Us < cut) drop++;

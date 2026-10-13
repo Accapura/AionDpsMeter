@@ -178,13 +178,14 @@ api.on('status', s => { status = s; if (!matches(snap)) render(); });
 api.on('snap', s => { snap = s; render(); });
 api.on('records', r => { records = r || {}; });
 // Пинг до игрового сервера (считается по трафику игры): полоски сигнала и миллисекунды.
-function showPing(ms, est) {
+function showPing(ms, est, dbg) {
+  const dt = dbg && dbg.seen ? '\nНавыков увидено: ' + dbg.seen + ' · сопоставлено: ' + dbg.hit : '';
   const el = $('ping');
   if (ms === -2) {
     // игра идёт через ускоритель/VPN: он сам подтверждает пакеты, настоящий пинг знает только он
     el.className = 'ping vpn';
     el.innerHTML = `<svg width="11" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9c-4.6-1-8-4.5-8-9V6z"/></svg>VPN`;
-    el.title = 'Игра идёт через ускоритель или VPN — пинг появится после первых навыков в бою';
+    el.title = 'Игра идёт через ускоритель или VPN — пинг появится после первых навыков в бою' + dt;
     el.hidden = false; return;
   }
   if (ms == null || ms < 0) { el.hidden = true; return; }
@@ -192,8 +193,8 @@ function showPing(ms, est) {
   const bars = [0, 1, 2].map(i => `<rect x="${1 + i * 4}" y="${8 - i * 3}" width="2.6" height="${3 + i * 3}" rx="1" fill="currentColor" opacity="${i < n ? 1 : .28}"/>`).join('');
   el.className = 'ping ' + q;
   el.innerHTML = `<svg width="13" height="12" viewBox="0 0 13 12" aria-hidden="true">${bars}</svg>${est ? '~' : ''}${ms}<span class="u">мс</span>`;
-  el.title = est ? 'Примерный пинг до адреса сервера: ' + ms + ' мс. Точный — по вашим навыкам до ответа игрового сервера — появится после первых навыков в бою' : 'Пинг до игрового сервера по вашим навыкам (весь путь, с ускорителем): ' + ms + ' мс';
+  el.title = est ? 'Примерный пинг до адреса сервера: ' + ms + ' мс. Точный — по вашим навыкам до ответа игрового сервера — появится после первых навыков в бою' + dt : 'Пинг до игрового сервера по вашим навыкам (весь путь, с ускорителем): ' + ms + ' мс' + dt;
   el.hidden = false;
 }
-api.on('ping', (ms, est) => showPing(ms, est));
-api.state().then(st => { showPing(st.ping, st.pingEst); records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });
+api.on('ping', (ms, est, dbg) => showPing(ms, est, dbg));
+api.state().then(st => { showPing(st.ping, st.pingEst, st.pingDbg); records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });

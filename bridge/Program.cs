@@ -245,7 +245,9 @@ void StartCapture()
         var c = new LiveCapture(data, new LiveCaptureOptions());
         c.EventDecoded += tracker.Process;
         // пинг по своим навыкам (работает и через ускорители/VPN)
-        c.EventDecoded += e => { if (e is AionMeter.Core.Events.CastEvent ce && ce.ActorId != 0 && ce.ActorId == tracker.SelfActorId) c.Ping.MatchCast(ce.TimeMs, ce.SkillCode); };
+        // Свой ID игра присылает при входе в мир — если программу запустили позже, он неизвестен. Тогда сопоставляем навыки всех:
+        // запрос с таким навыком в нашем трафике бывает только от нас, чужие навыки просто не находят пары.
+        c.EventDecoded += e => { if (e is AionMeter.Core.Events.CastEvent ce && ce.ActorId != 0 && (tracker.SelfActorId == 0 || ce.ActorId == tracker.SelfActorId)) c.Ping.MatchCast(ce.TimeMs, ce.SkillCode); };
         c.StatusChanged += st => Emit(new { t = "status", state = st.State.ToString(), msg = Ru(st) });
         c.Start();
         capture = c;
@@ -376,8 +378,9 @@ while (running)
         else if (icmp >= 2) { ping = icmp; est = true; }
         else if (passive >= 3) { ping = passive; est = true; }
         else ping = icmp >= 0 || passive >= 0 ? -2 : -1;
-        var pk = ping * 2 + (est ? 1 : 0);
-        if (pk != pingLast) { pingLast = pk; Emit(new { t = "ping", ms = ping, est }); }
+        var dbg = capture?.Ping.Debug ?? (0, 0, 0);
+        var pk = HashCode.Combine(ping, est, dbg.Item1, dbg.Item2);
+        if (pk != pingLast) { pingLast = pk; Emit(new { t = "ping", ms = ping, est, seen = dbg.Item1, hit = dbg.Item2, tx = dbg.Item3 }); }
     }
     Thread.Sleep(250);
 }
