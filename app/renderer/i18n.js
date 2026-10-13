@@ -22,7 +22,7 @@
     'Не показываются «Полевой босс №N» и записи с давно прошедшим временем возрождения': 'Unnamed “Field boss #N” rows and long-past respawn times are no longer shown',
     'Секундные бои без урона не сохраняются': 'One-second fights without damage are not saved',
     'Они больше не попадают в историю и в «Поделиться»': 'They no longer reach the history or “Share”',
-    'Аврора': 'Aurora', 'Неон': 'Neon', 'Билет': 'Ticket', 'Компакт': 'Compact', 'Таймер': 'Timer',
+    'Стекло · Градиент': 'Glass · Gradient', 'Стекло · Чёрное': 'Glass · Black', 'Аврора': 'Aurora', 'Неон': 'Neon', 'Билет': 'Ticket', 'Компакт': 'Compact', 'Таймер': 'Timer',
     'Скрывать уведомление через': 'Hide a notification after',
     'Уведомление об обновлении не исчезает само — только по кнопке.': 'The update notification does not disappear by itself — only by its button.',
     'Что показывать:': 'What to show:',

@@ -1,5 +1,7 @@
 'use strict';
 const THEMES = {
+  glass: { name: 'Стекло · Градиент', g1: '58,40,92', g2: '20,24,48', accent: '#ffc66b', accentFg: '#2a1d48', text: '#fbf7ff', muted: '#cbc2dc', line: 'rgba(255,255,255,.18)', hp: '#ff5d73', lay: ['list', 'top', 'side'] },
+  glassblack: { name: 'Стекло · Чёрное', g1: '34,34,40', g2: '2,2,4', accent: '#ffffff', accentFg: '#16171b', text: '#f6f6f8', muted: '#c4c6cc', line: 'rgba(255,255,255,.16)', hp: '#ff5a5f', lay: ['list', 'top', 'side'] },
   catppuccin: { name: 'Catppuccin Mocha', g1: '49,50,68', g2: '30,30,46', accent: '#cba6f7', accentFg: '#1e1e2e', text: '#cdd6f4', muted: '#a6adc8', line: 'rgba(205,214,244,.16)', hp: '#f38ba8', lay: ['cards', 'top', 'side'] },
   tokyo: { name: 'Tokyo Night', g1: '41,46,66', g2: '26,27,38', accent: '#7aa2f7', accentFg: '#1a1b26', text: '#c0caf5', muted: '#9aa5ce', line: 'rgba(122,162,247,.22)', hp: '#f7768e', lay: ['list', 'top', 'top'] },
   dracula: { name: 'Dracula', g1: '68,71,90', g2: '40,42,54', accent: '#bd93f9', accentFg: '#282a36', text: '#f8f8f2', muted: '#b9bccf', line: 'rgba(189,147,249,.24)', hp: '#ff5555', lay: ['big', 'top', 'right'] },
