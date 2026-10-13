@@ -837,6 +837,9 @@ function cardHtml(f) {
     const cm = classMedian(f, me.cls);
     if (cm && cm.med > 0) { const d = Math.round((me.dps / cm.med - 1) * 100); badge += `<div class="b ${d >= 0 ? 'up' : 'dn'}">${escH(T('К медиане класса'))}: ${d >= 0 ? '+' : ''}${d}%</div>`; }
   }
+  const rank = me ? (f.players || []).indexOf(me) + 1 : 0, ntot = (f.players || []).filter(p => p.dmg > 0).length;
+  const hero = me ? `<div class="hero"><div class="hd">${me.cls && me.cls !== 'Unknown' ? `<img src="${pathToFileURL(path.join(ASSETS, 'classes', String(me.cls).toLowerCase() + '.png')).href}">` : ''}<div><div class="hn">${escH(me.name)}</div><div class="hdps">${nf(me.dps)}<small> DPS</small></div></div><div class="rk">#${rank}<small>/ ${ntot}</small></div></div>
+    <div class="st"><div><span>${escH(T('Урон'))}</span><b>${nf(me.dmg)}</b></div><div><span>${escH(T('Доля'))}</span><b>${((me.share || 0) * 100).toFixed(1)}%</b></div>${me.crit != null ? `<div><span>${escH(T('Крит'))}</span><b>${Math.round(me.crit * 100)}%</b></div>` : ''}${me.maxHit ? `<div><span>${escH(T('Макс. удар'))}</span><b>${nf(me.maxHit)}</b></div>` : ''}${me.hps > 0 ? `<div><span>HPS</span><b>${nf(me.hps)}</b></div>` : ''}</div></div>` : '';
   // график DPS по секундам (сглаживание за 5 с)
   let chart = '';
   const tl = f.timeline;
@@ -856,11 +859,12 @@ function cardHtml(f) {
   const rows = ps.map((p, i) => `<div class="r ${p.self ? 'me' : ''}"><span class="n">${i + 1}</span>${p.cls && p.cls !== 'Unknown' ? `<img src="${pathToFileURL(path.join(ASSETS, 'classes', String(p.cls).toLowerCase() + '.png')).href}">` : '<img>'}<span class="nm">${escH(p.name)}</span><span class="bar"><i style="width:${(p.dps / top * 100).toFixed(1)}%"></i></span><b>${nf(p.dps)}</b><span class="pc">${((p.share || 0) * 100).toFixed(1)}%</span></div>`).join('');
   const date = f.at ? new Date(f.at).toLocaleString(settings.lang === 'en' ? 'en-GB' : 'ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
   return `<!doctype html><meta charset="utf-8"><style>
-*{box-sizing:border-box;margin:0}body{width:760px;background:linear-gradient(135deg,#1b1233,#2b1a4f 60%,#1a1030);font:14px 'Manrope','Segoe UI',sans-serif;color:#efe9ff;padding:22px}
+*{box-sizing:border-box;margin:0}html{overflow:hidden}body{width:760px;overflow:hidden;background:linear-gradient(135deg,#1b1233,#2b1a4f 60%,#1a1030);font:14px 'Manrope','Segoe UI',sans-serif;color:#efe9ff;padding:22px}
 .h{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}.t{font-size:26px;font-weight:800;color:#ffc66b}.s{color:#b9a9e6;font-size:13px;margin-top:2px}
 .k{text-align:right}.k b{font-size:30px;color:#fff}.k span{display:block;color:#b9a9e6;font-size:12px}
 .bs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.b{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px}.b i{font-style:normal;color:#b9a9e6;font-weight:500}
 .rec{background:rgba(255,198,107,.18);border-color:#ffc66b;color:#ffc66b}.up{color:#7fe0a8}.dn{color:#ff9a8a}
+.hero{background:linear-gradient(135deg,rgba(155,108,255,.22),rgba(255,198,107,.12));border:1px solid rgba(255,198,107,.35);border-radius:16px;padding:14px;margin:8px 0}.hd{display:flex;align-items:center;gap:12px}.hd img{width:44px;height:44px}.hn{font-weight:700;font-size:15px}.hdps{font-size:38px;font-weight:800;color:#ffc66b;line-height:1.05}.hdps small{font-size:15px;color:#b9a9e6;font-weight:600}.rk{margin-left:auto;font-size:34px;font-weight:800;color:#ffc66b}.rk small{font-size:15px;color:#b9a9e6;margin-left:3px}.st{display:flex;gap:8px;margin-top:12px}.st div{flex:1;background:rgba(0,0,0,.25);border-radius:11px;padding:8px 10px}.st span{display:block;color:#b9a9e6;font-size:11.5px}.st b{font-size:17px}
 .c{background:rgba(0,0,0,.22);border-radius:14px;padding:10px;margin:8px 0}svg{display:block;width:100%}
 .r{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:9px}.r.me{background:rgba(255,198,107,.14)}
 .n{width:18px;color:#b9a9e6;text-align:right}.r img{width:22px;height:22px}.nm{width:150px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}
@@ -868,7 +872,7 @@ function cardHtml(f) {
 .r b{width:70px;text-align:right}.pc{width:48px;text-align:right;color:#b9a9e6}.f{display:flex;justify-content:space-between;color:#8f7fc0;font-size:12px;margin-top:6px}
 </style><body><div class="h"><div><div class="t">${escH(f.boss || f.title || T('Бой'))}</div><div class="s">${escH(date)}${f.zone ? ' · ' + escH(f.zone) : ''} · ${escH(T('бой'))} ${mmss(f.combatMs)}</div></div>
 <div class="k"><b>${nf(f.partyDps)}</b><span>${escH(T('DPS группы'))}</span></div></div>
-<div class="bs">${badge}</div>${chart ? `<div class="c">${chart}</div>` : ''}<div class="c">${rows}</div>
+<div class="bs">${badge}</div>${hero}${chart ? `<div class="c">${chart}</div>` : ''}<div class="c">${rows}</div>
 <div class="f"><span>Aion DPS Meter</span><span>${escH(settings.character || '')}</span></div></body>`;
 }
 async function cardPng(f) {
@@ -876,11 +880,11 @@ async function cardPng(f) {
   let win;
   try {
     fs.writeFileSync(file, cardHtml(f));
-    win = new BrowserWindow({ show: false, width: 760, height: 400, useContentSize: true, webPreferences: { offscreen: false, backgroundThrottling: false } });
+    win = new BrowserWindow({ show: false, width: 1520, height: 800, useContentSize: true, webPreferences: { zoomFactor: 2, backgroundThrottling: false } });
     await win.loadFile(file);
     await new Promise(r => setTimeout(r, 250));
     const h = await win.webContents.executeJavaScript('document.body.scrollHeight');
-    win.setContentSize(760, Math.max(200, h));
+    win.setContentSize(1520, Math.max(400, h * 2));
     await new Promise(r => setTimeout(r, 150));
     return await win.webContents.capturePage();
   } catch { return null; } finally { try { if (win && !win.isDestroyed()) win.destroy(); } catch { /* ignore */ } try { fs.unlinkSync(file); } catch { /* ignore */ } }
@@ -890,18 +894,18 @@ async function shareFight(fightId) {
   if (!f && !fightId && !(lastSnap && lastSnap.players?.length)) f = loadFights()[0] || null; // боя сейчас нет — делимся последним записанным
   if (!f && lastSnap && lastSnap.players?.length) {
     const s = lastSnap;
-    f = { boss: s.boss?.name || s.target?.name, title: s.title, combatMs: s.combatMs, partyDps: s.partyDps, players: s.players };
+    f = { at: Date.now(), boss: s.boss?.name || s.target?.name, title: s.title, combatMs: s.combatMs, partyDps: s.partyDps, players: s.players };
   }
   if (!f) { showToast({ key: 'share' + Date.now(), name: 'Нечем поделиться', type: 'info', icon: 'info', start: null, text: 'Сначала проведите бой' }); return; }
   const data = { text: fightText(f) };
   const ov = wins.overlay;
-  if (f.id) { const img = await cardPng(f); if (img && !img.isEmpty()) data.image = img; }
-  else if (ov && !ov.isDestroyed() && ov.isVisible()) {
+  { const img = await cardPng(f); if (img && !img.isEmpty()) data.image = img; }
+  if (!data.image && ov && !ov.isDestroyed() && ov.isVisible()) {
     try { data.image = await ov.webContents.capturePage(); } catch { /* только текст */ }
   }
   clipboard.write(data);
   if (settings.webhook?.on && WEBHOOK_RE.test(settings.webhook.url || '')) {
-    const r = await webhookSend(settings.webhook.url, fightEmbed(f), data.image ? data.image.toPNG() : null);
+    const r = await webhookSend(settings.webhook.url, fightEmbed(f, !!data.image), data.image ? data.image.toPNG() : null);
     showToast({ key: 'share' + Date.now(), name: r.ok ? T('Итог боя отправлен в Discord') : T('Не удалось отправить в Discord'), type: 'info', icon: 'discord', start: null, text: r.ok ? T('И скопирован: Ctrl+V') : r.error });
     return;
   }
@@ -912,13 +916,13 @@ async function shareFight(fightId) {
 const WEBHOOK_RE = /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/;
 const padR = (t, n) => { t = String(t); return t.length >= n ? t.slice(0, n) : t + ' '.repeat(n - t.length); };
 const padL = (t, n) => { t = String(t); return t.length >= n ? t : ' '.repeat(n - t.length) + t; };
-function fightEmbed(f) {
+function fightEmbed(f, cardOnly) {
   const ps = (f.players || []).filter(p => p.dmg > 0).slice(0, 12);
   const rows = ps.map((p, i) => `${padL(i + 1, 2)} ${padR(p.name + (p.self ? '*' : ''), 16)} ${padL(nf(p.dps), 7)} ${padL(nf(p.dmg), 7)} ${padL(((p.share || 0) * 100).toFixed(1).replace('.', settings.lang === 'en' ? '.' : ','), 5)}`);
   const table = '```\n' + [` # ${padR(T('Игрок'), 16)} ${padL('DPS', 7)} ${padL(T('Урон'), 7)} ${padL('%', 5)}`, ...rows].join('\n') + '\n```';
   const embed = {
     title: '⚔ ' + (f.boss || f.title || T('Бой')),
-    description: `${T('Время боя')}: **${mmss(f.combatMs)}** · ${T('DPS группы')}: **${nf(f.partyDps)}**\n${table}`,
+    description: `${T('Время боя')}: **${mmss(f.combatMs)}** · ${T('DPS группы')}: **${nf(f.partyDps)}**${cardOnly ? '' : '\n' + table}`,
     color: 0xFFC66B,
     footer: { text: 'Aion DPS Meter · ' + (settings.character || 'AION 2') },
     timestamp: new Date(f.at || Date.now()).toISOString(),
