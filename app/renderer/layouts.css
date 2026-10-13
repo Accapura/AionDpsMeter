@@ -104,7 +104,7 @@ body[data-hd=side][data-win=overlay] .head{overflow:hidden}
 body[data-hd=side][data-win=overlay] #bHide{order:-2}
 body[data-hd=side][data-win=overlay] .head .logo{order:-1}
 @media (max-height:300px){
-  body[data-hd=side][data-win=overlay] .head{padding:4px 0;gap:2px}
+  body[data-hd=side][data-win=overlay] .head{padding:3px 0;gap:1px}
   body[data-hd=side][data-win=overlay] .head .logo{display:none}
-  body[data-hd=side][data-win=overlay] .head .icon{width:26px;height:24px}
+  body[data-hd=side][data-win=overlay] .head button.icon{width:26px;height:22px}
 }
