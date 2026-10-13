@@ -4,6 +4,10 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Бесплатно': 'Free',
+    'Открытый исходный код': 'Open source', 'Aion DPS Meter на GitHub': 'Aion DPS Meter on GitHub', 'Релизы': 'Releases', 'Исходный код': 'Source code', 'Сообщить об ошибке': 'Report a bug',
+    'Ссылка на GitHub в «О программе»': 'GitHub link in “About”', 'Исходный код, релизы и баг-репорты — одной кнопкой': 'Source code, releases and bug reports — one button away',
+    'Исходный код и релизы': 'Source code and releases', 'Новые версии, описание изменений, исходный код и баг-репорты': 'New versions, change notes, source code and bug reports', 'Открыть GitHub': 'Open GitHub',
     'Таймер берсерка босса': 'Boss enrage timer', 'В оверлее рядом с HP — сколько осталось до берсерка (5:00 боя). Только для боссов, у которых время подтверждено: Атиэль, Эмиссар Нуа, Бешеный Ферк, Завершённая форма Берка, Священный Аулдор, Запечатанный сура, Разъярённая Леда': 'In the overlay next to the HP — time left until the enrage (5:00 of combat). Only for bosses with a confirmed time: Atiel, Executioner Nua, Furious Feruk, Ultimate Berk, Divine Auldor, Sealed Sura, Enraged Reda',
     'Время до берсерка босса (5:00 боя)': 'Time until the boss enrages (5:00 of combat)', 'Босс в берсерке': 'The boss is enraged', 'берсерк': 'enrage',
     'Уведомления скрываются сами': 'Notifications hide themselves',

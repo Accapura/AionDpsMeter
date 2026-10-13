@@ -247,8 +247,22 @@ const pages = {
         <div style="margin-top:6px">На сегодня NCSoft публично не запрещала такие счётчики урона, но и официального разрешения не давала. Если NCSoft объявит запрет, работа счётчика будет отключена через обновление.</div>
         <div style="margin-top:6px" class="muted">Программа не связана с NCSoft и не одобрена ею. AION 2, названия и эмблемы классов — собственность NCSoft.</div>
       </div></div>
-      <div class="muted" style="font-size:12px;text-align:center">Открытый исходный код · лицензия GPL-3.0 · <a href="#" data-url="https://www.gnu.org/licenses/gpl-3.0.html">текст лицензии</a></div></div>
+      <div class="muted" style="font-size:12px;text-align:center">Открытый исходный код · лицензия GPL-3.0 · <a href="#" data-url="https://github.com/Accapura/AionDpsMeter">GitHub</a> · <a href="#" data-url="https://www.gnu.org/licenses/gpl-3.0.html">текст лицензии</a></div></div>
     ${updateCard()}
+    <div class="card ghCard">
+      <div class="ghIc"><svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></div>
+      <div class="ghBody">
+        <span class="lbl">Открытый исходный код</span>
+        <b class="ghName">Aion DPS Meter на GitHub</b>
+        <div class="ghTags"><span class="ghRepo" data-notr>Accapura / AionDpsMeter</span><span>GPL-3.0</span><span>Бесплатно</span></div>
+        <div class="ghLinks">
+          <button type="button" data-url="https://github.com/Accapura/AionDpsMeter/releases/latest">Релизы</button>
+          <button type="button" data-url="https://github.com/Accapura/AionDpsMeter">Исходный код</button>
+          <button type="button" data-url="https://github.com/Accapura/AionDpsMeter/issues">Сообщить об ошибке</button>
+        </div>
+      </div>
+      <button type="button" class="primary discord" data-url="https://github.com/Accapura/AionDpsMeter"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Открыть GitHub</button>
+    </div>
     <div class="card authorCard">
       <img src="../assets/logo.png" width="64" height="64" alt="">
       <div class="who"><span class="lbl">Автор</span><b>Accapura</b><span class="muted">Разработка, идеи и поддержка программы</span></div>
