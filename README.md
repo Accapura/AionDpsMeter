@@ -52,16 +52,33 @@
 
 ## 📥 Установка
 
-1. Скачайте установщик **`AionDpsMeter.vX.Y.Z.exe`** со страницы [**Releases**](https://github.com/Accapura/AionDpsMeter/releases/latest) и запустите.
-2. Выберите язык, примите соглашение и папку — программа появится в меню «Пуск».
-3. Для чтения боя нужны (установщик сам проверит и даст ссылки):
-   - [**Npcap**](https://npcap.com/#download) — драйвер захвата трафика, ставьте с настройками по умолчанию;
-   - [**.NET 10 Runtime**](https://dotnet.microsoft.com/download/dotnet/10.0) — для модуля чтения боя (Windows x64).
-4. Запускайте Aion DPS Meter **до входа в подземелье** — имена игроков игра присылает на экране загрузки.
+<p align="center">
+<a href="https://github.com/Accapura/AionDpsMeter/releases/latest"><img src="https://img.shields.io/badge/скачать_установщик-ffc66b?style=for-the-badge&logo=windows&logoColor=1d1536" alt="Скачать установщик"></a>
+</p>
 
-**Поддерживаемые клиенты:** AION 2 Global · Steam, AION 2 Global · PURPLE. Windows 10 / 11 x64.
+<table>
+<tr>
+<td width="64" align="center"><h2>1</h2></td>
+<td><b>Скачайте и запустите установщик</b><br>Файл <code>AionDpsMeter.vX.Y.Z.exe</code> — на странице <a href="https://github.com/Accapura/AionDpsMeter/releases/latest">Releases</a>. Выберите язык, примите соглашение и папку: программа появится в меню «Пуск».</td>
+</tr>
+<tr>
+<td align="center"><h2>2</h2></td>
+<td><b>Поставьте два компонента для чтения боя</b><br>Установщик сам их проверит и даст ссылки. Npcap — с настройками по умолчанию.<br><br>
+<a href="https://npcap.com/#download"><img src="https://img.shields.io/badge/Npcap-драйвер_захвата_трафика-5b8def?style=flat-square" alt="Npcap"></a>
+<a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img src="https://img.shields.io/badge/.NET_10_Runtime-x64-512bd4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10 Runtime"></a></td>
+</tr>
+<tr>
+<td align="center"><h2>3</h2></td>
+<td><b>Запускайте до входа в подземелье</b><br>Имена игроков игра присылает на экране загрузки — если программа уже запущена, ники будут в оверлее с первой секунды.</td>
+</tr>
+<tr>
+<td align="center"><h2>4</h2></td>
+<td><b>Дальше всё само</b><br>Когда выйдет новая версия, появится уведомление «Доступно обновление» — нажмите <b>«Обновить сейчас»</b>. Настройки и история боёв сохраняются.</td>
+</tr>
+</table>
 
-Дальше программа обновляется сама: появится уведомление «Доступно обновление» — нажмите **«Обновить сейчас»**.
+> [!NOTE]
+> **Поддерживаемые клиенты:** AION 2 Global · Steam и AION 2 Global · PURPLE. **Система:** Windows 10 / 11 x64.
 
 ## ⌨️ Горячие клавиши
 

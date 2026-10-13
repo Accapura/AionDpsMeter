@@ -52,16 +52,33 @@
 
 ## 📥 Install
 
-1. Download the installer **`AionDpsMeter.vX.Y.Z.exe`** from [**Releases**](https://github.com/Accapura/AionDpsMeter/releases/latest) and run it.
-2. Pick the language, accept the agreement and choose a folder — the app appears in the Start menu.
-3. To read fights you need (the installer checks and gives links):
-   - [**Npcap**](https://npcap.com/#download) — traffic capture driver, install with default options;
-   - [**.NET 10 Runtime**](https://dotnet.microsoft.com/download/dotnet/10.0) — for the fight reader (Windows x64).
-4. Start Aion DPS Meter **before entering a dungeon** — the game sends player names on the loading screen.
+<p align="center">
+<a href="https://github.com/Accapura/AionDpsMeter/releases/latest"><img src="https://img.shields.io/badge/download_installer-ffc66b?style=for-the-badge&logo=windows&logoColor=1d1536" alt="Download the installer"></a>
+</p>
 
-**Supported clients:** AION 2 Global · Steam, AION 2 Global · PURPLE. Windows 10 / 11 x64.
+<table>
+<tr>
+<td width="64" align="center"><h2>1</h2></td>
+<td><b>Download and run the installer</b><br>The <code>AionDpsMeter.vX.Y.Z.exe</code> file is on the <a href="https://github.com/Accapura/AionDpsMeter/releases/latest">Releases</a> page. Pick the language, accept the agreement and choose a folder: the app appears in the Start menu.</td>
+</tr>
+<tr>
+<td align="center"><h2>2</h2></td>
+<td><b>Install two components for fight reading</b><br>The installer checks them and gives you the links. Install Npcap with default options.<br><br>
+<a href="https://npcap.com/#download"><img src="https://img.shields.io/badge/Npcap-traffic_capture_driver-5b8def?style=flat-square" alt="Npcap"></a>
+<a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img src="https://img.shields.io/badge/.NET_10_Runtime-x64-512bd4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10 Runtime"></a></td>
+</tr>
+<tr>
+<td align="center"><h2>3</h2></td>
+<td><b>Start it before entering a dungeon</b><br>The game sends player names on the loading screen — if the app is already running, nicknames show in the overlay from the first second.</td>
+</tr>
+<tr>
+<td align="center"><h2>4</h2></td>
+<td><b>After that it updates itself</b><br>When a new version is out, an “Update available” notice appears — click <b>“Update now”</b>. Your settings and fight history are kept.</td>
+</tr>
+</table>
 
-After that the app updates itself: when “Update available” appears, click **“Update now”**.
+> [!NOTE]
+> **Supported clients:** AION 2 Global · Steam and AION 2 Global · PURPLE. **System:** Windows 10 / 11 x64.
 
 ## ⌨️ Hotkeys
 
