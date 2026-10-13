@@ -2,16 +2,16 @@
 const THEMES = {
   glass: { name: 'Стекло · Градиент', g1: '58,40,92', g2: '20,24,48', accent: '#ffc66b', accentFg: '#2a1d48', text: '#fbf7ff', muted: '#cbc2dc', line: 'rgba(255,255,255,.18)', hp: '#ff5d73', lay: ['list', 'top', 'side'] },
   glassblack: { name: 'Стекло · Чёрное', g1: '34,34,40', g2: '2,2,4', accent: '#ffffff', accentFg: '#16171b', text: '#f6f6f8', muted: '#c4c6cc', line: 'rgba(255,255,255,.16)', hp: '#ff5a5f', lay: ['list', 'top', 'side'] },
-  catppuccin: { name: 'Catppuccin Mocha', g1: '49,50,68', g2: '30,30,46', accent: '#cba6f7', accentFg: '#1e1e2e', text: '#cdd6f4', muted: '#a6adc8', line: 'rgba(205,214,244,.16)', hp: '#f38ba8', lay: ['cards', 'top', 'side'] },
-  tokyo: { name: 'Tokyo Night', g1: '41,46,66', g2: '26,27,38', accent: '#7aa2f7', accentFg: '#1a1b26', text: '#c0caf5', muted: '#9aa5ce', line: 'rgba(122,162,247,.22)', hp: '#f7768e', lay: ['list', 'top', 'top'] },
-  dracula: { name: 'Dracula', g1: '68,71,90', g2: '40,42,54', accent: '#bd93f9', accentFg: '#282a36', text: '#f8f8f2', muted: '#b9bccf', line: 'rgba(189,147,249,.24)', hp: '#ff5555', lay: ['big', 'top', 'right'] },
-  nord: { name: 'Nord', g1: '59,66,82', g2: '36,41,51', accent: '#88c0d0', accentFg: '#2e3440', text: '#eceff4', muted: '#aab4c6', line: 'rgba(136,192,208,.22)', hp: '#bf616a', lay: ['ticker', 'bottom', 'rail'] },
-  rosepine: { name: 'Rosé Pine', g1: '38,35,58', g2: '25,23,36', accent: '#ebbcba', accentFg: '#191724', text: '#e0def4', muted: '#908caa', line: 'rgba(235,188,186,.2)', hp: '#eb6f92', lay: ['cards', 'bottom', 'dock'] },
-  gruvbox: { name: 'Gruvbox Dark', g1: '60,56,54', g2: '40,40,40', accent: '#fabd2f', accentFg: '#282828', text: '#ebdbb2', muted: '#bdae93', line: 'rgba(250,189,47,.22)', hp: '#fb4934', lay: ['list', 'side', 'top'] },
-  kanagawa: { name: 'Kanagawa', g1: '54,54,70', g2: '31,31,40', accent: '#e6c384', accentFg: '#1f1f28', text: '#dcd7ba', muted: '#a6a69c', line: 'rgba(230,195,132,.22)', hp: '#e46876', lay: ['columns', 'top', 'side'] },
-  onedark: { name: 'One Dark', g1: '50,56,66', g2: '33,37,43', accent: '#61afef', accentFg: '#21252b', text: '#d7dae0', muted: '#9aa2b1', line: 'rgba(97,175,239,.22)', hp: '#e06c75', lay: ['list', 'bottom', 'side'] },
-  everforest: { name: 'Everforest', g1: '52,63,68', g2: '35,42,46', accent: '#a7c080', accentFg: '#232a2e', text: '#d3c6aa', muted: '#9da9a0', line: 'rgba(167,192,128,.22)', hp: '#e67e80', lay: ['big', 'side', 'right'] },
-  solarized: { name: 'Solarized Dark', g1: '7,54,66', g2: '0,43,54', accent: '#2aa198', accentFg: '#002b36', text: '#eee8d5', muted: '#93a1a1', line: 'rgba(42,161,152,.28)', hp: '#dc322f', lay: ['ticker', 'top', 'dock'] },
+  catppuccin: { name: 'Каппуччино Мокко', g1: '49,50,68', g2: '30,30,46', accent: '#cba6f7', accentFg: '#1e1e2e', text: '#cdd6f4', muted: '#a6adc8', line: 'rgba(205,214,244,.16)', hp: '#f38ba8', lay: ['cards', 'top', 'side'] },
+  tokyo: { name: 'Токийская ночь', g1: '41,46,66', g2: '26,27,38', accent: '#7aa2f7', accentFg: '#1a1b26', text: '#c0caf5', muted: '#9aa5ce', line: 'rgba(122,162,247,.22)', hp: '#f7768e', lay: ['list', 'top', 'top'] },
+  dracula: { name: 'Дракула', g1: '68,71,90', g2: '40,42,54', accent: '#bd93f9', accentFg: '#282a36', text: '#f8f8f2', muted: '#b9bccf', line: 'rgba(189,147,249,.24)', hp: '#ff5555', lay: ['big', 'top', 'right'] },
+  nord: { name: 'Норд', g1: '59,66,82', g2: '36,41,51', accent: '#88c0d0', accentFg: '#2e3440', text: '#eceff4', muted: '#aab4c6', line: 'rgba(136,192,208,.22)', hp: '#bf616a', lay: ['ticker', 'bottom', 'rail'] },
+  rosepine: { name: 'Розовая сосна', g1: '38,35,58', g2: '25,23,36', accent: '#ebbcba', accentFg: '#191724', text: '#e0def4', muted: '#908caa', line: 'rgba(235,188,186,.2)', hp: '#eb6f92', lay: ['cards', 'bottom', 'dock'] },
+  gruvbox: { name: 'Грувбокс Тёмная', g1: '60,56,54', g2: '40,40,40', accent: '#fabd2f', accentFg: '#282828', text: '#ebdbb2', muted: '#bdae93', line: 'rgba(250,189,47,.22)', hp: '#fb4934', lay: ['list', 'side', 'top'] },
+  kanagawa: { name: 'Канагава', g1: '54,54,70', g2: '31,31,40', accent: '#e6c384', accentFg: '#1f1f28', text: '#dcd7ba', muted: '#a6a69c', line: 'rgba(230,195,132,.22)', hp: '#e46876', lay: ['columns', 'top', 'side'] },
+  onedark: { name: 'Ван Дарк', g1: '50,56,66', g2: '33,37,43', accent: '#61afef', accentFg: '#21252b', text: '#d7dae0', muted: '#9aa2b1', line: 'rgba(97,175,239,.22)', hp: '#e06c75', lay: ['list', 'bottom', 'side'] },
+  everforest: { name: 'Вечный лес', g1: '52,63,68', g2: '35,42,46', accent: '#a7c080', accentFg: '#232a2e', text: '#d3c6aa', muted: '#9da9a0', line: 'rgba(167,192,128,.22)', hp: '#e67e80', lay: ['big', 'side', 'right'] },
+  solarized: { name: 'Соларайзд Тёмная', g1: '7,54,66', g2: '0,43,54', accent: '#2aa198', accentFg: '#002b36', text: '#eee8d5', muted: '#93a1a1', line: 'rgba(42,161,152,.28)', hp: '#dc322f', lay: ['ticker', 'top', 'dock'] },
 };
 
 const CLASS_RU = { Gladiator: 'Гладиатор', Templar: 'Страж', Ranger: 'Стрелок', Assassin: 'Убийца', Sorcerer: 'Волшебник', Elementalist: 'Заклинатель', Cleric: 'Целитель', Chanter: 'Чародей', Brawler: 'Боец', Unknown: 'Класс неизвестен' };
