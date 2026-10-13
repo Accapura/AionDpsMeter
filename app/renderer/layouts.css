@@ -94,3 +94,7 @@ body[data-app=top][data-win=main] main,body[data-app=dock][data-win=main] main{p
 body[data-ov=big][data-win=overlay] .row:not(:first-child) .grid{grid-template-columns:16px 20px minmax(0,1fr) 54px 40px}
 body[data-ov=columns][data-win=overlay] .row{max-width:96px}
 body[data-ov=columns][data-win=overlay] .list{justify-content:flex-start}
+
+/* Шапка снизу: уголок изменения размера не должен лежать на кнопке «закрыть» */
+body[data-hd=bottom][data-win=overlay] .head{padding-right:26px}
+body[data-hd=bottom][data-win=overlay] .resize{width:20px;height:20px;padding:0 2px 2px 0}
