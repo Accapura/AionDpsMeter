@@ -15,7 +15,10 @@ public sealed class PingMeter
     // путь туда и обратно, в том числе через ускоритель/VPN. В игру мы ничего не отправляем — только читаем ответ.
     private const long UnrealOffsetMs = 16_777_216_000L;
     private const long DotnetToUnixMs = 62_135_596_800_000L;
-    private readonly List<int> _echoes = new(); // последние замеры; показываем медиану, чтобы одиночный всплеск не дёргал число
+    // «Живой» пинг: точный замер игры (раз в ~10 с) — якорь; между замерами число двигается вместе с задержкой подтверждений
+    // TCP в трафике игры (они идут постоянно). Берётся нижняя четверть последних замеров — это отсекает отложенные подтверждения.
+    private double _anchor, _anchorPassive = -1;
+    private double? _live;
     private long _echoAtMs;
     private int _echoCount, _echoLast;
 
@@ -35,10 +38,25 @@ public sealed class PingMeter
     }
     public long LastSampleUs { get { lock (_gate) return _samples.Count == 0 ? 0 : _samples[^1].Us; } }
 
-    /// <summary>Пинг по ответам игры (мс); -1, если замеров нет или они старше 45 с.</summary>
-    public int EchoPingMs(long nowMs)
+    /// <summary>Задержка подтверждений TCP за последние windowMs мс (нижняя четверть замеров); -1, если замеров меньше двух. Под замком.</summary>
+    private double PassiveLow(long nowMs, int windowMs)
     {
-        lock (_gate) { if (_echoes.Count == 0 || nowMs - _echoAtMs >= 45_000) return -1; var a = _echoes.OrderBy(x => x).ToArray(); return a[a.Length / 2]; }
+        var a = _samples.Where(s => nowMs - s.Us / 1000 < windowMs).Select(s => s.Ms).OrderBy(x => x).ToArray();
+        return a.Length < 2 ? -1 : a[a.Length / 4];
+    }
+
+    /// <summary>Живой пинг (мс): точный замер игры плюс изменение задержки соединения с момента этого замера. -1, если замера нет или он старше 60 с.</summary>
+    public int LivePingMs(long nowMs)
+    {
+        lock (_gate)
+        {
+            if (_echoCount == 0 || nowMs - _echoAtMs >= 60_000) return -1;
+            var p = PassiveLow(nowMs, 6000);
+            var target = _anchor + (p >= 0 && _anchorPassive >= 0 ? p - _anchorPassive : 0);
+            target = Math.Clamp(target, Math.Max(1, _anchor * 0.6), _anchor * 1.6 + 15);
+            _live = _live is double l ? l + 0.6 * (target - l) : target;
+            return (int)Math.Round(_live.Value);
+        }
     }
     /// <summary>Для подсказки в оверлее: сколько ответов игры получено и последний замер, мс.</summary>
     public (int Count, int Last) EchoInfo { get { lock (_gate) return (_echoCount, _echoLast); } }
@@ -65,7 +83,7 @@ public sealed class PingMeter
             if (rtt < 1 || rtt > 2000) continue;
             lock (_gate)
             {
-                _echoes.Add((int)rtt); if (_echoes.Count > 5) _echoes.RemoveAt(0);
+                _anchor = rtt; _anchorPassive = PassiveLow(wallNow, 8000); _live = rtt;
                 _echoAtMs = wallNow; _echoLast = (int)rtt; _echoCount++;
             }
         }

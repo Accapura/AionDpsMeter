@@ -357,8 +357,8 @@ while (running)
         });
     }
     CheckForeground();
-    // пинг до игрового сервера: раз в 2 секунды, если изменился
-    if (now - pingAt >= 2000)
+    // пинг до игрового сервера: раз в 3 секунды, если изменился
+    if (now - pingAt >= 3000)
     {
         pingAt = now;
         // Главный источник — сама игра: раз в ~10 секунд клиент шлёт серверу запрос пинга со своим временем, сервер возвращает его
@@ -369,7 +369,7 @@ while (running)
         var passive = capture?.Ping.PingMs ?? -1;
         var lastUs = capture?.Ping.LastSampleUs ?? 0;
         if (lastUs > 0 && now - lastUs / 1000 > 15_000) passive = -1;
-        var echo = capture?.Ping.EchoPingMs(now) ?? -1;
+        var echo = capture?.Ping.LivePingMs(now) ?? -1;
         int ping; var est = false;
         if (echo >= 1) ping = echo;
         else if (icmp >= 2) { ping = icmp; est = true; }

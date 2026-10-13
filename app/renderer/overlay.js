@@ -193,7 +193,7 @@ function showPing(ms, est, dbg) {
   const bars = [0, 1, 2].map(i => `<rect x="${1 + i * 4}" y="${8 - i * 3}" width="2.6" height="${3 + i * 3}" rx="1" fill="currentColor" opacity="${i < n ? 1 : .28}"/>`).join('');
   el.className = 'ping ' + q;
   el.innerHTML = `<svg width="13" height="12" viewBox="0 0 13 12" aria-hidden="true">${bars}</svg>${est ? '~' : ''}${ms}<span class="u">мс</span>`;
-  el.title = est ? 'Примерный пинг до адреса сервера: ' + ms + ' мс. Точный — по ответу игры на её пинг-запрос — появится в течение 10 секунд' + dt : 'Пинг до игрового сервера по ответу игры (весь путь, с ускорителем): ' + ms + ' мс' + dt;
+  el.title = est ? 'Примерный пинг до адреса сервера: ' + ms + ' мс. Точный — по ответу игры на её пинг-запрос — появится в течение 10 секунд' + dt : 'Пинг до игрового сервера (весь путь, с ускорителем): ' + ms + ' мс. Точный замер игра даёт раз в 10 секунд, между ними число меняется вместе с задержкой соединения' + dt;
   el.hidden = false;
 }
 api.on('ping', (ms, est, dbg) => showPing(ms, est, dbg));
