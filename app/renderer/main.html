@@ -207,6 +207,16 @@ nav > button.upd::after{content:"";position:absolute;left:28px;top:9px;width:8px
 .pv-minimal{height:22px;margin:6px 0;border-radius:999px;padding:0 3px;background:rgba(var(--g2),.95);border:1px solid var(--line)}
 .pv-minimal .pi{width:16px;height:16px;border-radius:50%;background:var(--accent);color:var(--accentFg)}
 .pv-minimal .pl i+i{display:none}
+.pv-aurora{border-radius:10px;background:radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,var(--accent) 40%,transparent),transparent 60%),rgba(var(--g1),.95);border:1px solid var(--line)}
+.pv-aurora .pi{border-radius:50%}
+.pv-neon{border-radius:8px;background:rgba(var(--g2),.97);border:1.5px solid var(--accent);box-shadow:0 0 8px color-mix(in srgb,var(--accent) 40%,transparent)}
+.pv-neon .pi{background:none;border:1px solid var(--accent)}
+.pv-ticket{border-radius:7px;padding-left:0;background:rgba(var(--g1),.95);border:1px solid var(--line)}
+.pv-ticket .pi{align-self:stretch;width:24px;height:auto;border-radius:0;background:var(--accent);color:var(--accentFg);border-right:1.5px dashed rgba(0,0,0,.3)}
+.pv-compact{height:26px;margin:4px 0;border-radius:8px;background:rgba(var(--g2),.95);border:1px solid var(--line)}
+.pv-compact .pl i+i{display:none}
+.pv-timer{border-radius:7px;background:rgb(var(--g2));border:1px solid var(--line)}
+.pv-timer::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:60%;background:var(--accent)}
 .pv-banner{border-radius:9px;padding:0 4px;background:linear-gradient(120deg,var(--accent) -40%,rgba(var(--g1),.96) 40%,rgba(var(--g2),.96));border:1px solid var(--line)}
 .pv-banner .pi{width:26px;height:26px;border-radius:7px;background:rgba(0,0,0,.25)}
 @media (max-width:700px){.stgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}

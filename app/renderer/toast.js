@@ -24,7 +24,7 @@ function updCard(t, enter) {
 function render() {
   applyTheme({ theme: data.theme }, 94);
   document.body.style.justifyContent = data.top ? 'flex-start' : 'flex-end';
-  const st = data.style || 'glass', icSize = st === 'banner' ? 44 : st === 'minimal' ? 20 : 24;
+  const st = data.style || 'glass', icSize = st === 'banner' ? 44 : st === 'minimal' ? 20 : st === 'compact' ? 20 : st === 'ticket' ? 30 : 24;
   const html = data.toasts.map(t => {
     if (t.type === 'update') return updCard(t, !entered.has(t.key));
     const left = t.start ? Math.max(0, Math.floor((t.start - Date.now()) / 1000)) : 0;
@@ -32,9 +32,9 @@ function render() {
     const line = t.start ? `Начало через <b class="num">${left >= 3600 ? Math.floor(left / 3600) + ' ч ' : ''}${clock((left % 3600) * 1000)}</b>` : esc(t.text || 'Смотрите окно «Расписание»');
     return `<div class="t s-${st}${t.actions?.length || t.progress != null ? ' tall' : ''}"><div class="ic">${eventIcon(t, icSize)}</div><div class="b"><div class="k">${TYPE[t.type] || 'Ивент'}${at}</div>
       <div class="n">${esc(t.name)}</div><div class="l">${line}</div>${foot(t)}</div>
-      <button class="icon x" data-k="${esc(t.key)}" aria-label="Закрыть уведомление">${ICON.close}</button></div>`;
+      <button class="icon x" data-k="${esc(t.key)}" aria-label="Закрыть уведомление">${ICON.close}</button>${st === 'timer' && t.exp ? `<i class="tb" style="animation-duration:${Math.max(1, (t.exp - t.at0) / 1000)}s;animation-delay:-${Math.max(0, (Date.now() - t.at0) / 1000).toFixed(2)}s"></i>` : ''}</div>`;
   }).join('');
-  const sig = html.replace(/ enter"/g, '"') + '|' + st + '|' + data.theme + '|' + data.lang;
+  const sig = html.replace(/ enter"/g, '"').replace(/animation-delay:-[\d.]+s/g, '') + '|' + st + '|' + data.theme + '|' + data.lang;
   // перерисовываем только если что-то изменилось — иначе анимации и подсветка кнопок сбрасывались бы каждую секунду
   if (sig === lastHtml) return;
   lastHtml = sig;
@@ -46,8 +46,9 @@ function render() {
 }
 api.on('toasts', d => {
   data = d; render();
-  let fresh = false;
-  for (const t of d.toasts) if (!played.has(t.key)) { played.add(t.key); fresh = true; }
-  if (d.sound && fresh) playSound(d.soundName, d.volume);
+  // звук у каждого вида уведомлений свой: t.snd — 'off' (без звука) или имя звука; нет — общий
+  let snd = null;
+  for (const t of d.toasts) if (!played.has(t.key)) { played.add(t.key); if (snd == null && t.snd !== 'off') snd = t.snd || d.soundName; }
+  if (d.sound && snd) playSound(snd, d.volume);
 });
 setInterval(render, 1000);

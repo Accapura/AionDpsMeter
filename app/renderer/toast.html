@@ -39,6 +39,30 @@ body{display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding
 .s-banner .ic{width:84px;height:84px;border-radius:18px;background:rgba(0,0,0,.25)}
 .s-banner .ic svg{width:44px;height:44px}
 .s-banner .n{font-size:17px}.s-banner .l{font-size:14px}.s-banner .l b{font-size:18px}
+/* 6. Аврора — мягкое свечение акцентом */
+.s-aurora{height:96px;border-radius:20px;padding:12px 8px 12px 14px;background:radial-gradient(130% 160% at 0% 0%,color-mix(in srgb,var(--accent) 38%,transparent),transparent 58%),linear-gradient(155deg,rgba(var(--g1),.96),rgba(var(--g2),.96));border:1px solid var(--line);box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.s-aurora .ic{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.1);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),0 0 18px color-mix(in srgb,var(--accent) 35%,transparent)}
+.s-aurora .n{font-size:15.5px}.s-aurora .l{font-size:13.5px}
+/* 7. Неон — тёмная карточка с контуром */
+.s-neon{height:96px;border-radius:16px;padding:12px 8px 12px 14px;background:rgba(var(--g2),.97);border:1.5px solid var(--accent);box-shadow:inset 0 0 0 1px rgba(0,0,0,.45),inset 0 0 22px color-mix(in srgb,var(--accent) 16%,transparent)}
+.s-neon .ic{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--accent)}
+.s-neon .n{font-size:15px}.s-neon .l{font-size:13.5px}
+/* 8. Билет — цветной корешок слева и пунктир */
+.s-ticket{height:96px;border-radius:14px;padding:12px 8px 12px 0;background:linear-gradient(90deg,rgba(var(--g1),.97),rgba(var(--g2),.97));border:1px solid var(--line);box-shadow:0 8px 22px rgba(0,0,0,.4)}
+.s-ticket .ic{align-self:stretch;width:74px;margin:-12px 0 -12px 0;border-radius:14px 0 0 14px;background:var(--accent);color:var(--accentFg);border-right:2px dashed rgba(0,0,0,.28)}
+.s-ticket .n{font-size:15.5px}.s-ticket .l{font-size:13.5px}
+/* 9. Компакт — тонкая карточка без подписи */
+.s-compact{height:66px;border-radius:14px;padding:8px 6px 8px 10px;background:rgba(var(--g2),.94);border:1px solid var(--line)}
+.s-compact .ic{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.1)}
+.s-compact .k{display:none}.s-compact .n{font-size:14.5px}.s-compact .l{font-size:12.5px}
+.s-compact .x{align-self:center}
+/* 10. Таймер — плотная карточка и полоска, которая тает до исчезновения */
+.s-timer{height:96px;border-radius:14px;padding:12px 8px 14px 14px;background:rgb(var(--g2));border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.42)}
+.s-timer .ic{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.1)}
+.s-timer .n{font-size:15.5px}.s-timer .l{font-size:13.5px}
+.tb{position:absolute;left:0;bottom:0;height:3px;width:100%;transform-origin:left;background:var(--accent);opacity:.9;animation:tbShrink linear forwards}
+@keyframes tbShrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.t.tall.s-compact,.t.tall.s-ticket,.t.tall.s-aurora,.t.tall.s-neon,.t.tall.s-timer{height:auto!important}
 .acts{display:flex;gap:6px;margin-top:8px}
 .ta{height:28px;padding:0 12px;white-space:nowrap;flex:none;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--text);font:600 12.5px var(--font,inherit);cursor:pointer;transition:background .15s,transform .15s}
 .ta:hover{background:rgba(255,255,255,.16)}

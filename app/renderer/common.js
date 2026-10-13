@@ -287,7 +287,7 @@ const EV_ICON = {
   skull: '<path d="M12 3c4.4 0 8 3.2 8 7.4c0 2.4-1.2 4.2-3 5.3V19h-2v-2h-2v2h-2v-2H9v2H7v-3.3c-1.8-1.1-3-2.9-3-5.3C4 6.2 7.6 3 12 3z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/>',
 };
 // Звуки уведомлений: свои мелодии из assets/sounds и простой сигнал.
-const SOUNDS = [['stars', 'Stars'], ['stars-lite', 'Stars Lite'], ['clear-sky', 'Clear Sky'], ['ma-bae', 'Ma Bae'], ['kark', 'Kark'], ['beep', 'Простой сигнал']];
+const SOUNDS = [['stars', 'Stars'], ['stars-lite', 'Stars Lite'], ['clear-sky', 'Clear Sky'], ['ma-bae', 'Ma Bae'], ['kark', 'Kark'], ['chime', 'Chime'], ['drop', 'Drop'], ['glass', 'Glass'], ['marimba', 'Marimba'], ['harp', 'Harp'], ['pulse', 'Pulse'], ['beep', 'Простой сигнал']];
 let _snd = null;
 function playSound(name, volume = 80) {
   const v = Math.max(0, Math.min(100, +volume || 0)) / 100;

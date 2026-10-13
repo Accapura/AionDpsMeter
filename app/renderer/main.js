@@ -40,7 +40,7 @@ function sideSet() {
 }
 
 let WHN = { text: '', cls: '' }; // сообщение под ссылкой вебхука
-const NOTIFY_STYLES = [['glass', 'Стекло'], ['solid', 'Плотная'], ['accent', 'Акцент'], ['minimal', 'Минимал'], ['banner', 'Баннер']];
+const NOTIFY_STYLES = [['glass', 'Стекло'], ['solid', 'Плотная'], ['accent', 'Акцент'], ['minimal', 'Минимал'], ['banner', 'Баннер'], ['aurora', 'Аврора'], ['neon', 'Неон'], ['ticket', 'Билет'], ['compact', 'Компакт'], ['timer', 'Таймер']];
 const NOTIFY_POS = [['tl', 'Слева вверху'], ['tc', 'Сверху по центру'], ['tr', 'Справа вверху'], ['bl', 'Слева внизу'], ['bc', 'Снизу по центру'], ['br', 'Справа внизу']];
 
 const DISCORD_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19.3 5.3A16.6 16.6 0 0 0 15.2 4l-.5 1a15.4 15.4 0 0 0-5.4 0l-.5-1a16.6 16.6 0 0 0-4.1 1.3C2 9.2 1.3 13 1.6 16.8a16.8 16.8 0 0 0 5 2.5l1.1-1.7a10.8 10.8 0 0 1-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.7a16.7 16.7 0 0 0 5-2.5c.4-4.4-.7-8.2-3.1-11.5zM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2s1.8.9 1.8 2s-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2s1.8.9 1.8 2s-.8 2-1.8 2z"/></svg>';
@@ -161,6 +161,7 @@ const pages = {
       <div class="row"><button type="button" id="hkReset">Вернуть стандартные</button><span class="muted" style="font-size:12px">Нажмите на сочетание, затем любую клавишу или сочетание — подойдут и клавиши цифрового блока (Num 1, Num +). Esc — отмена.</span></div></div>`,
 
   connect: () => {
+    const sndSel = k => { const cur = (S.notify.sounds || {})[k] || ''; return `<select class="nsnd" data-k="${k}" title="Звук этого уведомления" style="width:150px;height:34px"><option value=""${cur === '' ? ' selected' : ''}>Общий звук</option><option value="off"${cur === 'off' ? ' selected' : ''}>Без звука</option>${SOUNDS.map(([v, t]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`; };
     const [main, addr] = splitStatus(status.msg);
     return `${head('Настройки', 'Чтение боя, уведомления и что нужно для работы программы')}
     <div class="card field center"><span class="lbl">Состояние</span><div class="big">${esc(main || '—')}</div>
@@ -180,10 +181,17 @@ const pages = {
         return dropList('ddSnd', `<span class="pl">${ICON.play}</span><span class="dd-v"${cur === 'beep' ? '' : ' data-notr'}>${n}</span>`, SOUNDS.map(([k, t]) => ({ v: k, on: k === cur, html: `<span class="pl">${ICON.play}</span><span${k === 'beep' ? '' : ' data-notr'}>${t}</span><span class="ck">${ICON.check}</span>` })), { label: 'Звук уведомления' }); })()}</div>
       <div class="sl vol"><label for="nVol">Громкость</label><b id="nVolV">${S.notify.volume ?? 50}%</b><input type="range" id="nVol" min="0" max="100" step="5" value="${S.notify.volume ?? 50}"></div>
       <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
-      <label class="opt" style="max-width:560px;margin:0 auto;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — уведомление, кто и чем добил персонажа, с кнопкой «Разбор»</span></label>
-      <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nPhase" ${S.phaseToast !== false ? 'checked' : ''}> <span><b>Фазы босса</b> — уведомление и звук на 75 / 50 / 25 % HP босса</span></label>
-      <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nPb" ${S.pbToast !== false ? 'checked' : ''}> <span><b>Новый рекорд</b> — уведомление после боя, если побит ваш лучший DPS или самое быстрое убийство босса</span></label>
-      <label class="opt" style="max-width:560px;margin:8px auto 0;text-align:left"><input type="checkbox" id="nLag" ${S.lagAlert !== false ? 'checked' : ''}> <span><b>Скачок пинга</b> — пинг на панели вспыхивает красным и приходит уведомление, когда связь с сервером резко ухудшилась</span></label></div>
+      <div class="sl vol"><label for="nHide">Скрывать уведомление через</label><b id="nHideV">${S.notify.hideSec ?? 8} с</b><input type="range" id="nHide" min="3" max="30" step="1" value="${S.notify.hideSec ?? 8}"></div>
+      <div class="muted" style="font-size:12px">Уведомление об обновлении не исчезает само — только по кнопке.</div>
+      <div style="max-width:560px;margin:6px auto 0;text-align:left"><b>Что показывать:</b></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nEv" ${S.evToast !== false ? 'checked' : ''}> <span><b>Ивенты расписания</b> — напоминания за 15 / 5 / 1 минуту до начала (когда они включены для ивента)</span></label>${sndSel('ev')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nFb" ${S.fbToast !== false ? 'checked' : ''}> <span><b>Полевые боссы</b> — уведомление, когда по таймеру из игры должен возродиться босс</span></label>${sndSel('fb')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nFeed" ${S.feedToast !== false ? 'checked' : ''}> <span><b>Новые ивенты</b> — когда в расписании появились новые события</span></label>${sndSel('feed')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nPhase" ${S.phaseToast !== false ? 'checked' : ''}> <span><b>Фазы босса</b> — уведомление и звук на 75 / 50 / 25 % HP босса</span></label>${sndSel('phase')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — кто и чем добил персонажа, с кнопкой «Разбор»</span></label>${sndSel('death')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nPb" ${S.pbToast !== false ? 'checked' : ''}> <span><b>Новый рекорд</b> — после боя, если побит ваш лучший DPS или самое быстрое убийство</span></label>${sndSel('pb')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nLag" ${S.lagAlert !== false ? 'checked' : ''}> <span><b>Скачок пинга</b> — пинг на панели вспыхивает красным и приходит уведомление</span></label>${sndSel('lag')}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nMisc" ${S.miscToast !== false ? 'checked' : ''}> <span><b>Короткие подтверждения</b> — «скопировано», «отчёт сохранён» и подобные</span></label>${sndSel('misc')}</div>
     <div class="card field center"><span class="lbl">Итог боя в Discord-канал</span>
       <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkLabel(hkText('share')))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
       <div class="whrow"><input type="password" id="whUrl" value="${esc(S.webhook?.url || '')}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false"><button type="button" id="whTest">Проверить</button></div>
@@ -812,6 +820,17 @@ function render() {
   on('restart', 'onclick', () => api.restartBridge());
   on('tt', 'onclick', () => api.testToast());
   on('nSound', 'onchange', e => api.set({ notify: { sound: e.target.checked } }));
+  document.querySelectorAll('.nsnd').forEach(el => el.onchange = () => {
+    const sounds = { ...(S.notify.sounds || {}) }; sounds[el.dataset.k] = el.value;
+    api.set({ notify: { sounds } });
+    if (el.value && el.value !== 'off') playSound(el.value, S.notify.volume ?? 50);
+  });
+  on('nEv', 'onchange', e => api.set({ evToast: e.target.checked }));
+  on('nFb', 'onchange', e => api.set({ fbToast: e.target.checked }));
+  on('nFeed', 'onchange', e => api.set({ feedToast: e.target.checked }));
+  on('nMisc', 'onchange', e => api.set({ miscToast: e.target.checked }));
+  on('nHide', 'oninput', e => { $('nHideV').textContent = e.target.value + ' с'; });
+  on('nHide', 'onchange', e => api.set({ notify: { hideSec: +e.target.value } }));
   on('nDeath', 'onchange', e => api.set({ deathToast: e.target.checked }));
   on('nLag', 'onchange', e => api.set({ lagAlert: e.target.checked }));
   on('nPhase', 'onchange', e => api.set({ phaseToast: e.target.checked }));

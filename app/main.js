@@ -46,7 +46,7 @@ const DEFAULTS = {
   discordRpc: true,             // статус в Discord
   updateSkip: '',               // версия, о которой больше не напоминать
   lang: 'ru',                   // язык интерфейса: ru | en
-  notify: { m15: true, m5: true, m1: false, sound: true, soundName: 'clear-sky', volume: 50, position: 'br', style: 'glass' }, // position: tl tc tr bl bc br; style: glass solid accent minimal banner
+  notify: { m15: true, m5: true, m1: false, sound: true, soundName: 'clear-sky', volume: 50, position: 'br', style: 'glass', hideSec: 8, sounds: {} }, // position: tl tc tr bl bc br; style: glass solid accent minimal banner
   events: [],
   character: '',               // ник персонажа — приходит из игры
   characterClass: '',
@@ -68,6 +68,10 @@ const DEFAULTS = {
   phaseToast: true,             // уведомление на 75 / 50 / 25 % HP босса
   checklist: null,              // свой список дел (null — стандартный), см. renderer: страница «Дела»
   streamer: false,              // режим стримера: ники заменяются на «Игрок NN»
+  evToast: true,                // напоминания об ивентах расписания
+  fbToast: true,                // возрождение полевых боссов
+  feedToast: true,              // «Новые ивенты в расписании»
+  miscToast: true,              // короткие подтверждения («скопировано» и т. п.)
   pbToast: true,                // уведомление о новом рекорде после боя
   webhook: { url: '', on: false }, // отправка итога боя в Discord-канал
   winBounds: {},                // место и размер окон (главное, расписание, разбивка), как их оставил пользователь
@@ -580,7 +584,7 @@ async function updateFeed(manual) {
   const seen = new Set(settings.seenFeedIds);
   const fresh = feed.events.filter(e => !seen.has(e.id));
   if (fresh.length) {
-    if (seen.size) showToast({ key: 'feed' + Date.now(), name: 'Новые ивенты в расписании', text: fresh.map(e => e.name).join(', '), type: 'info', icon: 'calendar', start: null });
+    if (seen.size && settings.feedToast !== false) showToast({ key: 'feed' + Date.now(), name: 'Новые ивенты в расписании', text: fresh.map(e => e.name).join(', '), type: 'info', icon: 'calendar', start: null });
     patchSettings({ seenFeedIds: feed.events.map(e => e.id) });
   }
   broadcastSchedule();
@@ -643,20 +647,48 @@ function checkSchedule() {
       if (now >= at && now < at + 20000 && !notified.has(key)) { notified.add(key); showToast({ key, name, type, start, icon }); }
     }
   };
-  for (const ev of allEvents()) {
+  for (const ev of settings.evToast === false ? [] : allEvents()) {
     if (!ev.bell) continue;
     for (const start of Sched.occurrences(ev, now, now + 16 * 60000, regionNow())) if (start > now) fire(ev.id, ev.name, ev.type, start);
   }
   for (const map of Object.values(fieldBosses[currentServer()] || {})) for (const sl of map.slots || []) {
     const id = 'fb:' + sl.name;
-    if (!sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss');
+    if (settings.fbToast !== false && !sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss');
   }
 }
+const toastSec = () => { const v = Number(settings.notify.hideSec); return isFinite(v) && v >= 2 ? Math.min(60, v) : 8; };
+// Вид уведомления — для своего звука в настройках.
+function toastKind(t) {
+  const k = String(t.key || '');
+  if (t.type === 'update') return '';
+  if (k.startsWith('phase')) return 'phase';
+  if (k.startsWith('death')) return 'death';
+  if (k.startsWith('lag')) return 'lag';
+  if (k.startsWith('feed')) return 'feed';
+  if (k.startsWith('pb')) return 'pb';
+  if (k.startsWith('fb:')) return 'fb';
+  if (t.misc) return 'misc';
+  if (t.start) return 'ev';
+  return '';
+}
 function showToast(t) {
+  if (t.misc && settings.miscToast === false) return;
+  const kind = toastKind(t), cs = settings.notify.sounds && settings.notify.sounds[kind];
+  if (kind && cs && !t.snd) t = { ...t, snd: cs };
+  // исчезает само через N секунд (настройка); «липкие» (обновление) — только по кнопке
+  const prev = toasts.find(x => x.key === t.key);
+  t = prev && prev.exp && !t.fresh && !t.sticky ? { ...t, exp: prev.exp, at0: prev.at0 } : { ...t, at0: Date.now(), exp: t.sticky ? 0 : Date.now() + toastSec() * 1000 };
   toasts = [t, ...toasts.filter(x => x.key !== t.key)].slice(0, 3);
+  renderToasts();
+}
+function renderToasts() {
+  clearTimeout(showToast.timer);
+  const now = Date.now();
+  toasts = toasts.filter(x => !x.exp || x.exp > now);
+  if (!toasts.length) { if (wins.toast && !wins.toast.isDestroyed()) wins.toast.close(); return; }
   const wa = screen.getPrimaryDisplay().workArea;
   const st = settings.notify.style || 'glass';
-  const per = { minimal: 70, banner: 130 }[st] || 112;
+  const per = { minimal: 70, compact: 82, banner: 130 }[st] || 112;
   const extra = t => (t.actions?.length || t.progress != null ? (st === 'minimal' ? 46 : 40) : 0);
   const pos = settings.notify.position || 'br', W = st === 'banner' ? 440 : 380, h = 16 + toasts.reduce((n, t) => n + (t.type === 'update' ? 168 : per + extra(t)), 0), m = 16;
   const x = pos[1] === 'l' ? wa.x + m : pos[1] === 'c' ? wa.x + Math.round((wa.width - W) / 2) : wa.x + wa.width - W - m;
@@ -667,14 +699,13 @@ function showToast(t) {
   w.setBounds(bounds);
   const send = () => w.webContents.send('toasts', { toasts, sound: settings.notify.sound, soundName: settings.notify.soundName || 'clear-sky', volume: settings.notify.volume ?? 50, theme: settings.theme, top: pos[0] === 't', style: settings.notify.style || 'glass', lang: settings.lang });
   if (w.webContents.isLoading()) w.webContents.once('did-finish-load', send); else send();
-  clearTimeout(showToast.timer);
-  // обычные уведомления исчезают сами; «липкие» (обновление) — только по кнопке
-  showToast.timer = setTimeout(() => { toasts = toasts.filter(x => x.sticky); if (!toasts.length) wins.toast?.close(); else showToast(toasts[0]); }, 45000);
+  const next = Math.min(...toasts.filter(x => x.exp).map(x => x.exp));
+  if (isFinite(next)) showToast.timer = setTimeout(renderToasts, Math.max(200, next - Date.now() + 50));
 }
 function closeToast(key) {
   if (!toasts.some(t => t.key === key)) return;
   toasts = toasts.filter(t => t.key !== key);
-  if (!toasts.length) wins.toast?.close(); else showToast(toasts[0]);
+  renderToasts();
 }
 
 // ---------------------------------------------------------------- Discord автора
@@ -683,7 +714,7 @@ const DISCORD_ID = '256419758369538048';
 async function openDiscord(how) {
   if (how === 'copy') {
     clipboard.writeText('https://discord.com/users/' + DISCORD_ID);
-    showToast({ key: 'dc' + Date.now(), name: 'Ссылка на профиль скопирована', type: 'info', icon: 'discord', start: null, text: 'Вставьте её в любой чат Discord — откроется профиль' });
+    showToast({ misc: true, key: 'dc' + Date.now(), name: 'Ссылка на профиль скопирована', type: 'info', icon: 'discord', start: null, text: 'Вставьте её в любой чат Discord — откроется профиль' });
     return;
   }
   if (how === 'web') return shell.openExternal('https://discord.com/users/' + DISCORD_ID);
@@ -984,7 +1015,7 @@ function shareChat() {
   if (!f) { showToast({ key: 'chat' + Date.now(), name: 'Нечем поделиться', type: 'info', icon: 'info', start: null, text: 'Сначала проведите бой' }); return; }
   const line = chatLine(f);
   clipboard.writeText(line);
-  showToast({ key: 'chat' + Date.now(), name: T('Строка для чата скопирована'), type: 'info', icon: 'app', start: null, text: line });
+  showToast({ misc: true, key: 'chat' + Date.now(), name: T('Строка для чата скопирована'), type: 'info', icon: 'app', start: null, text: line });
 }
 // ---------------------------------------------------------------- карточка боя (картинка)
 const escH = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1082,7 +1113,7 @@ async function shareFight(fightId) {
     showToast({ key: 'share' + Date.now(), name: r.ok ? T('Итог боя отправлен в Discord') : T('Не удалось отправить в Discord'), type: 'info', icon: 'discord', start: null, text: r.ok ? T('И скопирован: Ctrl+V') : r.error });
     return;
   }
-  showToast({ key: 'share' + Date.now(), name: 'Итог боя скопирован', type: 'info', icon: 'app', start: null, text: data.image ? 'Картинка и текст · Ctrl+V' : 'Текст · Ctrl+V' });
+  showToast({ misc: true, key: 'share' + Date.now(), name: 'Итог боя скопирован', type: 'info', icon: 'app', start: null, text: data.image ? 'Картинка и текст · Ctrl+V' : 'Текст · Ctrl+V' });
 }
 
 // ---------------------------------------------------------------- отправка в Discord-канал (вебхук канала)
@@ -1189,7 +1220,7 @@ async function saveReport() {
   try {
     fs.writeFileSync(file, '\ufeff' + lines.join('\r\n'), 'utf8');
     shell.showItemInFolder(file);
-    showToast({ key: 'rep' + Date.now(), type: 'info', icon: 'info', start: null, name: T('Отчёт сохранён на рабочем столе'), text: T('Отправьте файл автору в Discord') });
+    showToast({ misc: true, key: 'rep' + Date.now(), type: 'info', icon: 'info', start: null, name: T('Отчёт сохранён на рабочем столе'), text: T('Отправьте файл автору в Discord') });
     return { ok: true, file };
   } catch (e) { return { ok: false, error: e.message }; }
 }
@@ -1461,7 +1492,7 @@ app.whenReady().then(() => {
 // Повторный запуск: второй экземпляр закрывается, а этот открывает главное окно и показывает уведомление.
 app.on('second-instance', () => {
   openMain();
-  showToast({ key: 'dup' + Date.now(), name: 'Aion DPS Meter уже запущен', type: 'info', icon: 'app', start: null, text: 'Окно программы открыто' });
+  showToast({ misc: true, key: 'dup' + Date.now(), name: 'Aion DPS Meter уже запущен', type: 'info', icon: 'app', start: null, text: 'Окно программы открыто' });
 });
 app.on('window-all-closed', () => { /* программа живёт в трее */ });
 app.on('before-quit', () => { for (const w of Object.values(wins)) if (w && !w.isDestroyed() && w.__keep) w.__keep(); saveNow(); });
