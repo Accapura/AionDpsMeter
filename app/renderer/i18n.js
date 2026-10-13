@@ -4,6 +4,8 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Таймер берсерка босса': 'Boss enrage timer', 'В оверлее рядом с HP — сколько осталось до берсерка (5:00 боя). Только для боссов, у которых время подтверждено: Атиэль, Эмиссар Нуа, Бешеный Ферк, Завершённая форма Берка, Священный Аулдор, Запечатанный сура, Разъярённая Леда': 'In the overlay next to the HP — time left until the enrage (5:00 of combat). Only for bosses with a confirmed time: Atiel, Executioner Nua, Furious Feruk, Ultimate Berk, Divine Auldor, Sealed Sura, Enraged Reda',
+    'Время до берсерка босса (5:00 боя)': 'Time until the boss enrages (5:00 of combat)', 'Босс в берсерке': 'The boss is enraged', 'берсерк': 'enrage',
     'Уведомления скрываются сами': 'Notifications hide themselves',
     'Через 8 секунд (от 3 до 30 в настройках); для каждого вида уведомлений свой переключатель и свой звук': 'After 8 seconds (3 to 30 in settings); every kind of notification has its own switch and sound',
     'Новые звуки уведомлений': 'New notification sounds',

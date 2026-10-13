@@ -96,6 +96,14 @@ function empty() {
 }
 
 // Время до убийства: по скорости падения HP за последние ~15 секунд, а пока её не видно — по DPS группы.
+// Берсерк босса: сколько секунд боя до него. Только значения, подтверждённые справочником (5:00); остальных боссов не угадываем.
+const BERSERK_SEC = 300, BERSERK_BOSSES = ['Atiel', 'Атиэль', 'Executioner Nua', 'Эмиссар Нуа', 'Furious Feruk', 'Бешеный Ферк', 'Ultimate Berk', 'Завершенная форма Берка', 'Завершённая форма Берка', 'Divine Auldor', 'Священный Аулдор', 'Sealed Sura', 'Запечатанный сура', 'Enraged Reda', 'Разъяренная Леда', 'Разъярённая Леда'];
+function berserkText(snap) {
+  const n = snap.boss?.name; if (!n || !snap.active || !BERSERK_BOSSES.includes(n)) return '';
+  const left = BERSERK_SEC * 1000 - (snap.combatMs || 0);
+  if (left > 0) return `<span class="bers num${left < 30000 ? ' hot' : ''}" title="Время до берсерка босса (5:00 боя)">${clock(left)}</span>`;
+  return '<span class="bers hot" title="Босс в берсерке">берсерк</span>';
+}
 let etaS = [], etaKey = '';
 function etaText(snap, src) {
   if (!src || !(src.max > 0) || !(src.hp > 0)) { etaS = []; return ''; }
@@ -151,7 +159,7 @@ function render() {
   const targetHtml = `
     <div class="target" title="${esc(snap.zone || '')}">
       <div class="trow"><div class="tname">${boss?.name || tg?.name ? nt(tName) : esc(tName)}${more}</div>
-        ${hp != null ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}` : ''}
+        ${hp != null ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
       ${hp != null ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;

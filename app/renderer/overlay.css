@@ -19,6 +19,8 @@ body.hasnick .title .full,body.hasnick .title .short{display:none}
 .tname{flex:1;min-width:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hpp{font-weight:700;color:var(--hp)}
 .eta{font-weight:600;color:var(--muted);font-size:12px}
+.bers{font-weight:700;font-size:12px;color:var(--accent);margin-left:6px;padding:0 6px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent)}
+.bers.hot{color:#ff7a8a;border-color:#ff7a8a}
 .timer{display:flex;align-items:center;gap:3px;font-weight:600;color:var(--muted)}
 .timer svg.i{width:12px;height:12px;color:var(--accent)}
 .hpbar{position:relative;height:15px;border-radius:8px;background:rgba(255,255,255,.14);overflow:hidden}

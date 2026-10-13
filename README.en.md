@@ -23,6 +23,7 @@
 | | |
 |---|---|
 | ⚔️ **In-game overlay** | DPS, damage, share, crit and healing for every player. Boss HP, fight timer, phases and kill ETA, your place and the gap to your record. Dungeon: Boss, World: Boss and Mobs modes. Gear score and combat power columns, eDPS / aDPS, ping indicator and lag alert. |
+| ⏳ **Enrage timer** | A countdown to the boss enrage (5:00 of combat) next to its HP — for bosses with a confirmed time. |
 | 🎯 **Solo view** | Your own DPS, place in the group, damage, share and crit in big numbers instead of the group list. |
 | 🏆 **Records** | A “New record” toast right after the fight, personal bests per boss, comparison with your previous fight and with your class median. |
 | 📈 **Statistics** | Fight history with search and export, DPS chart with boss phases, growth chart, two-fight comparison, DPS by class. |
