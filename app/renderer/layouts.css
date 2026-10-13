@@ -98,3 +98,13 @@ body[data-ov=columns][data-win=overlay] .list{justify-content:flex-start}
 /* Шапка снизу: уголок изменения размера не должен лежать на кнопке «закрыть» */
 body[data-hd=bottom][data-win=overlay] .head{padding-right:26px}
 body[data-hd=bottom][data-win=overlay] .resize{width:20px;height:20px;padding:0 2px 2px 0}
+
+/* Шапка сбоку: «закрыть» всегда первой кнопкой сверху, чтобы не уходить за край в низком окне */
+body[data-hd=side][data-win=overlay] .head{overflow:hidden}
+body[data-hd=side][data-win=overlay] #bHide{order:-2}
+body[data-hd=side][data-win=overlay] .head .logo{order:-1}
+@media (max-height:300px){
+  body[data-hd=side][data-win=overlay] .head{padding:4px 0;gap:2px}
+  body[data-hd=side][data-win=overlay] .head .logo{display:none}
+  body[data-hd=side][data-win=overlay] .head .icon{width:26px;height:24px}
+}
