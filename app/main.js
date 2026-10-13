@@ -938,12 +938,16 @@ async function webhookSend(url, payload, png) {
       body.append('payload_json', JSON.stringify(payload));
       body.append('files[0]', new Blob([png], { type: 'image/png' }), 'fight.png');
     }
-    const r = await fetch(url, png ? { method: 'POST', body, signal: AbortSignal.timeout(20000) }
-      : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(20000) });
+    // net.fetch идёт через системный прокси и сеть Chromium (как браузер), обычный fetch Node прокси игнорирует, и Discord без VPN-режима не открывался
+    const opts = png ? { method: 'POST', body, signal: AbortSignal.timeout(20000) }
+      : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(20000) };
+    let r;
+    try { r = await net.fetch(url, opts); }
+    catch (e1) { r = await fetch(url, opts); }
     if (r.status === 404 || r.status === 401) return { ok: false, error: T('Вебхук не найден — создайте новую ссылку в настройках канала') };
     if (!r.ok) return { ok: false, error: 'Discord: ' + r.status };
     return { ok: true };
-  } catch (e) { return { ok: false, error: T('нет связи с Discord') }; }
+  } catch (e) { const c = String((e && (e.cause && (e.cause.code || e.cause.message))) || (e && e.message) || '').slice(0, 60); return { ok: false, error: T('нет связи с Discord') + (c ? ' (' + c + ')' : '') }; }
 }
 
 // ---------------------------------------------------------------- «Что нового»
