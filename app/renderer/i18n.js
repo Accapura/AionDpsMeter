@@ -4,6 +4,7 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'Профиль (все поля)': 'Profile (all fields)', ' (вложенные данные)': ' (nested data)', 'пусто': 'empty', 'да': 'yes', 'нет': 'no',
     'Экипировка': 'Equipment', 'Характеристики': 'Stats', 'Загружаю…': 'Loading…', 'Данные сайта (для проверки)': 'Site data (for checking)', 'Превышение': 'Exceed', 'Сайт не прислал список экипировки для этого персонажа (возможно, профиль скрыт).': 'The site did not send an equipment list for this character (the profile may be hidden).',
     'Рост вашего DPS по боссу': 'Your DPS progress by boss', 'Нужно хотя бы два боя с этим боссом, чтобы построить график.': 'At least two fights with this boss are needed for the chart.', 'Чем добивали чаще всего': 'Most common killers', 'Где умирали чаще всего': 'Where you died most often',
     'К прошлому бою': 'Versus last fight', 'Поиск по боссу или зоне': 'Search by boss or zone', 'Все итоги': 'All results', 'За всё время': 'All time', '7 дней': '7 days', '30 дней': '30 days', 'Ничего не найдено — измените поиск или фильтры.': 'Nothing found — change the search or filters.', 'Экспорт истории (CSV)': 'Export history (CSV)', 'Нажмите ещё раз': 'Click again', 'Не удалось сохранить файл': 'Could not save the file', 'Сохранено: ': 'Saved: ',

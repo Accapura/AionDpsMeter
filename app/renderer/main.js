@@ -637,6 +637,37 @@ function statRows(info) {
   if (!lists.length) return [];
   return lists.sort((a, b) => b.arr.length - a.arr.length)[0].arr.map(x => ({ name: x.name || x.statName, value: x.value }));
 }
+// ---- «вся информация»: любые разделы ответа сайта выводятся как есть (поля читаемо подписаны), чтобы ничего не терялось
+const pretty = k => String(k).replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/^./, c => c.toUpperCase());
+const isImg = (k, v) => typeof v === 'string' && /^https?:\/\//.test(v) && (/image|icon|img|thumb|url/i.test(k) || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(v));
+const scal = (k, v) => v == null || v === '' ? '—' : isImg(k, v) ? `<img src="${esc(v)}" loading="lazy" alt="" style="height:26px;border-radius:5px;vertical-align:middle">` : typeof v === 'boolean' ? (v ? 'да' : 'нет') : typeof v === 'number' ? esc(v.toLocaleString(LOC())) : esc(v);
+function dataBlock(o, depth = 0) {
+  if (o == null) return '';
+  if (typeof o !== 'object') return `<div>${esc(o)}</div>`;
+  if (Array.isArray(o)) {
+    if (!o.length) return '<div class="muted">пусто</div>';
+    if (o.every(x => x == null || typeof x !== 'object')) return `<div class="data-v">${o.map(x => scal('', x)).join(', ')}</div>`;
+    const rows = o.slice(0, 80).filter(x => x && typeof x === 'object');
+    const cols = [...new Set(rows.flatMap(r => Object.entries(r).filter(([, v]) => v == null || typeof v !== 'object').map(([k]) => k)))].slice(0, 12);
+    const nested = [...new Set(rows.flatMap(r => Object.entries(r).filter(([, v]) => v && typeof v === 'object').map(([k]) => k)))];
+    return `<div class="scroll"><table class="ft dt"><tr>${cols.map(c => `<th>${esc(pretty(c))}</th>`).join('')}</tr>${rows.map(r => `<tr>${cols.map(c => `<td data-notr>${scal(c, r[c])}</td>`).join('')}</tr>`).join('')}</table></div>${depth < 3 ? nested.map(n => `<details class="dsub"><summary>${esc(pretty(n))} (вложенные данные)</summary>${rows.map((r, i) => r[n] ? `<div class="dnote"><b data-notr>${esc(r.name || r.itemName || r.title || r.id || '#' + (i + 1))}</b>${dataBlock(r[n], depth + 1)}</div>` : '').join('')}</details>`).join('') : ''}`;
+  }
+  const ent = Object.entries(o);
+  const sc = ent.filter(([, v]) => v == null || typeof v !== 'object'), ob = ent.filter(([, v]) => v && typeof v === 'object');
+  return `${sc.length ? `<div class="kv stt">${sc.map(([k, v]) => `<div><span>${esc(pretty(k))}</span><b data-notr>${scal(k, v)}</b></div>`).join('')}</div>` : ''}${ob.map(([k, v]) => depth >= 3 ? '' : `<details class="dsub" ${depth < 1 ? 'open' : ''}><summary>${esc(pretty(k))}</summary>${dataBlock(v, depth + 1)}</details>`).join('')}`;
+}
+function allData() {
+  const skip = new Set(['profile', 'ranking']);
+  const parts = [];
+  for (const [k, v] of Object.entries(R.info || {})) if (!skip.has(k) && k !== 'page' && k !== 'image' && v != null && typeof v === 'object') parts.push([k, v]);
+  for (const [k, v] of Object.entries(R.equip || {})) if (v != null && typeof v === 'object') parts.push(['equipment · ' + k, v]);
+  const prof = (R.info && R.info.profile) || {};
+  const rest = Object.fromEntries(Object.entries(prof).filter(([, v]) => v == null || typeof v !== 'object'));
+  const out = [];
+  if (Object.keys(rest).length) out.push(`<details class="card field dsec"><summary>Профиль (все поля)</summary>${dataBlock(rest)}</details>`);
+  for (const [k, v] of parts) out.push(`<details class="card field dsec"><summary>${esc(pretty(k))}</summary>${dataBlock(v)}</details>`);
+  return out.join('');
+}
 function gearHtml() {
   if (R.equipErr) return `<div class="card field"><span class="lbl">Экипировка</span><div class="muted">Не получилось загрузить экипировку: ${esc(R.equipErr)}</div></div>`;
   if (!R.equip) return '<div class="card field"><span class="lbl">Экипировка</span><div class="muted">Загружаю…</div></div>';
@@ -646,6 +677,7 @@ function gearHtml() {
   const raw = JSON.stringify({ equipment: R.equip, info: R.info }, null, 1).slice(0, 40000);
   return `<div class="card field"><span class="lbl">Экипировка</span>${gear}</div>
     ${stats.length ? `<div class="card field"><span class="lbl">Характеристики</span><div class="kv stt">${stats.map(s => `<div><span>${esc(s.name)}</span><b>${esc(typeof s.value === 'number' ? s.value.toLocaleString(LOC()) : s.value)}</b></div>`).join('')}</div></div>` : ''}
+    ${allData()}
     <details class="card field rawd"><summary>Данные сайта (для проверки)</summary><pre>${esc(raw)}</pre></details>`;
 }
 function charsBody() {
