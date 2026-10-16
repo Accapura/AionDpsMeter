@@ -51,15 +51,17 @@ function render() {
     <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0V14" stroke="rgba(255,255,255,.07)" stroke-width="3"/></pattern>
     <filter id="bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="18"/></filter><filter id="bl2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
     <filter id="sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity=".6"/></filter></defs>
-    <rect width="${W}" height="${H}" fill="url(#sea)"/>${terrain}${rings}${zones}<rect width="${W}" height="${H}" fill="url(#vg)"/>`;
+    <rect width="${W}" height="${H}" fill="url(#sea)"/>${terrain}${zones}<rect width="${W}" height="${H}" fill="url(#vg)"/>`;
   const m = 1 / (2 * half) * W, scaleU = [10, 20, 50, 100, 200, 500].find(u => u * m >= 120) || 500;
   const compass = `<g transform="translate(920 90)" fill="none" stroke="hsla(${hue},60%,85%,.55)" stroke-width="3"><circle r="38"/><path d="M0-54L9-10L0-22L-9-10Z" fill="hsla(${hue},60%,85%,.75)"/><path d="M0 54L0 22M-54 0L-22 0M54 0L22 0"/><text y="-62" text-anchor="middle" fill="hsla(${hue},60%,90%,.8)" stroke="none" font-size="24" font-weight="700">С</text></g>
     <g transform="translate(60 950)" stroke="hsla(${hue},60%,85%,.7)" stroke-width="4"><path d="M0 0H${(scaleU * m).toFixed(0)}M0-8V8M${(scaleU * m).toFixed(0)}-8V8"/><text x="0" y="-16" fill="hsla(${hue},60%,90%,.8)" stroke="none" font-size="22">${scaleU} ед.</text></g>`;
-  const dots = pts.map(p => {
-    const sel = p.slot === D.slot, X = +sx(p.x).toFixed(1), Y = +sy(p.y).toFixed(1), col = sel ? 'var(--accent)' : p.alive ? 'var(--hp)' : '#c9ced8', w = String(p.name).length * 15 + 30;
-    return `${sel ? `<circle class="ring" cx="${X}" cy="${Y}" r="22"/>` : ''}<g filter="url(#sh)"><circle cx="${X}" cy="${Y}" r="${sel ? 17 : 12}" fill="${col}" stroke="#fff" stroke-width="${sel ? 4 : 3}"/><circle cx="${X}" cy="${Y}" r="${sel ? 6 : 4}" fill="rgba(0,0,0,.45)"/></g>`
-      + `<g transform="translate(${X} ${Y - 38})"><rect x="${-w / 2}" y="-20" width="${w}" height="34" rx="17" fill="rgba(12,14,22,.78)" stroke="${sel ? 'var(--accent)' : 'rgba(255,255,255,.25)'}" stroke-width="2"/><text class="lbl" y="5" text-anchor="middle">${esc(p.name)}</text></g>`;
-  }).join('');
+  const mk = (p, sel) => {
+    const X = +sx(p.x).toFixed(1), Y = +sy(p.y).toFixed(1), col = sel ? 'var(--accent)' : p.alive ? 'var(--hp)' : '#c9ced8', fs = sel ? 24 : 18, w = String(p.name).length * (sel ? 15.5 : 11.5) + 28;
+    const reticle = sel ? `<g stroke="var(--accent)" fill="none" stroke-linecap="round"><path d="M0 ${Y}H${X - 34}M${X + 34} ${Y}H${W}M${X} 0V${Y - 34}M${X} ${Y + 34}V${H}" stroke-width="1.5" stroke-dasharray="3 9" opacity=".7"/><path d="M${X - 30} ${Y - 14}V${Y - 30}H${X - 14}M${X + 14} ${Y - 30}H${X + 30}V${Y - 14}M${X + 30} ${Y + 14}V${Y + 30}H${X + 14}M${X - 14} ${Y + 30}H${X - 30}V${Y + 14}" stroke-width="4"/></g><circle class="ring" cx="${X}" cy="${Y}" r="20"/>` : '';
+    return `${reticle}<g filter="url(#sh)"><circle cx="${X}" cy="${Y}" r="${sel ? 12 : 8}" fill="${col}" stroke="#fff" stroke-width="${sel ? 4 : 2.5}"/></g>`
+      + `<g transform="translate(${X} ${Y - (sel ? 52 : 28)})" opacity="${sel ? 1 : .8}"><rect x="${-w / 2}" y="${-fs * .85}" width="${w}" height="${fs * 1.5}" rx="${fs * .75}" fill="rgba(12,14,22,.8)" stroke="${sel ? 'var(--accent)' : 'rgba(255,255,255,.22)'}" stroke-width="${sel ? 2.5 : 1.5}"/><text class="lbl" style="font-size:${fs}px" y="${fs * .3}" text-anchor="middle">${esc(p.name)}</text></g>`;
+  };
+  const dots = pts.filter(p => p.slot !== D.slot).map(p => mk(p, false)).join('') + pts.filter(p => p.slot === D.slot).map(p => mk(p, true)).join('');
   const me = pts.find(p => p.slot === D.slot);
   $('body').innerHTML = `<div class="map"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${bg}${g}${compass}${dots}</svg></div>
     <div class="info"><b>${esc(D.name)}</b> · ${esc(D.map)}${me ? ` · X ${Math.round(me.x)}, Y ${Math.round(me.y)}` : ''}<br>${esc(tr('Схема по координатам из игры: север сверху, масштаб подгоняется под известные точки. Это не карта из игры.'))}</div>`;
