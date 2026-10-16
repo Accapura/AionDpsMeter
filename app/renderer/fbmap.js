@@ -32,24 +32,33 @@ function render() {
     for (let i = 0; i < n; i++) d += 'Q' + P[i].map(v => v.toFixed(1)).join(' ') + ' ' + mid(P[i], P[(i + 1) % n]).map(v => v.toFixed(1)).join(' ');
     return d + 'Z';
   };
-  const land = blob(500, 500, 400, 12, .22);
-  let terrain = `<path d="${land}" fill="hsla(${hue},30%,45%,.16)" stroke="hsla(${hue},50%,75%,.35)" stroke-width="3"/><path d="${blob(500, 500, 330, 12, .25)}" fill="hsla(${hue},30%,55%,.07)" stroke="hsla(${hue},40%,75%,.15)" stroke-width="2"/>`;
-  for (let i = 0; i < 2; i++) terrain += `<path d="${blob(250 + rnd() * 500, 250 + rnd() * 500, 45 + rnd() * 50, 8, .3)}" fill="hsla(205,55%,50%,.22)" stroke="hsla(205,55%,75%,.4)" stroke-width="2"/>`;
-  const rx = [150 + rnd() * 700, 150 + rnd() * 700, 150 + rnd() * 700];
-  terrain += `<path d="M${rx[0].toFixed(0)} 90C${rx[1].toFixed(0)} 300 ${rx[2].toFixed(0)} 600 ${(200 + rnd() * 600).toFixed(0)} 920" fill="none" stroke="hsla(205,60%,65%,.35)" stroke-width="7" stroke-linecap="round"/>`;
-  for (let i = 0; i < 14; i++) { const mx = 120 + rnd() * 760, my = 120 + rnd() * 760, k = 14 + rnd() * 14; terrain += `<path d="M${(mx - k).toFixed(0)} ${my.toFixed(0)}L${mx.toFixed(0)} ${(my - k * 1.3).toFixed(0)}L${(mx + k).toFixed(0)} ${my.toFixed(0)}" fill="none" stroke="hsla(${hue},40%,85%,.3)" stroke-width="3" stroke-linejoin="round"/>`; }
-  const zones = pts.map(p => `<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="170" fill="url(#zg)"/>`).join('');
-  let rings = ''; for (let r = 1; r <= 5; r++) rings += `<circle cx="${W / 2}" cy="${H / 2}" r="${r * 100}" fill="none" stroke="hsla(${hue},40%,70%,.10)" stroke-width="1.5" stroke-dasharray="${r % 2 ? '2 8' : '10 10'}"/>`;
-  const bg = `<defs><radialGradient id="zg"><stop offset="0" stop-color="hsl(${hue},55%,55%)" stop-opacity=".38"/><stop offset="1" stop-color="hsl(${hue},55%,55%)" stop-opacity="0"/></radialGradient>
-    <linearGradient id="bgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},35%,18%)"/><stop offset="1" stop-color="hsl(${(hue + 40) % 360},30%,9%)"/></linearGradient></defs>
-    <rect width="${W}" height="${H}" fill="url(#bgg)" opacity=".85"/>${terrain}${rings}${zones}`;
+  const land = blob(500, 500, 410, 14, .2), seaH = 205, lh = [100, 38, 160, 265, 18][hue % 5];
+  let terrain = `<path d="${land}" fill="none" stroke="hsla(${seaH},70%,70%,.22)" stroke-width="38" filter="url(#bl)"/><path d="${land}" fill="none" stroke="hsla(${seaH},70%,75%,.35)" stroke-width="14" filter="url(#bl2)"/>`
+    + `<path d="${land}" fill="url(#lg)" stroke="hsla(${lh},35%,80%,.55)" stroke-width="3"/><path d="${land}" fill="url(#hatch)" opacity=".5"/>`;
+  for (let i = 0; i < 3; i++) terrain += `<path d="${blob(250 + rnd() * 500, 250 + rnd() * 500, 90 + rnd() * 90, 10, .3)}" fill="hsla(${lh},28%,58%,.16)" stroke="hsla(${lh},30%,80%,.22)" stroke-width="2"/>`;
+  for (let c = 0; c < 4; c++) { const fx = 200 + rnd() * 600, fy = 200 + rnd() * 600; for (let i = 0; i < 16; i++) { const a = rnd() * 6.28, d = rnd() * 70; terrain += `<circle cx="${(fx + Math.cos(a) * d).toFixed(0)}" cy="${(fy + Math.sin(a) * d).toFixed(0)}" r="${(7 + rnd() * 8).toFixed(0)}" fill="hsla(125,45%,28%,.7)" stroke="hsla(125,45%,60%,.4)" stroke-width="1.5"/>`; } }
+  for (let i = 0; i < 2; i++) { const lx = 250 + rnd() * 500, ly = 250 + rnd() * 500, lr = 40 + rnd() * 45; terrain += `<path d="${blob(lx, ly, lr, 9, .28)}" fill="url(#wg)" stroke="hsla(${seaH},70%,82%,.55)" stroke-width="2.5"/>`; }
+  const rx = [150 + rnd() * 700, 150 + rnd() * 700, 150 + rnd() * 700], re = (200 + rnd() * 600).toFixed(0);
+  terrain += `<path d="M${rx[0].toFixed(0)} 90C${rx[1].toFixed(0)} 300 ${rx[2].toFixed(0)} 600 ${re} 920" fill="none" stroke="hsla(${seaH},60%,35%,.7)" stroke-width="11" stroke-linecap="round"/><path d="M${rx[0].toFixed(0)} 90C${rx[1].toFixed(0)} 300 ${rx[2].toFixed(0)} 600 ${re} 920" fill="none" stroke="hsla(${seaH},75%,70%,.65)" stroke-width="5" stroke-linecap="round"/>`;
+  for (let i = 0; i < 16; i++) { const mx = 120 + rnd() * 760, my = 140 + rnd() * 740, k = 16 + rnd() * 16; terrain += `<path d="M${(mx - k).toFixed(0)} ${my.toFixed(0)}L${mx.toFixed(0)} ${(my - k * 1.5).toFixed(0)}L${(mx + k).toFixed(0)} ${my.toFixed(0)}Z" fill="hsla(${lh},20%,30%,.75)" stroke="hsla(${lh},30%,85%,.45)" stroke-width="2" stroke-linejoin="round"/><path d="M${mx.toFixed(0)} ${(my - k * 1.5).toFixed(0)}L${(mx + k).toFixed(0)} ${my.toFixed(0)}L${(mx + k * .2).toFixed(0)} ${my.toFixed(0)}Z" fill="hsla(${lh},20%,12%,.45)"/><path d="M${(mx - k * .3).toFixed(0)} ${(my - k * 1.05).toFixed(0)}L${mx.toFixed(0)} ${(my - k * 1.5).toFixed(0)}L${(mx + k * .3).toFixed(0)} ${(my - k * 1.05).toFixed(0)}Z" fill="rgba(255,255,255,.7)"/>`; }
+  const zones = pts.map(p => `<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="150" fill="url(#zg)"/>`).join('');
+  let rings = ''; for (let r = 1; r <= 5; r++) rings += `<circle cx="${W / 2}" cy="${H / 2}" r="${r * 100}" fill="none" stroke="hsla(${hue},40%,80%,.07)" stroke-width="1.5" stroke-dasharray="${r % 2 ? '2 8' : '10 10'}"/>`;
+  const bg = `<defs><radialGradient id="zg"><stop offset="0" stop-color="hsl(${hue},75%,62%)" stop-opacity=".45"/><stop offset="1" stop-color="hsl(${hue},75%,62%)" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${seaH},45%,20%)"/><stop offset="1" stop-color="hsl(${seaH + 15},50%,10%)"/></linearGradient>
+    <radialGradient id="lg" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="hsl(${lh},28%,40%)"/><stop offset="1" stop-color="hsl(${lh},30%,22%)"/></radialGradient>
+    <radialGradient id="wg"><stop offset="0" stop-color="hsl(${seaH},65%,55%)"/><stop offset="1" stop-color="hsl(${seaH},60%,28%)"/></radialGradient>
+    <radialGradient id="vg" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient>
+    <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0V14" stroke="rgba(255,255,255,.07)" stroke-width="3"/></pattern>
+    <filter id="bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="18"/></filter><filter id="bl2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity=".6"/></filter></defs>
+    <rect width="${W}" height="${H}" fill="url(#sea)"/>${terrain}${rings}${zones}<rect width="${W}" height="${H}" fill="url(#vg)"/>`;
   const m = 1 / (2 * half) * W, scaleU = [10, 20, 50, 100, 200, 500].find(u => u * m >= 120) || 500;
   const compass = `<g transform="translate(920 90)" fill="none" stroke="hsla(${hue},60%,85%,.55)" stroke-width="3"><circle r="38"/><path d="M0-54L9-10L0-22L-9-10Z" fill="hsla(${hue},60%,85%,.75)"/><path d="M0 54L0 22M-54 0L-22 0M54 0L22 0"/><text y="-62" text-anchor="middle" fill="hsla(${hue},60%,90%,.8)" stroke="none" font-size="24" font-weight="700">С</text></g>
     <g transform="translate(60 950)" stroke="hsla(${hue},60%,85%,.7)" stroke-width="4"><path d="M0 0H${(scaleU * m).toFixed(0)}M0-8V8M${(scaleU * m).toFixed(0)}-8V8"/><text x="0" y="-16" fill="hsla(${hue},60%,90%,.8)" stroke="none" font-size="22">${scaleU} ед.</text></g>`;
   const dots = pts.map(p => {
-    const sel = p.slot === D.slot, X = sx(p.x).toFixed(1), Y = sy(p.y).toFixed(1);
-    return `${sel ? `<circle class="ring" cx="${X}" cy="${Y}" r="22"/>` : ''}<circle class="dot${sel ? ' sel' : p.alive ? ' live' : ''}" cx="${X}" cy="${Y}" r="${sel ? 16 : 11}"/>`
-      + `<text class="lbl" x="${X}" y="${(+Y - 26).toFixed(1)}" text-anchor="middle">${esc(p.name)}</text>`;
+    const sel = p.slot === D.slot, X = +sx(p.x).toFixed(1), Y = +sy(p.y).toFixed(1), col = sel ? 'var(--accent)' : p.alive ? 'var(--hp)' : '#c9ced8', w = String(p.name).length * 15 + 30;
+    return `${sel ? `<circle class="ring" cx="${X}" cy="${Y}" r="22"/>` : ''}<g filter="url(#sh)"><circle cx="${X}" cy="${Y}" r="${sel ? 17 : 12}" fill="${col}" stroke="#fff" stroke-width="${sel ? 4 : 3}"/><circle cx="${X}" cy="${Y}" r="${sel ? 6 : 4}" fill="rgba(0,0,0,.45)"/></g>`
+      + `<g transform="translate(${X} ${Y - 38})"><rect x="${-w / 2}" y="-20" width="${w}" height="34" rx="17" fill="rgba(12,14,22,.78)" stroke="${sel ? 'var(--accent)' : 'rgba(255,255,255,.25)'}" stroke-width="2"/><text class="lbl" y="5" text-anchor="middle">${esc(p.name)}</text></g>`;
   }).join('');
   const me = pts.find(p => p.slot === D.slot);
   $('body').innerHTML = `<div class="map"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${bg}${g}${compass}${dots}</svg></div>
