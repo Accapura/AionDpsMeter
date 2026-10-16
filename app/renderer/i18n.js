@@ -155,6 +155,8 @@
     'Разбор — в «Статистике»': 'Recap is in “Statistics”',
     'Разбор': 'Recap',
     'Показать на карте': 'Show on map',
+    'С': 'N',
+    'ед.': 'u.',
     'Карта босса': 'Boss map',
     'Координаты этого босса ещё не известны. Они запоминаются, когда босс появляется в игре, пока вы в этой зоне.': "This boss's position isn't known yet. It is remembered when the boss spawns in the game while you are in that zone.",
     'Схема по координатам из игры: север сверху, масштаб подгоняется под известные точки. Это не карта из игры.': 'Schematic from in-game coordinates: north is up, scale fits the known points. This is not an in-game map.',
