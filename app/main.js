@@ -170,7 +170,7 @@ const wins = {};
 function broadcast(ch, data) { for (const w of Object.values(wins)) if (w && !w.isDestroyed()) w.webContents.send(ch, data); }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-const REMEMBER = ['main', 'schedule', 'breakdown']; // окна, чьи место и размер запоминаются
+const REMEMBER = ['main', 'schedule', 'breakdown', 'fbmap']; // окна, чьи место и размер запоминаются
 function makeWindow(name, opts, file) {
   const old = wins[name];
   if (old && !old.isDestroyed()) { if (!opts.showInactive) { old.show(); old.focus(); } return old; }
@@ -606,11 +606,21 @@ async function updateFeed(manual) {
 
 // Полевые боссы из игры (по серверам).
 let fieldBosses = readJson(USER_FILE('field-bosses.json')) || {};
+let fbPos = readJson(USER_FILE('field-boss-pos.json')) || {};
 function onFieldBosses(m) {
   const server = m.server || settings.detectedServer || '?';
   fieldBosses[server] = fieldBosses[server] || {};
   fieldBosses[server][m.mapId] = { map: m.map, at: Date.now(), slots: m.slots };
   writeJson(USER_FILE('field-bosses.json'), fieldBosses);
+  // Запоминаем, где босс появлялся в последний раз (координаты приходят только у живых).
+  let moved = false;
+  for (const sl of m.slots || []) {
+    if (!sl.alive || !isFinite(sl.x) || !isFinite(sl.y) || (!sl.x && !sl.y)) continue;
+    fbPos[server] = fbPos[server] || {};
+    fbPos[server][sl.slot] = { mapId: m.mapId, map: m.map, name: sl.name, x: sl.x, y: sl.y, z: sl.z || 0, at: Date.now() };
+    moved = true;
+  }
+  if (moved) writeJson(USER_FILE('field-boss-pos.json'), fbPos);
   broadcastSchedule();
 }
 
@@ -653,10 +663,10 @@ let toasts = [];
 function checkSchedule() {
   const now = Date.now();
   const leads = [['m15', 15], ['m5', 5], ['m1', 1]].filter(([k]) => settings.notify[k]).map(([, m]) => m);
-  const fire = (id, name, type, start, icon = id) => {
+  const fire = (id, name, type, start, icon = id, actions) => {
     for (const m of leads) {
       const at = start - m * 60000, key = id + '@' + start + '@' + m;
-      if (now >= at && now < at + 20000 && !notified.has(key)) { notified.add(key); showToast({ key, name, type, start, icon }); }
+      if (now >= at && now < at + 20000 && !notified.has(key)) { notified.add(key); showToast({ key, name, type, start, icon, ...(actions ? { actions } : {}) }); }
     }
   };
   for (const ev of settings.evToast === false ? [] : allEvents()) {
@@ -665,7 +675,7 @@ function checkSchedule() {
   }
   for (const map of Object.values(fieldBosses[currentServer()] || {})) for (const sl of map.slots || []) {
     const id = 'fb:' + sl.name;
-    if (settings.fbToast !== false && !sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss');
+    if (settings.fbToast !== false && !sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss', [{ id: 'fbmap:' + sl.slot, label: T('Показать на карте'), primary: true }]);
   }
 }
 const toastSec = () => { const v = Number(settings.notify.hideSec); return isFinite(v) && v >= 2 ? Math.min(60, v) : 8; };
@@ -998,7 +1008,32 @@ ipcMain.on('toast-action', (_e, key, id) => {
   else if (id === 'upd-later') closeToast(key);
   else if (id === 'upd-notes') { const v = updateInfo().version; if (v) shell.openExternal('https://github.com/Accapura/AionDpsMeter/releases/tag/v' + v); else openMain('about'); }
   else if (id === 'death') { closeToast(key); openMain('stats:death'); }
+  else if (id.startsWith('fbmap:')) { closeToast(key); openFbMap(Number(id.slice(6))); }
 });
+
+// Схема карты: где появляется полевой босс (точки — по тому, что видели в игре).
+function openFbMap(slot) {
+  let server = currentServer();
+  if (!(fbPos[server] || {})[slot]) {
+    // на случай, если выбранный сервер называется иначе — берём тот, где этот босс видели последним
+    const hit = Object.entries(fbPos).filter(([, v]) => v[slot]).sort((a, b) => b[1][slot].at - a[1][slot].at)[0];
+    if (hit) server = hit[0];
+  }
+  const pos = (fbPos[server] || {})[slot] || null;
+  const mapId = pos ? pos.mapId : Math.floor(slot / 100);
+  const cur = (fieldBosses[server] || {})[mapId];
+  const points = Object.entries(fbPos[server] || {}).filter(([, p]) => p.mapId === mapId).map(([sl, p]) => {
+    const s2 = ((cur && cur.slots) || []).find(x => String(x.slot) === sl);
+    return { slot: Number(sl), name: p.name, x: p.x, y: p.y, alive: !!(s2 && s2.alive), atMs: s2 ? s2.atMs : 0 };
+  });
+  const sel = ((cur && cur.slots) || []).find(x => x.slot === slot);
+  const wa = screen.getPrimaryDisplay().workArea;
+  const w = makeWindow('fbmap', { width: 520, height: 600, minWidth: 380, minHeight: 440, center: true, alwaysOnTop: true }, 'fbmap.html');
+  w.setAlwaysOnTop(true, 'floating');
+  const payload = { server, map: (cur && cur.map) || (pos && pos.map) || '', slot, name: (sel && sel.name) || (pos && pos.name) || '', known: !!pos, points, theme: settings.theme, lang: settings.lang };
+  const send = () => w.webContents.send('fbmap-data', payload);
+  if (w.webContents.isLoading()) w.webContents.once('did-finish-load', send); else send();
+}
 
 // ---------------------------------------------------------------- «Поделиться боем»
 const nf = n => {

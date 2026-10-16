@@ -107,7 +107,7 @@ tracker.FieldBossListed += list =>
         slots = list.Slots.Select(sl =>
         {
             var code = block != 0 ? data.FieldBossInSlot(block, list.MapId, sl.SlotId, list.Count) : 0;
-            return new { slot = sl.SlotId, name = code != 0 ? data.NpcName(code) : "Полевой босс №" + (sl.SlotId - list.MapId * 100), alive = sl.Alive, atMs = sl.AtMs };
+            return new { slot = sl.SlotId, name = code != 0 ? data.NpcName(code) : "Полевой босс №" + (sl.SlotId - list.MapId * 100), alive = sl.Alive, atMs = sl.AtMs, x = sl.X, y = sl.Y, z = sl.Z };
         }),
     });
 };
