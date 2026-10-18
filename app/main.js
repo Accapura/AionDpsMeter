@@ -35,7 +35,7 @@ const DEFAULTS = {
   overlay: { x: null, y: null, width: null, height: null, visible: true },
   compact: false,
   showHeader: true,             // строка с названиями колонок в оверлее
-  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
+  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
   clickThrough: false,
   autoStart: false,             // запускать вместе с Windows (свёрнутой в трей)
   quitWithGame: false,          // закрываться вместе с игрой
@@ -747,7 +747,7 @@ async function openDiscord(how) {
 }
 
 // ---------------------------------------------------------------- горячие клавиши
-const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeNext: 'Ctrl+Shift+M' };
+const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
 const HOTKEY_ACTIONS = {
   overlay: () => toggleOverlay(),
   lock: () => patchSettings({ clickThrough: !settings.clickThrough }),
@@ -758,7 +758,8 @@ const HOTKEY_ACTIONS = {
   modeBoss: () => setMode('boss'),
   modeWorld: () => setMode('world'),
   modeMob: () => setMode('mob'),
-  modeNext: () => setMode({ boss: 'world', world: 'mob', mob: 'boss' }[settings.mode] || 'boss'),
+  modeDummy: () => setMode('dummy'),
+  modeNext: () => setMode({ boss: 'world', world: 'mob', mob: 'dummy', dummy: 'boss' }[settings.mode] || 'boss'),
 };
 // смена режима подсчёта горячей клавишей (оверлей коротко покажет название режима)
 function setMode(m) { if (settings.mode !== m) patchSettings({ mode: m }); }
