@@ -123,7 +123,8 @@ const pages = {
   todo: todoBody,
   overlay: () => `${head('Оверлей', 'Внешний вид и поведение окна урона поверх игры')}
     <div class="card field"><span class="lbl">Режим подсчёта</span><div class="seg" id="mModes">${MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('')}</div>
-      <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Мир: Босс» — только мировые боссы, «Моб» — весь урон по всем целям.</div>
+      <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Мир: Босс» — только мировые боссы, «Моб» — весь урон по всем целям, «Манекен» — только тренировочные манекены (в остальных режимах они не считаются).</div>
+      ${S.mode === 'dummy' ? `<div class="field" style="margin-top:6px"><span class="lbl">Время теста на манекене</span><div class="seg" id="dSec">${[[10, '10 с'], [30, '30 с'], [60, '1 мин'], [120, '2 мин'], [180, '3 мин'], [300, '5 мин']].map(([v, l]) => `<button type="button" data-ds="${v}" class="${(S.dummySec ?? 60) === v ? 'on' : ''}" aria-pressed="${(S.dummySec ?? 60) === v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px">Тест идёт от первого удара по манекену и сам заканчивается — DPS считается за это время. Следующий тест начнётся после паузы 3 секунды.</div></div>` : ''}
       ${S.profilesOn !== false ? `<div class="profnote"><span>Настройки ниже сохраняются отдельно для режима</span> <b>${esc((MODES.find(m => m[0] === S.mode) || MODES[0])[1])}</b><span>: список, прозрачность, колонки, «Только я», размер и место оверлея.</span></div>` : ''}</div>
     <div class="card field"><span class="lbl">Колонки оверлея</span>
       <div class="row" style="gap:18px">
@@ -804,6 +805,7 @@ function render() {
   const slot = $('themeSlot');
   if (slot) { slot.innerHTML = themeButton(S.theme); bindThemeButton(slot, S.theme, k => api.set({ theme: k })); }
   m.querySelectorAll('[data-m]').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
+  m.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => api.set({ dummySec: Number(b.dataset.ds) }));
   m.querySelectorAll('[data-url]').forEach(a => a.onclick = e => { e.preventDefault(); api.open('url', a.dataset.url); });
   on('mCount', 'oninput', e => { $('vCount').textContent = e.target.value; });
   on('mCount', 'onchange', e => api.set({ count: +e.target.value }));

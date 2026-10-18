@@ -186,6 +186,9 @@ public sealed partial class CombatTracker
 
     // ---------------------------------------------------------------- events
 
+    private bool _dummyLocked;
+    private long _dummyLockLastMs;
+
     private void OnDamage(DamageEvent d)
     {
         if (d.Damage <= 0 || d.Damage > Options.MaxSingleHit * Math.Max(1, d.HitCount)) return;
@@ -227,6 +230,21 @@ public sealed partial class CombatTracker
         var npc = _entities.UpsertNpc(target);
         if (npc.Hp == 0) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
         if (npc.IsDummy != Options.DummyMode) return; // манекены считаются только в режиме «Манекен», и только они
+        if (Options.DummyMode && Options.DummySeconds > 0)
+        {
+            // Тест идёт заданное время от первого удара; после конца новые удары игнорируются, пока не будет паузы 3 с.
+            if (_dummyLocked)
+            {
+                if (d.TimeMs - _dummyLockLastMs <= 3000) { _dummyLockLastMs = d.TimeMs; return; }
+                _dummyLocked = false;
+            }
+            else if (_current is { IsActive: true } cur && d.TimeMs - cur.StartMs >= Options.DummySeconds * 1000L)
+            {
+                Finish(EncounterEndReason.Manual, cur.StartMs + Options.DummySeconds * 1000L);
+                _dummyLocked = true; _dummyLockLastMs = d.TimeMs;
+                return;
+            }
+        }
 
         if (Options.TargetMode == TargetMode.BossOnly)
         {

@@ -290,7 +290,7 @@ new Thread(() =>
     {
         var parts = line.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0) continue;
-        if (parts[0] == "mode") { var mv = parts.Length > 1 ? parts[1] : ""; options.DummyMode = mv == "dummy"; options.TargetMode = mv == "all" ? TargetMode.All : TargetMode.BossOnly; }
+        if (parts[0] == "mode") { var mp = (parts.Length > 1 ? parts[1] : "").Split(' ', StringSplitOptions.RemoveEmptyEntries); var mv = mp.Length > 0 ? mp[0] : ""; options.DummyMode = mv == "dummy"; if (mv == "dummy" && mp.Length > 1 && int.TryParse(mp[1], out var ds)) options.DummySeconds = Math.Clamp(ds, 0, 3600); options.TargetMode = mv == "all" ? TargetMode.All : TargetMode.BossOnly; }
         else if (parts[0] == "reset") tracker.Reset();
         else if (parts[0] == "lang" && parts.Length > 1) data.ReloadNames(dataDir, parts[1] == "en" ? "en" : "ru");
         else if (parts[0] == "detail" && parts.Length > 1) { var dp = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries); if (uint.TryParse(dp[0], out var actor)) EmitDetail(actor, dp.Length > 1 && dp[1] == "c"); }

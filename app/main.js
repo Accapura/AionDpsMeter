@@ -31,6 +31,7 @@ const DEFAULTS = {
   opacity: 85,
   scale: 100,
   count: 10,
+  dummySec: 60,                 // режим «Манекен»: длина теста в секундах
   mode: 'boss',                 // boss = Данж: Босс · world = Мир: Босс · mob = Моб
   overlay: { x: null, y: null, width: null, height: null, visible: true },
   compact: false,
@@ -154,7 +155,7 @@ function patchSettings(patch) {
   if (Array.isArray(patch.checklist)) settings.checklist = patch.checklist;
   save();
   broadcast('settings', settings);
-  if (settings.mode !== prevMode) bridge.setMode(settings.mode);
+  if (settings.mode !== prevMode || (settings.mode === 'dummy' && 'dummySec' in patch)) bridge.setMode(settings.mode);
   if (settings.scale !== prevScale) for (const w of Object.values(wins)) if (w && !w.isDestroyed()) w.webContents.setZoomFactor(settings.scale / 100);
   if ('clickThrough' in patch) applyClickThrough();
   if ('autoHide' in patch) applyOverlayVisibility();
@@ -322,6 +323,7 @@ let lastSnap = null;
 const phase = { boss: '', done: new Set(), min: 1 };
 function checkPhases(s) {
   const b = s && s.boss;
+  if (settings.mode === 'dummy') return; // манекен: уведомлений «босс на N% HP» не нужно
   if (!b || !(b.maxHp > 0) || !(b.hp >= 0)) { if (!s) { phase.boss = ''; phase.done = new Set(); } return; }
   const frac = Math.max(0, Math.min(1, b.hp / b.maxHp));
   if (b.name !== phase.boss || frac > phase.min + 0.15) { // новый босс или он восстановил HP — новая попытка
@@ -401,7 +403,7 @@ const bridge = {
     this.setMode(settings.mode);
   },
   send(cmd) { try { this.proc?.stdin.write(cmd + '\n'); } catch { /* мост уже закрыт */ } },
-  setMode(mode) { this.send(mode === 'mob' ? 'mode all' : mode === 'dummy' ? 'mode dummy' : 'mode boss'); },
+  setMode(mode) { this.send(mode === 'mob' ? 'mode all' : mode === 'dummy' ? 'mode dummy ' + (Number(settings.dummySec) >= 0 ? Number(settings.dummySec) : 60) : 'mode boss'); },
   reset() { this.send('reset'); },
   stop() {
     const p = this.proc;
@@ -472,7 +474,7 @@ function addFight(f) {
   const pb = personalBest(f);
   fights.unshift(f);
   fights.length = Math.min(fights.length, 500);
-  if (pb) showToast(pb);
+  if (pb && settings.mode !== 'dummy') showToast(pb);
   try { fs.writeFileSync(FIGHTS_FILE(), JSON.stringify(fights)); } catch { /* не критично */ }
   broadcast('fights', fights);
   broadcast('records', records());
