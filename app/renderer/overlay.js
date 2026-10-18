@@ -89,7 +89,7 @@ function matches(s) {
 
 function empty() {
   const bad = ['no-npcap', 'no-dotnet', 'error', 'Error', 'disabled'].includes(status.state);
-  const wait = S.mode === 'boss' ? 'Ждём босса подземелья' : S.mode === 'world' ? 'Ждём мирового босса' : 'Ждём боя';
+  const wait = S.mode === 'boss' ? 'Ждём босса подземелья' : S.mode === 'world' ? 'Ждём мирового босса' : S.mode === 'dummy' ? 'Ударьте по манекену' : 'Ждём боя';
   const msg = String(status.msg || '').split(' · ')[0];
   const text = bad ? msg : (status.state === 'Capturing' ? wait : (msg || wait));
   return `<div class="empty"><div>${esc(text)}</div>${bad ? '<button type="button" class="primary" data-a="conn">Подробнее</button>' : ''}</div>`;

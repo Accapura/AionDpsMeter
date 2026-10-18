@@ -16,7 +16,7 @@ const THEMES = {
 
 const CLASS_RU = { Gladiator: 'Гладиатор', Templar: 'Страж', Ranger: 'Стрелок', Assassin: 'Убийца', Sorcerer: 'Волшебник', Elementalist: 'Заклинатель', Cleric: 'Целитель', Chanter: 'Чародей', Brawler: 'Боец', Unknown: 'Класс неизвестен' };
 const CLASS_COLOR = { Gladiator: '31,162,200', Templar: '59,124,230', Ranger: '28,174,126', Assassin: '70,184,78', Sorcerer: '134,76,224', Elementalist: '194,63,196', Cleric: '216,162,42', Chanter: '234,125,44', Brawler: '214,51,62', Unknown: '94,107,132' };
-const MODES = [['boss', 'Данж: Босс'], ['world', 'Мир: Босс'], ['mob', 'Моб']];
+const MODES = [['boss', 'Данж: Босс'], ['world', 'Мир: Босс'], ['mob', 'Моб'], ['dummy', 'Манекен']];
 
 
 function applyTheme(s, opacityOverride) {

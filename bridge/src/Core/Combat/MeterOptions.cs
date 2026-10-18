@@ -10,6 +10,8 @@ public enum TargetMode
 public sealed class MeterOptions
 {
     public TargetMode TargetMode { get; set; } = TargetMode.BossOnly;
+    /// <summary>Режим «Манекен»: считаем только удары по тренировочным манекенам; в остальных режимах манекены не считаются.</summary>
+    public bool DummyMode { get; set; }
 
     /// <summary>End the segment after this long without outgoing damage (no boss alive).</summary>
     public int IdleTimeoutMs { get; set; } = 10_000;

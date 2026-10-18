@@ -226,6 +226,7 @@ public sealed partial class CombatTracker
 
         var npc = _entities.UpsertNpc(target);
         if (npc.Hp == 0) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
+        if (npc.IsDummy != Options.DummyMode) return; // манекены считаются только в режиме «Манекен», и только они
 
         if (Options.TargetMode == TargetMode.BossOnly)
         {

@@ -197,7 +197,7 @@
     'Выключить напоминание': 'Turn reminder off', 'Выход': 'Quit',
     'Где на экране показывать уведомления перед ивентами и о новых событиях в расписании:': 'Where on screen to show notifications before events and about schedule updates:',
     'Главное окно': 'Main window', 'Гладиатор': 'Gladiator', 'Горячие клавиши': 'Hotkeys', 'Графит': 'Graphite',
-    'Данж: Босс': 'Dungeon: Boss', 'Мир: Босс': 'World: Boss', 'Моб': 'Mobs', 'Длительность, мин': 'Duration, min',
+    'Данж: Босс': 'Dungeon: Boss', 'Мир: Босс': 'World: Boss', 'Моб': 'Mobs', 'Манекен': 'Dummy', 'Ударьте по манекену': 'Hit a training dummy', 'Длительность, мин': 'Duration, min',
     'Для правильной работы приложения необходимо': 'Required for the app to work', 'Дни': 'Days',
     'Доля критических ударов': 'Critical hit rate', 'Доля от урона всей группы': 'Share of the whole group damage', 'Доля урона': 'Damage share',
     'Европа': 'Europe', 'Ждём босса подземелья': 'Waiting for a dungeon boss', 'Ждём боя': 'Waiting for combat', 'Ждём мирового босса': 'Waiting for a world boss',

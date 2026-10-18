@@ -401,7 +401,7 @@ const bridge = {
     this.setMode(settings.mode);
   },
   send(cmd) { try { this.proc?.stdin.write(cmd + '\n'); } catch { /* мост уже закрыт */ } },
-  setMode(mode) { this.send(mode === 'mob' ? 'mode all' : 'mode boss'); },
+  setMode(mode) { this.send(mode === 'mob' ? 'mode all' : mode === 'dummy' ? 'mode dummy' : 'mode boss'); },
   reset() { this.send('reset'); },
   stop() {
     const p = this.proc;
