@@ -677,7 +677,7 @@ function checkSchedule() {
   }
   for (const map of Object.values(fieldBosses[currentServer()] || {})) for (const sl of map.slots || []) {
     const id = 'fb:' + sl.name;
-    if (settings.fbToast !== false && !sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss', [{ id: 'fbmap:' + sl.slot, label: T('Показать на карте'), primary: true }]);
+    if (settings.fbToast !== false && !sl.alive && sl.atMs > now && !/^Полевой босс №/.test(sl.name || '') && settings.bells[id] !== false) fire(id, sl.name + ' · ' + map.map, 'world', sl.atMs, 'fieldboss');
   }
 }
 const toastSec = () => { const v = Number(settings.notify.hideSec); return isFinite(v) && v >= 2 ? Math.min(60, v) : 8; };
