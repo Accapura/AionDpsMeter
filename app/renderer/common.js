@@ -24,7 +24,17 @@ const NAV_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'С
 const BTN_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // кнопки в оверлее
 const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы'], ['rings', 'Кольца'], ['podium', 'Подиум'], ['bars', 'Гистограмма'], ['console', 'Консоль'], ['nearby', 'Я и соседи'], ['donut', 'Пончик']];
 const OV_STATS = [['dps', 'DPS'], ['dmg', 'Урон'], ['pct', 'Доля']];
+// Кэш темы: окно открывается мгновенно в цветах последней темы, а не в стандартных (иначе секунду виден «старый» цвет).
+const THEME_KEYS = ['theme', 'corners', 'navPos', 'btnPos', 'ovView', 'fx'];
 function applyTheme(s, opacityOverride) {
+  try {
+    const c = {}; THEME_KEYS.forEach(k => { if (s[k] !== undefined) c[k] = s[k]; });
+    if (!s.__cached) localStorage.setItem('adm.theme', JSON.stringify(c));
+  } catch {}
+  _applyTheme(s, opacityOverride);
+  document.documentElement.classList.add('ready');
+}
+function _applyTheme(s, opacityOverride) {
   STREAMER = !!s.streamer;
   const t = THEMES[s.theme] || THEMES.midnight;
   const r = document.documentElement.style;
@@ -362,4 +372,13 @@ function bfSync(on) {
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; const el = spot(); if (el) { el.style.transform = `translate3d(${x}px,${y}px,0)`; el.style.opacity = 1; } });
   }, { passive: true });
   document.addEventListener('mouseleave', () => { const el = spot(); if (el) el.style.opacity = 0; });
+})();
+
+// Первый кадр — из кэша; если данных нет, страницу покажет таймер.
+(function () {
+  try {
+    const c = JSON.parse(localStorage.getItem('adm.theme') || 'null');
+    if (c) { c.__cached = true; const go = () => { applyTheme(c, 92); document.documentElement.classList.add('ready'); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); }
+  } catch {}
+  setTimeout(() => document.documentElement.classList.add('ready'), 1200);
 })();

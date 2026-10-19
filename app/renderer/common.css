@@ -110,3 +110,5 @@ select.sel-native{display:none}
 .rax div{display:flex;justify-content:space-between}
 .rleg{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);margin-top:4px}
 .rleg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+html:not(.ready) body{visibility:hidden}
