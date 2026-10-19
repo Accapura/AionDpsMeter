@@ -158,10 +158,10 @@ const pages = {
       <div class="row"><button type="button" id="hkReset">Вернуть стандартные</button><span class="muted" style="font-size:12px">Нажмите на сочетание, затем любую клавишу или сочетание — подойдут и клавиши цифрового блока (Num 1, Num +). Esc — отмена.</span></div></div>`,
 
   look: () => {
-    const cur = { theme: THEMES[S.theme] ? S.theme : 'midnight', corners: S.corners === 'square' ? 'square' : 'round', navPos: S.navPos || 'left', btnPos: S.btnPos || 'top', ovView: S.ovView || 'list', ovStat: S.ovStat || 'dps' };
+    const cur = { theme: THEMES[S.theme] ? S.theme : 'midnight', corners: S.corners === 'square' ? 'square' : 'round', navPos: S.navPos || 'left', btnPos: S.btnPos || 'top', ovView: S.ovView || 'list', ovStat: S.ovStat || 'dps', fx: S.fx === 'off' ? 'off' : 'on' };
     const tile = (ap, k, label, pv, cls) => `<button type="button" class="tile ${cls || ''}${cur[ap] === k ? ' on' : ''}" data-ap="${ap}" data-v="${k}" aria-pressed="${cur[ap] === k}">${pv}<span class="tl">${label}</span></button>`;
     const chev = '<svg class="chv" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-    const sum = { theme: (THEMES[cur.theme] || {}).name, corners: cur.corners === 'round' ? 'Закруглённые' : 'Квадратные', navPos: (NAV_POS.find(x => x[0] === cur.navPos) || [])[1], btnPos: (BTN_POS.find(x => x[0] === cur.btnPos) || [])[1], ovView: (OV_VIEWS.find(x => x[0] === cur.ovView) || [])[1], ovStat: (OV_STATS.find(x => x[0] === cur.ovStat) || [])[1] };
+    const sum = { theme: (THEMES[cur.theme] || {}).name, corners: cur.corners === 'round' ? 'Закруглённые' : 'Квадратные', navPos: (NAV_POS.find(x => x[0] === cur.navPos) || [])[1], btnPos: (BTN_POS.find(x => x[0] === cur.btnPos) || [])[1], ovView: (OV_VIEWS.find(x => x[0] === cur.ovView) || [])[1], ovStat: (OV_STATS.find(x => x[0] === cur.ovStat) || [])[1], fx: cur.fx === 'off' ? 'Выключены' : 'Включены' };
     const sec = (id, ico, title, hint, body, cls) => `<div class="card look acc${lookOpen[id] ? ' open' : ''}" data-sec="${id}"><button type="button" class="lh" aria-expanded="${!!lookOpen[id]}"><span class="li">${ico}</span><span class="lt"><b>${title}</b><small>${hint}</small></span><span class="cv">${esc(sum[id] || '')}</span>${chev}</button><div class="lb"><div class="lbi"><div class="tiles ${cls || ''}">${body}</div></div></div></div>`;
     // миниатюры
     const th = ([k, t]) => tile('theme', k, t.name, `<i class="ts" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}))"><b style="background:${t.accent}"></b><u style="background:${t.text}"></u><u style="background:${t.muted}"></u></i>`, 'tl-theme');
@@ -183,6 +183,7 @@ const pages = {
       donut: `<circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="30 82" opacity="1" transform="rotate(-90 22 25)"/><circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="22 82" stroke-dashoffset="-32" opacity=".6" transform="rotate(-90 22 25)"/><circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="16 82" stroke-dashoffset="-56" opacity=".3" transform="rotate(-90 22 25)"/>` + [12, 22, 32].map((y, i) => `<rect x="44" y="${y}" width="${26 - i * 5}" height="4" rx="2" fill="${A}" opacity="${1 - i * .25}"/>`).join(''),
     };
     const vw = OV_VIEWS.map(([k, l]) => tile('ovView', k, l, `<svg class="vp" viewBox="0 0 76 50" aria-hidden="true">${V[k] || ''}</svg>`)).join('');
+    const fxT = [['on', 'Включены', 'Все эффекты темы'], ['off', 'Выключены', 'Без анимаций — легче для слабого ПК']].map(([k, l, d]) => tile('fx', k, l, `<i class="sp fxp">${k === 'on' ? '✦' : '○'}</i>`)).join('');
     const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
     const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
@@ -192,6 +193,7 @@ const pages = {
     ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
     ${sec('ovView', ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '11 видов: от простого списка до колец и пончика долей', vw, 'g-view')}
     ${sec('ovStat', ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
+    ${sec('fx', ic('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'), 'Анимации темы', 'Эффекты тем вроде «Чёрного пламени»: выключите, если приложение лагает', fxT, 'g-2')}
     <div class="muted" style="font-size:12px;text-align:center">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`;
   },
 

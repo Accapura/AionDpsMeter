@@ -40,6 +40,8 @@ function applyTheme(s, opacityOverride) {
     d.app = { left: 'side', top: 'top', bottom: 'dock', right: 'right' }[s.navPos] || 'side';
     d.hd = { left: 'side', top: 'top', bottom: 'bottom', right: 'rside' }[s.btnPos] || 'top';
     d.ov = OV_VIEWS.some(v => v[0] === s.ovView) ? s.ovView : 'list';
+    d.fx = s.fx === 'off' ? 'off' : 'on';
+    bfSync(d.skin === 'blackflame');
   }
 }
 // Ротация: по строке на навык, по оси — время боя; золотые штрихи — криты. rot = { names, c: [[мс, навык, урон, флаги]], dur }.
@@ -339,14 +341,25 @@ function eventIcon(e, size = 18) {
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${EV_ICON[eventIconKey(e)]}</svg>`;
 }
 
-// Тема «Чёрное пламя»: мягкое пятно света следует за курсором (координаты берёт CSS).
+// Тема «Чёрное пламя»: слои эффектов — отдельные элементы, анимируются только transform/opacity (на видеокарте, без перерисовки окна).
+const BF_BACK = '<i class="bf-moon"></i><i class="bf-fog a"></i><i class="bf-fog b"></i><i class="bf-ember"></i><i class="bf-shu"></i><i class="bf-flame"></i>';
+const BF_FRONT = '<i class="bf-flamef"></i><i class="bf-ring"><b></b></i><i class="bf-spot"></i>';
+function bfSync(on) {
+  const sh = document.querySelector('.shell');
+  if (!sh || !['main', 'overlay'].includes(document.body.dataset.win)) return;
+  const has = !!sh.querySelector(':scope > .bfx');
+  if (!on) { if (has) sh.querySelectorAll(':scope > .bfx').forEach(e => e.remove()); return; }
+  if (has) return;
+  const mk = (cls, html) => { const d = document.createElement('div'); d.className = 'bfx ' + cls; d.setAttribute('aria-hidden', 'true'); d.innerHTML = html; return d; };
+  sh.prepend(mk('bfx-b', BF_BACK)); sh.append(mk('bfx-f', BF_FRONT));
+}
 (() => {
   let raf = 0, x = 0, y = 0;
-  const set = (a, b) => { document.body.style.setProperty('--mx', a + 'px'); document.body.style.setProperty('--my', b + 'px'); };
+  const spot = () => document.querySelector('.bf-spot');
   addEventListener('mousemove', e => {
-    if (!document.body || document.body.dataset.skin !== 'blackflame') return;
+    if (document.body.dataset.skin !== 'blackflame') return;
     x = e.clientX; y = e.clientY;
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; set(x, y); });
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; const el = spot(); if (el) { el.style.transform = `translate3d(${x}px,${y}px,0)`; el.style.opacity = 1; } });
   }, { passive: true });
-  document.addEventListener('mouseleave', () => set(-300, -300));
+  document.addEventListener('mouseleave', () => { const el = spot(); if (el) el.style.opacity = 0; });
 })();

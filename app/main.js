@@ -28,6 +28,7 @@ const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 // ---------------------------------------------------------------- настройки
 const DEFAULTS = {
   theme: 'midnight',
+  fx: 'on',
   corners: 'round',             // round | square — форма углов окон и кнопок
   navPos: 'left',               // главное меню: left | top | bottom | right
   btnPos: 'top',                // кнопки в оверлее: left | bottom | top | right

@@ -196,6 +196,7 @@
     'Ваши навыки в этом бою': 'Your skills in this fight', 'Вернуть стандартные': 'Restore defaults', 'Версия': 'Version',
     'Цвет, форма окон, положение кнопок и вид оверлея DPS': 'Colour, window shape, button position and DPS overlay view',
     'Кольца': 'Rings', 'Подиум': 'Podium', 'Гистограмма': 'Histogram', 'Консоль': 'Console', 'Я и соседи': 'Me & neighbours', 'Пончик': 'Donut',
+    'Анимации темы': 'Theme animations', 'Включены': 'On', 'Выключены': 'Off', 'Эффекты тем вроде «Чёрного пламени»: выключите, если приложение лагает': 'Effects of themes like “Black Flame”: turn off if the app lags',
     'Включить напоминание': 'Turn reminder on', 'Внешний вид и поведение окна урона поверх игры': 'Look and behaviour of the damage window over the game',
     'Волшебник': 'Sorcerer', 'Восстановить': 'Restore', 'Время': 'Time', 'Время боя': 'Fight time',
     'Вс': 'Sun', 'Пн': 'Mon', 'Вт': 'Tue', 'Ср': 'Wed', 'Чт': 'Thu', 'Пт': 'Fri', 'Сб': 'Sat',
