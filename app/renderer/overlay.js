@@ -1,32 +1,14 @@
 'use strict';
 let S = null, status = {}, snap = null, records = {};
 const $ = id => document.getElementById(id);
-$('bGear').innerHTML = ICON.gear; $('bHide').innerHTML = ICON.close; $('bReset').innerHTML = ICON.reset;
+$('bMain').innerHTML = ICON.win; $('bHide').innerHTML = ICON.close; $('bReset').innerHTML = ICON.reset;
 $('bShare').innerHTML = ICON.share;
 $('bShare').onclick = () => api.share();
 $('bHide').onclick = () => api.win('hide');
 $('bReset').onclick = () => api.reset();
 $('bLock').onclick = () => api.set({ clickThrough: !S.clickThrough });
 $('bCompact').onclick = () => api.set({ compact: !S.compact });
-$('bGear').onclick = e => { e.stopPropagation(); togglePanel(); };
-$('pMain').onclick = () => { togglePanel(false); api.open('main'); };
-$('pSched').onclick = () => { togglePanel(false); api.open('schedule'); };
-$('pSize').onclick = () => api.overlayResetSize();
-$('count').oninput = e => { S.count = +e.target.value; $('countV').value = S.count; render(); api.set({ count: S.count }); };
-$('opacity').oninput = e => { S.opacity = +e.target.value; $('opV').value = S.opacity + '%'; applyTheme(S, S.opacity); api.set({ opacity: S.opacity }); };
-$('scale').onchange = e => api.set({ scale: +e.target.value });
-$('showHead').onchange = e => api.set({ showHeader: e.target.checked });
-$('solo').onchange = e => api.set({ solo: e.target.checked });
-$('soloBtn').onclick = () => api.set({ solo: !S.solo });
-$('autoHide').onchange = e => api.set({ autoHide: e.target.checked });
-document.querySelectorAll('[data-col]').forEach(c => c.onchange = () => api.set({ columns: { [c.dataset.col]: c.checked } }));
-$('scale').oninput = e => { $('scV').value = e.target.value + '%'; };
-function togglePanel(force) {
-  const p = $('panel'), open = force ?? p.hidden;
-  p.hidden = !open; $('bGear').setAttribute('aria-expanded', String(open));
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
-
+$('bMain').onclick = () => api.open('main');
 // Уголок изменения размера (прозрачные окна Windows не тянутся за край).
 resizeGrip($('resize'));
 const fit = () => { document.body.classList.toggle('narrow', innerWidth < 300); document.body.classList.toggle('short', innerHeight < 240); };
@@ -51,8 +33,6 @@ function chrome() {
   document.body.classList.toggle('locked', !!S.clickThrough);
   document.body.classList.toggle('compact', !!S.compact);
   document.body.classList.toggle('nohead', S.showHeader === false);
-  $('showHead').checked = S.showHeader !== false;
-  $('solo').checked = !!S.solo; $('autoHide').checked = S.autoHide !== false;
   $('bLock').innerHTML = S.clickThrough ? ICON.lock : ICON.unlock;
   $('bLock').style.color = S.clickThrough ? 'var(--accent)' : '';
   const hk0 = Object.assign({ overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C' }, S.hotkeys || {});
@@ -67,18 +47,13 @@ function chrome() {
   $('bCompact').title = S.compact ? 'Показать режимы' : 'Компактно';
   $('modes').innerHTML = MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('');
   $('modes').querySelectorAll('button').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
-  // «Моб» и «Манекен»: только список урона и одна кнопка «Только я».
-  const sb = $('soloBtn');
-  sb.hidden = S.mode === 'boss';
-  sb.classList.toggle('on', !!S.solo); sb.setAttribute('aria-pressed', String(!!S.solo));
+  // «Только я» / «Группа»: переключатель кого показывать
+  $('who').querySelectorAll('button').forEach(b => {
+    const on = (b.dataset.w === 'me') === !!S.solo;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+    b.onclick = () => api.set({ solo: b.dataset.w === 'me' });
+  });
   document.body.dataset.mode = S.mode;
-  $('count').value = S.count; $('countV').value = S.count;
-  $('opacity').value = S.opacity; $('opV').value = S.opacity + '%';
-  $('scale').value = S.scale; $('scV').value = S.scale + '%';
-  document.querySelectorAll('[data-col]').forEach(c => { c.checked = !!(S.columns || {})[c.dataset.col]; });
-  paintRanges();
-  $('themeSlot').innerHTML = themeButton(S.theme);
-  bindThemeButton($('themeSlot'), S.theme, k => api.set({ theme: k }));
 }
 
 const fmtHp = n => Math.round(n).toLocaleString(LOC());
@@ -156,6 +131,11 @@ function render() {
   const narrow = !tot;
   document.body.classList.toggle('notot', narrow);
   document.body.style.setProperty('--cols', (narrow ? '14px 20px minmax(0,1fr) 48px' : '16px 20px minmax(0,1fr) 50px 50px') + extra.map(c => ' ' + c.w).join('') + ' 38px');
+  // Что показывать крупно: DPS, общий урон или долю. Остальные числа сдвигаются на соседние места.
+  const ST = ['dps', 'dmg', 'pct'].includes(S.ovStat) ? S.ovStat : 'dps';
+  const ORD = { dps: ['dps', 'dmg', 'pct'], dmg: ['dmg', 'dps', 'pct'], pct: ['pct', 'dps', 'dmg'] }[ST];
+  const SV = { dps: p => fmt(p.dps), dmg: p => fmt(p.dmg), pct: p => ((p.share || 0) * 100).toFixed(1).replace('.', ',') + '%' };
+  const SL = { dps: ['DPS', 'Урон в секунду'], dmg: ['Урон', 'Общий урон за бой'], pct: ['%', 'Доля от урона всей группы'] };
   const shown = ps.slice(0, S.count), rest = ps.length - shown.length;
   const restShare = ps.slice(S.count).reduce((a, p) => a + (p.share || 0), 0);
   const boss = snap.boss, tg = snap.target;
@@ -167,13 +147,13 @@ function render() {
   // свой персонаж: по метке игры, иначе по нику персонажа, с которого запущен счётчик
   const meName = String(S.character || '').toLowerCase();
   const me = ps.find(p => p.self) || (meName ? ps.find(p => String(p.name).toLowerCase() === meName) : null);
-  const rec = S.mode === 'boss' ? recordLine(me) : '';
+  const rec = recordLine(me);
   const targetHtml = `
     <div class="target" title="${esc(snap.zone || '')}">
       <div class="trow"><div class="tname">${boss?.name || tg?.name ? nt(tName) : esc(tName)}${more}</div>
-        ${hp != null && S.mode === 'boss' ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
+        ${hp != null && S.mode !== 'dummy' ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
-      ${hp != null && S.mode === 'boss' ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
+      ${hp != null && S.mode !== 'dummy' ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;
   if (S.solo && !me) {
     // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
@@ -185,7 +165,7 @@ function render() {
   if (S.solo && me) {
     const place = ps.indexOf(me) + 1;
     body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню">${classIcon(me.cls)}
-      <div class="who"><span class="name" data-notr>${esc(aliasOf(nm(me)))}</span><span class="bigdps num">${fmt(me.dps)}<small>DPS</small></span></div>
+      <div class="who"><span class="name" data-notr>${esc(aliasOf(nm(me)))}</span><span class="bigdps num">${SV[ST](me)}<small>${SL[ST][0] === '%' ? 'доля' : SL[ST][0]}</small></span></div>
       <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
       <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
       <div><span>Крит</span><b>${me.crit != null ? Math.round(me.crit * 100) + '%' : '—'}</b></div><div><span>Макс. удар</span><b>${fmt(me.maxHit)}</b></div>
@@ -195,12 +175,12 @@ function render() {
     return;
   }
   body.innerHTML = targetHtml + `
-    <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="Урон в секунду">DPS</span><span class="r c-total" title="Общий урон за бой">Урон</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="Доля от урона всей группы">%</span></div>
+    <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="${SL[ORD[0]][1]}">${SL[ORD[0]][0]}</span><span class="r c-total" title="${SL[ORD[1]][1]}">${SL[ORD[1]][0]}</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="${SL[ORD[2]][1]}">${SL[ORD[2]][0]}</span></div>
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
       return `<div class="row${p === me ? ' me' : ''}" style="--c:${c}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="--p:${(p.dmg / top * 100).toFixed(1)}%;width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
-      <span class="r dps">${fmt(p.dps)}</span><span class="r muted c-total">${fmt(p.dmg)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${((p.share || 0) * 100).toFixed(1).replace('.', ',')}</span></div></div>`;
+      <span class="r dps">${SV[ORD[0]](p)}</span><span class="r muted c-total">${SV[ORD[1]](p)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${SV[ORD[2]](p).replace('%', '')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;
   body.querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
   $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`;

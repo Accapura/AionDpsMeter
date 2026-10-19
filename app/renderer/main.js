@@ -164,9 +164,20 @@ const pages = {
       ${addr ? `<div class="addr" style="justify-content:center"><span class="muted">Адрес сервера игры:</span><code>${showAddr ? esc(addr) : '••••••••••••'}</code><button type="button" id="addrToggle">${showAddr ? 'Скрыть' : 'Показать'}</button></div>` : ''}
       <div class="row" style="justify-content:center"><button type="button" id="restart">Перезапустить чтение</button><button type="button" id="report">Отчёт об ошибке</button></div>
       <div class="muted" style="font-size:12px">Что-то не работает? «Отчёт об ошибке» сохранит на рабочий стол файл с версией, состоянием чтения и последними сообщениями — отправьте его автору в Discord.</div>
-    <div class="card field center"><span class="lbl">Внешний вид</span>
-      <div>Тема задаёт цвета, раскладку и форму всего интерфейса — оверлея и главного окна:</div>
-      <div class="row" style="justify-content:center"><span id="themeSlot"></span></div></div>
+    <div class="card field center"><span class="lbl">Оформление</span>
+      <div>Цвет — тема из 11 вариантов, она меняет только цвета:</div>
+      <div class="row" style="justify-content:center"><span id="themeSlot"></span></div>
+      <div>Форма окон и кнопок:</div>
+      <div class="seg ap" role="group">${[['round', 'Закруглённые'], ['square', 'Квадратные']].map(([k, l]) => `<button type="button" data-ap="corners" data-v="${k}" class="${(S.corners === 'square' ? 'square' : 'round') === k ? 'on' : ''}" aria-pressed="${(S.corners === 'square' ? 'square' : 'round') === k}">${l}</button>`).join('')}</div>
+      <div>Главное меню — где находятся кнопки разделов:</div>
+      <div class="seg ap" role="group">${NAV_POS.map(([k, l]) => `<button type="button" data-ap="navPos" data-v="${k}" class="${(S.navPos || 'left') === k ? 'on' : ''}" aria-pressed="${(S.navPos || 'left') === k}">${l}</button>`).join('')}</div>
+      <div>Оверлей DPS — где находятся кнопки окна:</div>
+      <div class="seg ap" role="group">${BTN_POS.map(([k, l]) => `<button type="button" data-ap="btnPos" data-v="${k}" class="${(S.btnPos || 'top') === k ? 'on' : ''}" aria-pressed="${(S.btnPos || 'top') === k}">${l}</button>`).join('')}</div>
+      <div>Оверлей DPS — вид списка игроков:</div>
+      <div class="seg ap" role="group">${OV_VIEWS.map(([k, l]) => `<button type="button" data-ap="ovView" data-v="${k}" class="${(S.ovView || 'list') === k ? 'on' : ''}" aria-pressed="${(S.ovView || 'list') === k}">${l}</button>`).join('')}</div>
+      <div>Оверлей DPS — что показывать крупно:</div>
+      <div class="seg ap" role="group">${OV_STATS.map(([k, l]) => `<button type="button" data-ap="ovStat" data-v="${k}" class="${(S.ovStat || 'dps') === k ? 'on' : ''}" aria-pressed="${(S.ovStat || 'dps') === k}">${l}</button>`).join('')}</div>
+      <div class="muted" style="font-size:12px">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div></div>
     <div class="card field center"><span class="lbl">Уведомления о событиях</span>
       <div>Где на экране показывать уведомления перед ивентами и о новых событиях в расписании:</div>
       <div class="ddwrap ddpos">${(() => { const cur = S.notify.position || 'br', n = (NOTIFY_POS.find(x => x[0] === cur) || NOTIFY_POS[5])[1];
@@ -804,6 +815,7 @@ function render() {
   function on2(id, fn) { const el = $(id); if (el) el.onclick = fn; }
   const slot = $('themeSlot');
   if (slot) { slot.innerHTML = themeButton(S.theme); bindThemeButton(slot, S.theme, k => api.set({ theme: k })); }
+  m.querySelectorAll('[data-ap]').forEach(b => b.onclick = () => api.set({ [b.dataset.ap]: b.dataset.v }));
   m.querySelectorAll('[data-m]').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
   m.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => api.set({ dummySec: Number(b.dataset.ds) }));
   m.querySelectorAll('[data-url]').forEach(a => a.onclick = e => { e.preventDefault(); api.open('url', a.dataset.url); });

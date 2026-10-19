@@ -13,10 +13,11 @@ body.hasnick .title .full,body.hasnick .title .short{display:none}
 .modes{flex:none;padding:6px 8px 0}
 .modes{display:flex;gap:6px;align-items:center}
 .modes .seg{padding:2px;border-radius:10px;flex:1;min-width:0}
-.solobtn{flex:none;height:28px;padding:0 9px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.18);color:var(--muted);font-size:11px;font-weight:600;white-space:nowrap}
-.solobtn.on{background:var(--accent);color:var(--accentFg);border-color:transparent}
-.solobtn[hidden]{display:none}
 .modes .seg button{height:24px;font-size:11px;padding:0 4px;border-radius:8px;white-space:nowrap}
+.modes{flex-wrap:wrap}
+.modes .seg.who{flex:none}
+.modes .seg.who button{padding:0 8px}
+#modes{flex:1 1 150px}
 .body{flex:1;min-height:0;display:flex;flex-direction:column}
 .target{flex:none;padding:6px 10px 4px;display:flex;flex-direction:column;gap:4px}
 .trow{display:flex;align-items:center;gap:8px;min-width:0}
@@ -59,16 +60,6 @@ body.hasnick .title .full,body.hasnick .title .short{display:none}
 .ping.vpn{color:var(--muted);font-weight:700;letter-spacing:.03em}
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;text-align:center;color:var(--muted);overflow:hidden}
 .empty button{height:28px;font-size:12px}
-.panel{position:absolute;left:6px;right:6px;top:36px;bottom:26px;z-index:5;overflow-y:auto;padding:10px;border-radius:14px;display:flex;flex-direction:column;gap:10px;
-  background:linear-gradient(155deg,rgba(var(--g1),.97),rgba(var(--g2),.97));border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.4)}
-.panel[hidden]{display:none}
-.prow{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.slider{display:grid;grid-template-columns:84px 1fr 38px;gap:6px;align-items:center}
-.slider output{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
-.pbtns{display:flex;flex-wrap:wrap;gap:6px}
-.pbtns button{height:28px;font-size:11.5px;padding:0 10px}
-.pbtns.top{padding-bottom:8px;margin-bottom:2px;border-bottom:1px solid var(--line)}
-.pbtns.top button{flex:1 1 auto}
 /* подсказка при смене режима */
 .mflash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);pointer-events:none;opacity:0;z-index:20;
   padding:8px 16px;border-radius:12px;font-weight:700;font-size:14px;white-space:nowrap;color:var(--accentFg);background:var(--accent);box-shadow:0 8px 24px rgba(0,0,0,.45);transition:opacity .18s,transform .18s}
@@ -81,12 +72,10 @@ body.narrow .title .short{display:inline}
 body.compact .modes{display:none}
 body.nohead .cols{display:none}
 .cols span{cursor:help}
-body.locked .modes,body.locked #bReset,body.locked #bGear,body.locked #bCompact,body.locked .resize{display:none}
+body.locked .modes,body.locked #bReset,body.locked #bMain,body.locked #bCompact,body.locked .resize{display:none}
 
 .row:hover{background:rgba(255,255,255,.1)}
 body.locked .row{cursor:default}
-.cks{display:flex;flex-wrap:wrap;gap:4px 12px}
-.cks label{display:flex;align-items:center;gap:5px}
 /* сравнение с рекордом */
 .rec{flex:none;font-weight:700;padding:0 6px;border-radius:6px;line-height:16px}
 .rec.up{color:#7ff0b0;background:rgba(127,240,176,.12)}

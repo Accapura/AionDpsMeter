@@ -27,7 +27,12 @@ const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 
 // ---------------------------------------------------------------- настройки
 const DEFAULTS = {
-  theme: 'onedark',
+  theme: 'midnight',
+  corners: 'round',             // round | square — форма углов окон и кнопок
+  navPos: 'left',               // главное меню: left | top | bottom | right
+  btnPos: 'top',                // кнопки в оверлее: left | bottom | top | right
+  ovView: 'list',               // вид списка в оверлее: list | cards | big | ticker | columns
+  ovStat: 'dps',                // что крупно: dps | dmg | pct
   opacity: 85,
   scale: 100,
   count: 10,
@@ -101,6 +106,19 @@ if (settings.settingsResetV !== '1.2.7') {
   }
   settings.settingsResetV = '1.2.7';
   try { fs.mkdirSync(path.dirname(SETTINGS_FILE()), { recursive: true }); fs.writeFileSync(SETTINGS_FILE(), JSON.stringify(settings, null, 2)); } catch { /* не критично */ }
+}
+// Оформление 1.2.8: тема — только цвета. Раскладка, что раньше жила в теме, переходит в отдельные настройки (один раз).
+const OLD_LAY = { glass: ['list', 'top', 'side'], glassblack: ['list', 'top', 'side'], catppuccin: ['cards', 'top', 'side'], tokyo: ['list', 'top', 'top'], dracula: ['big', 'top', 'right'], nord: ['ticker', 'bottom', 'rail'], rosepine: ['cards', 'bottom', 'dock'], gruvbox: ['list', 'side', 'top'], kanagawa: ['columns', 'top', 'side'], onedark: ['list', 'bottom', 'side'], everforest: ['big', 'side', 'right'], solarized: ['ticker', 'top', 'dock'] };
+if (settings.uiV !== '1.2.8') {
+  const L = OLD_LAY[settings.theme];
+  if (L && !firstRun) {
+    settings.ovView = L[0];
+    settings.btnPos = { top: 'top', bottom: 'bottom', side: 'left' }[L[1]] || 'top';
+    settings.navPos = { side: 'left', rail: 'left', top: 'top', dock: 'bottom', right: 'right' }[L[2]] || 'left';
+  }
+  // старые темы → ближайшие новые по цвету
+  settings.theme = { glass: 'amethyst', glassblack: 'midnight', catppuccin: 'lavender', tokyo: 'midnight', dracula: 'amethyst', nord: 'ocean', rosepine: 'sakura', gruvbox: 'amber', kanagawa: 'sunset', onedark: 'midnight', everforest: 'forest', solarized: 'teal' }[settings.theme] || settings.theme;
+  settings.uiV = '1.2.8';
 }
 // Режим «Мир: Босс» убран: тем, у кого он был выбран, включается «Данж: Босс»; его профиль и горячая клавиша удаляются.
 if (settings.mode === 'world') settings.mode = 'boss';
@@ -1084,7 +1102,7 @@ function classMedian(f, cls) {
 let _themes = null;
 function themePalette() {
   if (!_themes) { try { _themes = new Function(fs.readFileSync(path.join(ROOT, 'renderer', 'common.js'), 'utf8').match(/const THEMES = \{[\s\S]*?\n\};/)[0].replace('const THEMES =', 'return') )(); } catch { _themes = {}; } }
-  return _themes[settings.theme] || _themes.onedark || null;
+  return _themes[settings.theme] || _themes.midnight || null;
 }
 const hexRgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h); const n = m ? parseInt(m[1], 16) : 0; return `${n >> 16},${(n >> 8) & 255},${n & 255}`; };
 // Цвета карточки: из сиреневой гаммы по умолчанию — в цвета выбранной темы.

@@ -50,7 +50,6 @@ body[data-ov=big][data-win=overlay] .row:not(:first-child) .grid>:nth-child(n+5)
 /* ---- оверлей: где шапка ---- */
 body[data-hd=bottom] .head{order:9;border-bottom:0;border-top:1px solid var(--line)}
 body[data-hd=bottom][data-win=overlay] .foot{order:8}
-body[data-hd=bottom][data-win=overlay] .panel{top:6px;bottom:58px}
 body[data-hd=side][data-win=overlay] .shell:has(>.head){display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto}
 body[data-hd=side][data-win=overlay] .head{grid-column:1;grid-row:1/-1;flex-direction:column;height:auto;padding:8px 0;gap:4px;border-bottom:0;border-right:1px solid var(--line);justify-content:flex-start}
 body[data-hd=side][data-win=overlay] .head .dots,body[data-hd=side][data-win=overlay] .head .title{display:none}
@@ -58,7 +57,6 @@ body[data-hd=side][data-win=overlay] .head .logo{margin:0 0 6px}
 body[data-hd=side][data-win=overlay] .modes{grid-column:2;grid-row:1}
 body[data-hd=side][data-win=overlay] .body{grid-column:2;grid-row:2/4}
 body[data-hd=side][data-win=overlay] .foot{grid-column:2;grid-row:4}
-body[data-hd=side][data-win=overlay] .panel{left:44px;top:6px}
 
 /* ---- главное окно: где меню ---- */
 body[data-app] .dd-body{}
@@ -73,22 +71,14 @@ body[data-app=top][data-win=main] nav>button{height:36px;padding:0 13px;font-siz
 body[data-app=dock][data-win=main] nav>button{flex-direction:column;justify-content:center;gap:3px;height:54px;width:92px;padding:0;font-size:11px}
 body[data-app=top][data-win=main] .side-bottom,body[data-app=dock][data-win=main] .side-bottom{margin:0 0 0 auto;padding:0;flex-direction:row;align-items:center}
 body[data-app=dock][data-win=main] .side-bottom{margin:0}
-body[data-app=top][data-win=main] #sideSet,body[data-app=top][data-win=main] .char,body[data-app=top][data-win=main] .sys,body[data-app=top][data-win=main] .authorBadge,body[data-app=dock][data-win=main] #sideSet,body[data-app=dock][data-win=main] .char,body[data-app=dock][data-win=main] .sys,body[data-app=dock][data-win=main] .authorBadge,body[data-app=dock][data-win=main] #statusPill,body[data-app=rail][data-win=main] #sideSet,body[data-app=rail][data-win=main] .char,body[data-app=rail][data-win=main] .sys,body[data-app=rail][data-win=main] .authorBadge{display:none}
+body[data-app=top][data-win=main] #sideSet,body[data-app=top][data-win=main] .char,body[data-app=top][data-win=main] .sys,body[data-app=top][data-win=main] .authorBadge,body[data-app=dock][data-win=main] #sideSet,body[data-app=dock][data-win=main] .char,body[data-app=dock][data-win=main] .sys,body[data-app=dock][data-win=main] .authorBadge,body[data-app=dock][data-win=main] #statusPill{display:none}
 body[data-app=top][data-win=main] #langBox,body[data-app=dock][data-win=main] #langBox{position:relative;margin-left:auto}
 body[data-app=dock][data-win=main] #langBox{margin-left:0}
-body[data-app=top][data-win=main] .dd.mini,body[data-app=dock][data-win=main] .dd.mini,body[data-app=rail][data-win=main] .dd.mini{margin:0;width:64px;position:relative}
-body[data-app=top][data-win=main] .dd.mini.open,body[data-app=dock][data-win=main] .dd.mini.open,body[data-app=rail][data-win=main] .dd.mini.open{width:64px}
-body[data-app=top][data-win=main] .dd.mini .dd-body,body[data-app=dock][data-win=main] .dd.mini .dd-body,body[data-app=rail][data-win=main] .dd.mini .dd-body{position:absolute;left:0;min-width:130px;z-index:60;background:linear-gradient(155deg,rgba(var(--g1),.99),rgba(var(--g2),.99));border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+body[data-app=top][data-win=main] .dd.mini,body[data-app=dock][data-win=main] .dd.mini{margin:0;width:64px;position:relative}
+body[data-app=top][data-win=main] .dd.mini.open,body[data-app=dock][data-win=main] .dd.mini.open{width:64px}
+body[data-app=top][data-win=main] .dd.mini .dd-body,body[data-app=dock][data-win=main] .dd.mini .dd-body{position:absolute;left:0;min-width:130px;z-index:60;background:linear-gradient(155deg,rgba(var(--g1),.99),rgba(var(--g2),.99));border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.5)}
 body[data-app=top][data-win=main] .dd.mini .dd-body{top:100%}
-body[data-app=dock][data-win=main] .dd.mini .dd-body,body[data-app=rail][data-win=main] .dd.mini .dd-body{bottom:100%}
-body[data-app=rail][data-win=main] nav{width:66px;padding:12px 8px;align-items:center}
-body[data-app=rail][data-win=main] nav>button{width:48px;height:46px;padding:0;justify-content:center}
-body[data-app=rail][data-win=main] nav>button span{display:none}
-body[data-app=rail][data-win=main] .side-bottom{align-items:center;padding-top:6px}
-body[data-app=rail][data-win=main] #stText{display:none}
-body[data-app=rail][data-win=main] .pill{padding:6px;justify-content:center}
-body[data-app=rail][data-win=main] #langBox{margin-top:auto}
-body[data-app=rail][data-win=main] .side-bottom{margin-top:0}
+body[data-app=dock][data-win=main] .dd.mini .dd-body{bottom:100%}
 body[data-app=top][data-win=main] main,body[data-app=dock][data-win=main] main{padding-top:20px}
 
 body[data-ov=big][data-win=overlay] .row:not(:first-child) .grid{grid-template-columns:16px 20px minmax(0,1fr) 54px 40px}
@@ -107,4 +97,19 @@ body[data-hd=side][data-win=overlay] .head .logo{order:-1}
   body[data-hd=side][data-win=overlay] .head{padding:3px 0;gap:1px}
   body[data-hd=side][data-win=overlay] .head .logo{display:none}
   body[data-hd=side][data-win=overlay] .head button.icon{width:26px;height:22px}
+}
+
+/* Кнопки оверлея справа: зеркало варианта «слева» */
+body[data-hd=rside][data-win=overlay] .shell:has(>.head){display:grid;grid-template-columns:minmax(0,1fr) 38px;grid-template-rows:auto auto minmax(0,1fr) auto}
+body[data-hd=rside][data-win=overlay] .head{grid-column:2;grid-row:1/-1;flex-direction:column;height:auto;padding:8px 0 26px;gap:4px;border-bottom:0;border-left:1px solid var(--line);justify-content:flex-start;overflow:hidden}
+body[data-hd=rside][data-win=overlay] .head .dots,body[data-hd=rside][data-win=overlay] .head .title{display:none}
+body[data-hd=rside][data-win=overlay] .head .logo{margin:0 0 6px;order:-1}
+body[data-hd=rside][data-win=overlay] #bHide{order:-2}
+body[data-hd=rside][data-win=overlay] .modes{grid-column:1;grid-row:1}
+body[data-hd=rside][data-win=overlay] .body{grid-column:1;grid-row:2/4}
+body[data-hd=rside][data-win=overlay] .foot{grid-column:1;grid-row:4}
+@media (max-height:300px){
+  body[data-hd=rside][data-win=overlay] .head{padding:3px 0 22px;gap:1px}
+  body[data-hd=rside][data-win=overlay] .head .logo{display:none}
+  body[data-hd=rside][data-win=overlay] .head button.icon{width:26px;height:22px}
 }

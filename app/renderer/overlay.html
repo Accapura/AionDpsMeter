@@ -18,22 +18,13 @@
     <button class="icon" id="bShare"></button>
     <button class="icon" id="bLock"></button>
     <button class="icon" id="bReset" aria-label="Начать подсчёт заново (Ctrl+Shift+R)" title="Начать заново"></button>
-    <button class="icon" id="bGear" aria-label="Настройки оверлея" title="Настройки" aria-expanded="false"></button>
+    <button class="icon" id="bMain" aria-label="Главное окно" title="Главное окно и настройки"></button>
     <button class="icon" id="bHide" aria-label="Скрыть оверлей (Ctrl+Shift+D)" title="Скрыть"></button>
   </div>
-  <div class="modes" id="modesWrap"><div class="seg" role="group" aria-label="Режим" id="modes"></div><button type="button" id="soloBtn" class="solobtn" aria-pressed="false" hidden title="Показывать только мой урон">Только я</button></div>
+  <div class="modes" id="modesWrap"><div class="seg" role="group" aria-label="Режим" id="modes"></div><div class="seg who" role="group" aria-label="Кого показывать" id="who"><button type="button" data-w="me" title="Только мой урон">Только я</button><button type="button" data-w="all" title="Вся группа">Группа</button></div></div>
   <div id="body" class="body"></div>
   <div class="mflash" id="mflash" aria-live="polite"></div>
   <div class="foot num"><span id="stats"></span><span id="ping" class="ping" hidden></span></div>
-  <div class="panel" id="panel" hidden>
-    <div class="pbtns top"><button type="button" id="pMain">Главное окно</button><button type="button" id="pSize">Размер по умолчанию</button><button type="button" id="pSched">Расписание</button></div>
-    <div class="prow"><span>Оформление</span><span id="themeSlot"></span></div>
-    <label class="slider"><span>Игроков</span><input id="count" type="range" min="1" max="50" step="1"><output id="countV"></output></label>
-    <label class="slider"><span>Прозрачность</span><input id="opacity" type="range" min="20" max="100" step="5"><output id="opV"></output></label>
-    <label class="slider"><span>Масштаб</span><input id="scale" type="range" min="70" max="150" step="5"><output id="scV"></output></label>
-    <div class="prow" style="align-items:flex-start"><span>Колонки</span><span class="cks"><label><input type="checkbox" id="showHead"> Названия колонок</label><label><input type="checkbox" data-col="crit"> Крит %</label><label><input type="checkbox" data-col="hits"> Удары</label><label><input type="checkbox" data-col="maxHit"> Макс. удар</label><label><input type="checkbox" data-col="hps"> Лечение (HPS)</label><label><input type="checkbox" data-col="gs"> Гир-скор</label><label><input type="checkbox" data-col="cp"> Боевая мощь</label></span></div>
-    <div class="prow" style="align-items:flex-start"><span>Вид</span><span class="cks"><label><input type="checkbox" id="solo"> Только я</label><label><input type="checkbox" id="autoHide"> Прятать, когда игра свёрнута</label></span></div>
-  </div>
   <div class="resize" id="resize" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M11 4L4 11M11 8L8 11"/></svg></div>
 </div>
 <script src="common.js"></script>

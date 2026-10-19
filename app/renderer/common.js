@@ -1,17 +1,16 @@
 'use strict';
 const THEMES = {
-  glass: { name: 'Стекло · Градиент', g1: '58,40,92', g2: '20,24,48', accent: '#ffc66b', accentFg: '#2a1d48', text: '#fbf7ff', muted: '#cbc2dc', line: 'rgba(255,255,255,.18)', hp: '#ff5d73', lay: ['list', 'top', 'side'] },
-  glassblack: { name: 'Стекло · Чёрное', g1: '34,34,40', g2: '2,2,4', accent: '#ffffff', accentFg: '#16171b', text: '#f6f6f8', muted: '#c4c6cc', line: 'rgba(255,255,255,.16)', hp: '#ff5a5f', lay: ['list', 'top', 'side'] },
-  catppuccin: { name: 'Каппуччино Мокко', g1: '49,50,68', g2: '30,30,46', accent: '#cba6f7', accentFg: '#1e1e2e', text: '#cdd6f4', muted: '#a6adc8', line: 'rgba(205,214,244,.16)', hp: '#f38ba8', lay: ['cards', 'top', 'side'] },
-  tokyo: { name: 'Токийская ночь', g1: '41,46,66', g2: '26,27,38', accent: '#7aa2f7', accentFg: '#1a1b26', text: '#c0caf5', muted: '#9aa5ce', line: 'rgba(122,162,247,.22)', hp: '#f7768e', lay: ['list', 'top', 'top'] },
-  dracula: { name: 'Дракула', g1: '68,71,90', g2: '40,42,54', accent: '#bd93f9', accentFg: '#282a36', text: '#f8f8f2', muted: '#b9bccf', line: 'rgba(189,147,249,.24)', hp: '#ff5555', lay: ['big', 'top', 'right'] },
-  nord: { name: 'Норд', g1: '59,66,82', g2: '36,41,51', accent: '#88c0d0', accentFg: '#2e3440', text: '#eceff4', muted: '#aab4c6', line: 'rgba(136,192,208,.22)', hp: '#bf616a', lay: ['ticker', 'bottom', 'rail'] },
-  rosepine: { name: 'Розовая сосна', g1: '38,35,58', g2: '25,23,36', accent: '#ebbcba', accentFg: '#191724', text: '#e0def4', muted: '#908caa', line: 'rgba(235,188,186,.2)', hp: '#eb6f92', lay: ['cards', 'bottom', 'dock'] },
-  gruvbox: { name: 'Грувбокс Тёмная', g1: '60,56,54', g2: '40,40,40', accent: '#fabd2f', accentFg: '#282828', text: '#ebdbb2', muted: '#bdae93', line: 'rgba(250,189,47,.22)', hp: '#fb4934', lay: ['list', 'side', 'top'] },
-  kanagawa: { name: 'Канагава', g1: '54,54,70', g2: '31,31,40', accent: '#e6c384', accentFg: '#1f1f28', text: '#dcd7ba', muted: '#a6a69c', line: 'rgba(230,195,132,.22)', hp: '#e46876', lay: ['columns', 'top', 'side'] },
-  onedark: { name: 'Ван Дарк', g1: '50,56,66', g2: '33,37,43', accent: '#61afef', accentFg: '#21252b', text: '#d7dae0', muted: '#9aa2b1', line: 'rgba(97,175,239,.22)', hp: '#e06c75', lay: ['list', 'bottom', 'side'] },
-  everforest: { name: 'Вечный лес', g1: '52,63,68', g2: '35,42,46', accent: '#a7c080', accentFg: '#232a2e', text: '#d3c6aa', muted: '#9da9a0', line: 'rgba(167,192,128,.22)', hp: '#e67e80', lay: ['big', 'side', 'right'] },
-  solarized: { name: 'Соларайзд Тёмная', g1: '7,54,66', g2: '0,43,54', accent: '#2aa198', accentFg: '#002b36', text: '#eee8d5', muted: '#93a1a1', line: 'rgba(42,161,152,.28)', hp: '#dc322f', lay: ['ticker', 'top', 'dock'] },
+  amethyst: { name: 'Аметист', g1: '78,48,138', g2: '28,20,68', accent: '#ffcf6b', accentFg: '#2b1d48', text: '#fbf7ff', muted: '#cdc2e6', line: 'rgba(255,255,255,.18)', hp: '#ff5d73' },
+  ocean: { name: 'Океан', g1: '20,84,128', g2: '8,34,70', accent: '#5fe0ff', accentFg: '#06263a', text: '#f1fbff', muted: '#b4d4e6', line: 'rgba(190,235,255,.2)', hp: '#ff6b7a' },
+  emerald: { name: 'Изумруд', g1: '18,92,70', g2: '7,42,40', accent: '#5af0a8', accentFg: '#06281c', text: '#f0fff7', muted: '#b0dcc8', line: 'rgba(190,255,225,.2)', hp: '#ff6b6b' },
+  ruby: { name: 'Рубин', g1: '122,30,52', g2: '48,12,32', accent: '#ff8fa3', accentFg: '#3a0716', text: '#fff3f5', muted: '#e4b9c2', line: 'rgba(255,200,210,.22)', hp: '#ffb347' },
+  sunset: { name: 'Закат', g1: '138,56,66', g2: '52,24,76', accent: '#ffb077', accentFg: '#3a1608', text: '#fff6f1', muted: '#e6c4c4', line: 'rgba(255,215,190,.22)', hp: '#ff5d73' },
+  sakura: { name: 'Сакура', g1: '118,50,102', g2: '56,26,76', accent: '#ff9fd8', accentFg: '#3a0d2c', text: '#fff4fb', muted: '#e6bfdc', line: 'rgba(255,200,235,.22)', hp: '#ff6b88' },
+  amber: { name: 'Янтарь', g1: '104,66,24', g2: '44,28,18', accent: '#ffc94d', accentFg: '#3a2605', text: '#fff9ee', muted: '#e2cfa6', line: 'rgba(255,225,160,.22)', hp: '#ff6a4d' },
+  lavender: { name: 'Лаванда', g1: '72,66,140', g2: '32,34,88', accent: '#c0b8ff', accentFg: '#1f1b4a', text: '#f6f5ff', muted: '#c6c3ea', line: 'rgba(210,205,255,.22)', hp: '#ff7a9a' },
+  forest: { name: 'Лес', g1: '44,84,50', g2: '20,42,34', accent: '#b4e06a', accentFg: '#14260a', text: '#f6fff0', muted: '#bdd6b0', line: 'rgba(205,240,170,.22)', hp: '#ff7a6b' },
+  teal: { name: 'Бирюза', g1: '16,96,100', g2: '8,46,58', accent: '#6ff2e0', accentFg: '#052a2a', text: '#effffd', muted: '#a9dcd8', line: 'rgba(180,255,245,.2)', hp: '#ff7088' },
+  midnight: { name: 'Полночь', g1: '34,46,112', g2: '14,18,56', accent: '#86a8ff', accentFg: '#0b1440', text: '#f2f5ff', muted: '#b7c2ec', line: 'rgba(170,190,255,.22)', hp: '#ff6b88' },
 };
 
 const CLASS_RU = { Gladiator: 'Гладиатор', Templar: 'Страж', Ranger: 'Стрелок', Assassin: 'Убийца', Sorcerer: 'Волшебник', Elementalist: 'Заклинатель', Cleric: 'Целитель', Chanter: 'Чародей', Brawler: 'Боец', Unknown: 'Класс неизвестен' };
@@ -19,9 +18,14 @@ const CLASS_COLOR = { Gladiator: '31,162,200', Templar: '59,124,230', Ranger: '2
 const MODES = [['boss', 'Данж: Босс'], ['mob', 'Моб'], ['dummy', 'Манекен']];
 
 
+// Положение кнопок и форма интерфейса не зависят от темы: их выбирают в «Настройки → Оформление».
+const NAV_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // главное меню
+const BTN_POS = [['left', 'Слева'], ['bottom', 'Снизу'], ['top', 'Сверху'], ['right', 'Справа']];            // кнопки в оверлее
+const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы']];
+const OV_STATS = [['dps', 'DPS'], ['dmg', 'Урон'], ['pct', 'Доля']];
 function applyTheme(s, opacityOverride) {
   STREAMER = !!s.streamer;
-  const t = THEMES[s.theme] || THEMES.catppuccin;
+  const t = THEMES[s.theme] || THEMES.midnight;
   const r = document.documentElement.style;
   r.setProperty('--g1', t.g1); r.setProperty('--g2', t.g2);
   r.setProperty('--accent', t.accent); r.setProperty('--accentFg', t.accentFg);
@@ -29,8 +33,12 @@ function applyTheme(s, opacityOverride) {
   r.setProperty('--line', t.line); r.setProperty('--hp', t.hp);
   r.setProperty('--a', String((opacityOverride ?? 92) / 100));
   if (document.body) {
-    const k = THEMES[s.theme] ? s.theme : 'catppuccin', L = (THEMES[k].lay) || ['list', 'top', 'side'], d = document.body.dataset;
-    d.skin = k; d.ov = L[0]; d.hd = L[1]; d.app = L[2];
+    const d = document.body.dataset;
+    d.skin = THEMES[s.theme] ? s.theme : 'midnight';
+    d.corners = s.corners === 'square' ? 'square' : 'round';
+    d.app = { left: 'side', top: 'top', bottom: 'dock', right: 'right' }[s.navPos] || 'side';
+    d.hd = { left: 'side', top: 'top', bottom: 'bottom', right: 'rside' }[s.btnPos] || 'top';
+    d.ov = OV_VIEWS.some(v => v[0] === s.ovView) ? s.ovView : 'list';
   }
 }
 // Ротация: по строке на навык, по оси — время боя; золотые штрихи — криты. rot = { names, c: [[мс, навык, урон, флаги]], dur }.
@@ -82,6 +90,7 @@ const ICON = {
   play: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.4-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>',
   lock: '<svg class="i" viewBox="0 0 24 24"><path d="M6 11h12v9H6zM9 11V8a3 3 0 0 1 6 0v3"/></svg>',
   unlock: '<svg class="i" viewBox="0 0 24 24"><path d="M6 11h12v9H6zM9 11V8a3 3 0 0 1 5.8-1"/></svg>',
+  win: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M6.5 6.5h.01"/></svg>',
   gear: '<svg class="i" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3a1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8a1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   close: '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   min: '<svg class="i" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>',
@@ -100,7 +109,7 @@ const ICON = {
 
 // Всплывающее меню выбора оформления.
 function themeButton(current) {
-  const t = THEMES[current] || THEMES.catppuccin;
+  const t = THEMES[current] || THEMES.midnight;
   return `<button type="button" class="themeBtn" aria-haspopup="listbox" data-theme-btn><span class="sw" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}))"></span><span class="tn">${t.name}</span>${ICON.chevDown}</button>`;
 }
 function bindThemeButton(root, current, onPick) {
@@ -144,7 +153,7 @@ function bindDropList(root, id, onPick) {
   dd.querySelectorAll('.dd-opt').forEach(b => b.onclick = e => { e.stopPropagation(); onPick(b.dataset.v, b, dd); });
 }
 function closeDropList(id) { DD_OPEN.delete(id); const dd = document.getElementById(id); if (dd) { dd.classList.remove('open'); dd.querySelector('.dd-head')?.setAttribute('aria-expanded', 'false'); } }
-const themeSwatch = k => { const t = THEMES[k] || THEMES.catppuccin; return `<span class="sw" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}));box-shadow:inset 0 0 0 2px ${t.accent}"></span>`; };
+const themeSwatch = k => { const t = THEMES[k] || THEMES.midnight; return `<span class="sw" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}));box-shadow:inset 0 0 0 2px ${t.accent}"></span>`; };
 
 // Изменение размера окна уголком (прозрачные окна Windows не тянутся за край) и развёртывание на весь экран.
 function windowControls(gripId, maxId) {
