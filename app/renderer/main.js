@@ -1,4 +1,5 @@
 'use strict';
+let lookOpen = { theme: true };
 let S = null, status = {}, page = 'overlay', version = '', showAddr = false, U = null, rpcAvailable = false;
 // «Игра найдена, читаю бой · 1.2.3.4:7777» → ['Игра найдена, читаю бой', '1.2.3.4:7777']
 const splitStatus = msg => { const i = String(msg || '').indexOf(' · '); return i < 0 ? [msg || '', ''] : [msg.slice(0, i), msg.slice(i + 3)]; };
@@ -159,7 +160,9 @@ const pages = {
   look: () => {
     const cur = { theme: THEMES[S.theme] ? S.theme : 'midnight', corners: S.corners === 'square' ? 'square' : 'round', navPos: S.navPos || 'left', btnPos: S.btnPos || 'top', ovView: S.ovView || 'list', ovStat: S.ovStat || 'dps' };
     const tile = (ap, k, label, pv, cls) => `<button type="button" class="tile ${cls || ''}${cur[ap] === k ? ' on' : ''}" data-ap="${ap}" data-v="${k}" aria-pressed="${cur[ap] === k}">${pv}<span class="tl">${label}</span></button>`;
-    const sec = (ico, title, hint, body, cls) => `<div class="card look"><div class="lh"><span class="li">${ico}</span><div><b>${title}</b><small>${hint}</small></div></div><div class="tiles ${cls || ''}">${body}</div></div>`;
+    const chev = '<svg class="chv" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    const sum = { theme: (THEMES[cur.theme] || {}).name, corners: cur.corners === 'round' ? 'Закруглённые' : 'Квадратные', navPos: (NAV_POS.find(x => x[0] === cur.navPos) || [])[1], btnPos: (BTN_POS.find(x => x[0] === cur.btnPos) || [])[1], ovView: (OV_VIEWS.find(x => x[0] === cur.ovView) || [])[1], ovStat: (OV_STATS.find(x => x[0] === cur.ovStat) || [])[1] };
+    const sec = (id, ico, title, hint, body, cls) => `<div class="card look acc${lookOpen[id] ? ' open' : ''}" data-sec="${id}"><button type="button" class="lh" aria-expanded="${!!lookOpen[id]}"><span class="li">${ico}</span><span class="lt"><b>${title}</b><small>${hint}</small></span><span class="cv">${esc(sum[id] || '')}</span>${chev}</button><div class="lb"><div class="lbi"><div class="tiles ${cls || ''}">${body}</div></div></div></div>`;
     // миниатюры
     const th = ([k, t]) => tile('theme', k, t.name, `<i class="ts" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}))"><b style="background:${t.accent}"></b><u style="background:${t.text}"></u><u style="background:${t.muted}"></u></i>`, 'tl-theme');
     const cr = ['round', 'square'].map(k => tile('corners', k, k === 'round' ? 'Закруглённые' : 'Квадратные', `<i class="pc ${k}"><b></b><u></u></i>`)).join('');
@@ -183,14 +186,12 @@ const pages = {
     const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
     const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
-    ${sec(ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '11 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
-    <div class="lookrow">
-    ${sec(ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
-    ${sec(ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
-    </div>
-    ${sec(ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
-    ${sec(ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '11 видов: от простого списка до колец и пончика долей', vw, 'g-view')}
-    ${sec(ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
+    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '11 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
+    ${sec('corners', ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
+    ${sec('navPos', ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
+    ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
+    ${sec('ovView', ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '11 видов: от простого списка до колец и пончика долей', vw, 'g-view')}
+    ${sec('ovStat', ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
     <div class="muted" style="font-size:12px;text-align:center">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`;
   },
 
@@ -839,6 +840,7 @@ function render() {
   function on2(id, fn) { const el = $(id); if (el) el.onclick = fn; }
   const slot = $('themeSlot');
   if (slot) { slot.innerHTML = themeButton(S.theme); bindThemeButton(slot, S.theme, k => api.set({ theme: k })); }
+  m.querySelectorAll('.acc > .lh').forEach(b => b.onclick = () => { const c = b.parentElement, o = c.classList.toggle('open'); b.setAttribute('aria-expanded', o); lookOpen[c.dataset.sec] = o; });
   m.querySelectorAll('[data-ap]').forEach(b => b.onclick = () => api.set({ [b.dataset.ap]: b.dataset.v }));
   m.querySelectorAll('[data-m]').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
   m.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => api.set({ dummySec: Number(b.dataset.ds) }));
