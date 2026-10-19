@@ -65,3 +65,12 @@ body[data-skin=blackflame][data-win=overlay] .hpbar i{background:linear-gradient
 body[data-skin=blackflame][data-win=overlay] .row.me{box-shadow:inset 0 0 0 1.5px var(--accent)}
 body[data-skin=blackflame] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#ff4057,#7a0f24);border-radius:8px}
 body[data-skin=blackflame] ::selection{background:rgba(255,64,87,.45);color:#fff}
+
+/* «Чёрное пламя» в уведомлениях: алая линия бежит по горизонтали вдоль рамки карточки; повторяет её углы (круглые или прямые) */
+body[data-skin=blackflame][data-win=toast] .t{box-shadow:0 4px 10px rgba(0,0,0,.45),0 0 5px rgba(255,64,87,.18)}
+body[data-skin=blackflame][data-win=toast] .t::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:2px;pointer-events:none;will-change:background-position;transform:translateZ(0);background:linear-gradient(100deg,transparent 0 30%,rgba(255,64,87,.95) 47%,#ffd2c2 52%,rgba(255,64,87,.95) 57%,transparent 70% 100%) 100% 0/320% 100% no-repeat;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:bfSweep 3.4s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes bfSweep{from{background-position:100% 0}to{background-position:0 0}}
+body[data-skin=blackflame][data-win=toast][data-fx=off] .t::after{animation:none;background-position:30% 0}
+@media (prefers-reduced-motion:reduce){body[data-skin=blackflame][data-win=toast] .t::after{animation:none}}
+
+body[data-skin=blackflame][data-win=overlay] #body{contain:paint;transform:translateZ(0)}

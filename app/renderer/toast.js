@@ -22,7 +22,7 @@ function updCard(t, enter) {
   </div>`;
 }
 function render() {
-  applyTheme({ theme: data.theme }, 94);
+  applyTheme({ theme: data.theme, corners: data.corners, fx: data.fx }, 94);
   document.body.style.justifyContent = data.top ? 'flex-start' : 'flex-end';
   const st = data.style || 'glass', icSize = st === 'banner' ? 44 : st === 'minimal' ? 20 : st === 'compact' ? 20 : st === 'ticket' ? 30 : 24;
   const html = data.toasts.map(t => {
@@ -34,7 +34,7 @@ function render() {
       <div class="n">${esc(t.name)}</div><div class="l">${line}</div>${foot(t)}</div>
       <button class="icon x" data-k="${esc(t.key)}" aria-label="Закрыть уведомление">${ICON.close}</button>${st === 'timer' && t.exp ? `<i class="tb" style="animation-duration:${Math.max(1, (t.exp - t.at0) / 1000)}s;animation-delay:-${Math.max(0, (Date.now() - t.at0) / 1000).toFixed(2)}s"></i>` : ''}</div>`;
   }).join('');
-  const sig = html.replace(/ enter"/g, '"').replace(/animation-delay:-[\d.]+s/g, '') + '|' + st + '|' + data.theme + '|' + data.lang;
+  const sig = html.replace(/ enter"/g, '"').replace(/animation-delay:-[\d.]+s/g, '') + '|' + st + '|' + data.theme + '|' + data.corners + '|' + data.fx + '|' + data.lang;
   // перерисовываем только если что-то изменилось — иначе анимации и подсветка кнопок сбрасывались бы каждую секунду
   if (sig === lastHtml) return;
   lastHtml = sig;

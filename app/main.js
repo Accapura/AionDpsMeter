@@ -745,7 +745,7 @@ function renderToasts() {
   const w = makeWindow('toast', { ...bounds, alwaysOnTop: true, skipTaskbar: true, focusable: false, resizable: false, showInactive: true }, 'toast.html');
   w.setAlwaysOnTop(true, 'screen-saver');
   w.setBounds(bounds);
-  const send = () => w.webContents.send('toasts', { toasts, sound: settings.notify.sound, soundName: settings.notify.soundName || 'clear-sky', volume: settings.notify.volume ?? 50, theme: settings.theme, top: pos[0] === 't', style: settings.notify.style || 'glass', lang: settings.lang });
+  const send = () => w.webContents.send('toasts', { toasts, sound: settings.notify.sound, soundName: settings.notify.soundName || 'clear-sky', volume: settings.notify.volume ?? 50, theme: settings.theme, corners: settings.corners, fx: settings.fx, top: pos[0] === 't', style: settings.notify.style || 'glass', lang: settings.lang });
   if (w.webContents.isLoading()) w.webContents.once('did-finish-load', send); else send();
   const next = Math.min(...toasts.filter(x => x.exp).map(x => x.exp));
   if (isFinite(next)) showToast.timer = setTimeout(renderToasts, Math.max(200, next - Date.now() + 50));

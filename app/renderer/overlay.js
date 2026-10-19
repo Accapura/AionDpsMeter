@@ -1,6 +1,7 @@
 'use strict';
 let S = null, status = {}, snap = null, records = {};
 const $ = id => document.getElementById(id);
+function setHtml(el, h) { if (el._h !== h) { el._h = h; el.innerHTML = h; } }
 $('bMain').innerHTML = ICON.win; $('bMin').innerHTML = ICON.eyeOff; $('bRestore').innerHTML = ICON.eye;
 $('bMin').onclick = () => api.set({ minimal: true });
 $('bRestore').onclick = () => api.set({ minimal: false });
@@ -111,7 +112,7 @@ function render() {
   if (!S) return;
   const body = $('body');
   if (!matches(snap)) {
-    body.innerHTML = empty();
+    body._h = null; body.innerHTML = empty();
     const b = body.querySelector('[data-a]');
     if (b) b.onclick = () => api.open('main', 'connect');
     $('stats').textContent = '';
@@ -163,34 +164,34 @@ function render() {
   if (S.solo && !me) {
     // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
     // ни HP моба, ни таймер, ни суммы чужого боя не показываем: бой «начинается» для оверлея, когда урон нанёс сам персонаж
-    body.innerHTML = `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(aliasOf(S.character))}</b>` : ''}</div></div></div>`;
-    $('stats').innerHTML = '';
+    body._h = null; body.innerHTML = `<div class="solo"><div class="empty"><div>${esc(S.character ? 'Ждём ваш урон — ' : 'Ждём ваш урон')}${S.character ? `<b data-notr>${esc(aliasOf(S.character))}</b>` : ''}</div></div></div>`;
+    $('stats')._h = null; $('stats').innerHTML = '';
     return;
   }
   if (S.solo && me) {
     const place = ps.indexOf(me) + 1;
-    body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню">${classIcon(me.cls)}
+    body._h = null; body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню">${classIcon(me.cls)}
       <div class="who"><span class="name" data-notr>${esc(aliasOf(nm(me)))}</span><span class="bigdps num">${SV[ST](me)}<small>${SL[ST][0] === '%' ? 'доля' : SL[ST][0]}</small></span></div>
       <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
       <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
       <div><span>Крит</span><b>${me.crit != null ? Math.round(me.crit * 100) + '%' : '—'}</b></div><div><span>Макс. удар</span><b>${fmt(me.maxHit)}</b></div>
       ${me.hps ? `<div><span>HPS</span><b>${fmt(me.hps)}</b></div>` : ''}</div>${rec ? `<div style="text-align:center">${rec}</div>` : ''}</div>`;
     body.querySelector('.me1').onclick = () => { if (me.id != null) api.open('breakdown', +me.id); };
-    $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою`;
+    $('stats')._h = null; $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою`;
     return;
   }
   const alt = ALT_VIEWS.includes(S.ovView) ? altList(S.ovView, { shown, ps, me, top, SV, ST, SL }) : null;
-  if (alt) body.innerHTML = targetHtml + alt; else
-  body.innerHTML = targetHtml + `
+  if (alt) setHtml(body, targetHtml + alt); else
+  setHtml(body, targetHtml + `
     <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="${SL[ORD[0]][1]}">${SL[ORD[0]][0]}</span><span class="r c-total" title="${SL[ORD[1]][1]}">${SL[ORD[1]][0]}</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="${SL[ORD[2]][1]}">${SL[ORD[2]][0]}</span></div>
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
       return `<div class="row${p === me ? ' me' : ''}" style="--c:${c}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="--p:${(p.dmg / top * 100).toFixed(1)}%;width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
       <span class="r dps">${SV[ORD[0]](p)}</span><span class="r muted c-total">${SV[ORD[1]](p)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${SV[ORD[2]](p).replace('%', '')}</span></div></div>`;
-    }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;
+    }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`);
   body.querySelectorAll('.row[data-id], .ai[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
-  $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`;
+  setHtml($('stats'), `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`);
   if (rec) $('stats').insertAdjacentHTML('beforeend', ' ' + rec);
 }
 
