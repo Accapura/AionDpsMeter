@@ -23,5 +23,5 @@ body[data-skin] .card{box-shadow:none}
 
 /* ---- Квадратные углы: всё, кроме круглых точек, значков и аватаров ---- */
 body[data-corners=square]{--rad:0;--r2:0;--r3:0;--rr:0;--hr:0}
-body[data-corners=square] *:not(.dot):not(.pl):not(.av):not(.avw):not(.pd):not(.pi):not(.n):not(.ic):not(.dd-ch):not(.cls){border-radius:0!important}
+body[data-corners=square] *:not(.dot):not(.pl):not(.av):not(.avw):not(.pd):not(.pi):not(.n):not(.ic):not(.dd-ch):not(.cls):not(.pc):not(.pc b):not(.pc u){border-radius:0!important}
 body[data-corners=square] .cls.unknown{border-radius:0!important}
