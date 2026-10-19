@@ -8,3 +8,4 @@ setup/setup.nsi
 setup/*.exe
 setup/*.gz
 *.log
+app/assets/donate-qr.png

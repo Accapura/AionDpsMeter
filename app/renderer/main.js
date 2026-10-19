@@ -304,6 +304,13 @@ const pages = {
       <img src="../assets/logo.png" width="64" height="64" alt="">
       <div class="who"><span class="lbl">Автор</span><b>Accapura</b><span class="muted">Разработка, идеи и поддержка программы</span></div>
       <button type="button" class="primary discord" data-dc="app">${DISCORD_ICON}Написать в Discord</button>
+    </div>
+    <div class="card donCard" id="donCard">
+      <div class="donTop"><span class="donIc"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.5 3.7 4.5 6.9 4.5c2 0 3.4 1.1 5.1 3 1.7-1.9 3.1-3 5.1-3 3.2 0 5.3 3 4.1 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg></span>
+        <div class="who"><span class="lbl">Поддержка проекта</span><b>Поддержать автора</b><span class="muted">Программа бесплатная. Донат — добровольный, ничего не открывает и не блокирует.</span></div>
+        <button type="button" class="primary" id="donBtn">Показать QR</button></div>
+      <div class="donBody"><div class="donIn"><img class="donQr" src="../assets/donate-qr.png" width="210" height="210" alt="QR" onerror="document.getElementById('donCard').remove()">
+        <div class="donTx"><b>Отсканируйте камерой или в приложении банка</b><span class="muted">Перевод по СБП. Спасибо — это помогает развивать программу!</span></div></div></div>
     </div>`,
 };
 
@@ -847,6 +854,8 @@ function render() {
   m.querySelectorAll('[data-m]').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
   m.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => api.set({ dummySec: Number(b.dataset.ds) }));
   m.querySelectorAll('[data-url]').forEach(a => a.onclick = e => { e.preventDefault(); api.open('url', a.dataset.url); });
+  const donB = m.querySelector('#donBtn');
+  if (donB) donB.onclick = () => { const c = $('donCard'); const o = c.classList.toggle('open'); donB.textContent = o ? 'Скрыть QR' : 'Показать QR'; if (getLang() === 'en') donB.textContent = o ? 'Hide QR' : 'Show QR'; };
   on('mCount', 'oninput', e => { $('vCount').textContent = e.target.value; });
   on('mCount', 'onchange', e => api.set({ count: +e.target.value }));
   on('mOp', 'oninput', e => { $('vOp').textContent = e.target.value + '%'; });
