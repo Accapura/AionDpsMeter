@@ -21,7 +21,7 @@ const MODES = [['boss', 'Данж: Босс'], ['mob', 'Моб'], ['dummy', 'М�
 // Положение кнопок и форма интерфейса не зависят от темы: их выбирают в вкладке «Оформление».
 const NAV_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // главное меню
 const BTN_POS = [['left', 'Слева'], ['bottom', 'Снизу'], ['top', 'Сверху'], ['right', 'Справа']];            // кнопки в оверлее
-const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы']];
+const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы'], ['rings', 'Кольца'], ['podium', 'Подиум'], ['bars', 'Гистограмма'], ['console', 'Консоль'], ['nearby', 'Я и соседи'], ['donut', 'Пончик']];
 const OV_STATS = [['dps', 'DPS'], ['dmg', 'Урон'], ['pct', 'Доля']];
 function applyTheme(s, opacityOverride) {
   STREAMER = !!s.streamer;

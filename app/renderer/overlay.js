@@ -179,6 +179,8 @@ function render() {
     $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою`;
     return;
   }
+  const alt = ALT_VIEWS.includes(S.ovView) ? altList(S.ovView, { shown, ps, me, top, SV, ST, SL }) : null;
+  if (alt) body.innerHTML = targetHtml + alt; else
   body.innerHTML = targetHtml + `
     <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="${SL[ORD[0]][1]}">${SL[ORD[0]][0]}</span><span class="r c-total" title="${SL[ORD[1]][1]}">${SL[ORD[1]][0]}</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="${SL[ORD[2]][1]}">${SL[ORD[2]][0]}</span></div>
     <div class="list">${shown.map((p, i) => {
@@ -187,9 +189,61 @@ function render() {
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
       <span class="r dps">${SV[ORD[0]](p)}</span><span class="r muted c-total">${SV[ORD[1]](p)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${SV[ORD[2]](p).replace('%', '')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`;
-  body.querySelectorAll('.row[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
+  body.querySelectorAll('.row[data-id], .ai[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
   $('stats').innerHTML = `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`;
   if (rec) $('stats').insertAdjacentHTML('beforeend', ' ' + rec);
+}
+
+
+// Дополнительные виды списка (Оформление → вид списка игроков): своя вёрстка вместо строк.
+const ALT_VIEWS = ['rings', 'podium', 'bars', 'console', 'nearby', 'donut'];
+function altList(view, x) {
+  const { shown, ps, me, top, SV, ST, SL } = x;
+  const cc = p => CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
+  const at = p => `data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"`;
+  const nmh = p => `<span class="name" data-notr>${esc(aliasOf(nm(p)))}</span>`;
+  const rel = p => Math.max(2, Math.min(100, p.dmg / top * 100));
+  const pc = p => ((p.share || 0) * 100).toFixed(0) + '%';
+  if (view === 'rings') {
+    return `<div class="list alt a-rings">${shown.map(p => `<div class="ai ring${p === me ? ' me' : ''}" style="--c:${cc(p)};--v:${rel(p).toFixed(1)}" ${at(p)}><div class="rc"><b class="num">${SV[ST](p)}</b></div>${nmh(p)}</div>`).join('')}</div>`;
+  }
+  if (view === 'podium') {
+    const t = shown.slice(0, 3), medal = ['🥇', '🥈', '🥉'];
+    const steps = [1, 0, 2].filter(i => t[i]).map(i => { const p = t[i];
+      return `<div class="ai step s${i + 1}${p === me ? ' me' : ''}" style="--c:${cc(p)};height:${(38 + 62 * p.dmg / top).toFixed(0)}%" ${at(p)}><i>${medal[i]}</i>${nmh(p)}<b class="num">${SV[ST](p)}</b></div>`; }).join('');
+    const more = shown.slice(3).map((p, i) => `<div class="ai pr${p === me ? ' me' : ''}" style="--c:${cc(p)}" ${at(p)}><span class="rank">${i + 4}</span>${nmh(p)}<b class="num">${SV[ST](p)}</b></div>`).join('');
+    return `<div class="list alt a-podium"><div class="pod">${steps}</div>${more}</div>`;
+  }
+  if (view === 'bars') {
+    return `<div class="list alt a-bars">${shown.slice(0, 12).map(p => `<div class="ai bcol${p === me ? ' me' : ''}" style="--c:${cc(p)}" ${at(p)}><b class="num">${SV[ST](p)}</b><div class="bt"><i style="height:${rel(p).toFixed(1)}%"></i></div>${nmh(p)}</div>`).join('')}</div>`;
+  }
+  if (view === 'console') {
+    const cut = (s, n) => { const a = [...String(s)]; return (a.length > n ? a.slice(0, n - 1).join('') + '…' : a.join('')).padEnd(n); };
+    const hd = ` # ${cut('ИГРОК', 11)}${SL[ST][0].toUpperCase().padStart(6)}  ${cut('', 10)} ${'ДОЛЯ'.padStart(4)}`;
+    return `<div class="list alt a-console"><div class="ch">${esc(hd)}</div>${shown.map((p, i) => {
+      const n = Math.round(rel(p) / 10);
+      const line = `${String(i + 1).padStart(2)} ${cut(aliasOf(nm(p)), 11)}${SV[ST](p).padStart(6)}  ${'█'.repeat(n)}${'░'.repeat(10 - n)} ${pc(p).padStart(4)}`;
+      return `<div class="ai cl${p === me ? ' me' : ''}" ${at(p)} data-notr>${esc(line)}</div>`; }).join('')}</div>`;
+  }
+  if (view === 'nearby') {
+    const i = me ? ps.indexOf(me) : -1;
+    if (i < 0) return null;
+    const d = v => fmt(Math.abs(v));
+    const row = (p, k, delta, cls) => `<div class="ai nr${p === me ? ' me' : ''}" style="--c:${cc(p)}" ${at(p)}><span class="rank">${k}</span>${classIcon(p.cls)}${nmh(p)}<b class="num ${cls || ''}">${delta != null ? delta : SV[ST](p)}</b></div>`;
+    const a = ps[i - 1], b = ps[i + 1];
+    let rows;
+    if (i === 0) rows = row(me, 1) + (b ? row(b, 2, '+' + d(me.dps - b.dps), 'up') : '') + (ps[2] ? row(ps[2], 3, '+' + d(me.dps - ps[2].dps), 'up') : '');
+    else rows = row(a, i, '−' + d(a.dps - me.dps), 'dn') + row(me, i + 1) + (b ? row(b, i + 2, '+' + d(me.dps - b.dps), 'up') : '');
+    const info = i === 0 ? (b ? `вы лидер · отрыв ${d(me.dps - b.dps)}` : 'вы лидер') : `до лидера ${d(ps[0].dps - me.dps)} · вы ${((me.share || 0) * 100).toFixed(0)}% урона группы`;
+    return `<div class="list alt a-nearby">${rows}<div class="ninfo">${info}</div></div>`;
+  }
+  if (view === 'donut') {
+    let acc = 0;
+    const st = shown.slice(0, 8).map(p => { const a = acc; acc = Math.min(100, acc + (p.share || 0) * 100); return `rgb(${cc(p)}) ${a.toFixed(2)}% ${acc.toFixed(2)}%`; });
+    if (acc < 99.9) st.push(`rgba(255,255,255,.14) ${acc.toFixed(2)}% 100%`);
+    return `<div class="list alt a-donut"><div class="dn" style="background:conic-gradient(${st.join(',')})"><b class="num">${fmt(snap.total)}<small>группа</small></b></div><div class="lg">${shown.slice(0, 8).map(p => `<div class="ai lgi${p === me ? ' me' : ''}" ${at(p)}><i style="background:rgb(${cc(p)})"></i>${nmh(p)}<b class="num">${pc(p)}</b></div>`).join('')}</div></div>`;
+  }
+  return null;
 }
 
 // Меню игрока по правой кнопке: скопировать ник (вставить в игре в поиск друзей, приглашение или чат) и разбивка по навыкам.
@@ -200,7 +254,7 @@ document.addEventListener('mousedown', e => { if (pmenu && !pmenu.contains(e.tar
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 window.addEventListener('blur', closeMenu);
 document.addEventListener('contextmenu', e => {
-  const r = e.target.closest && e.target.closest('.row[data-nick], .me1[data-nick]');
+  const r = e.target.closest && e.target.closest('.row[data-nick], .me1[data-nick], .ai[data-nick]');
   if (!r) return;
   e.preventDefault();
   closeMenu();
