@@ -156,21 +156,43 @@ const pages = {
       <div class="keys">${HOTKEYS.map(([id, text]) => `<div class="hk"><button type="button" class="kbd hkb${hkWait === id ? ' wait' : ''}" data-hk="${id}" title="Нажмите и затем нужное сочетание клавиш">${hkWait === id ? 'Нажмите сочетание…' : esc(hkLabel(hkText(id)))}</button><span>${text}</span>${hkErr[id] ? `<span class="hkerr">${esc(hkErr[id])}</span>` : ''}</div>`).join('')}</div>
       <div class="row"><button type="button" id="hkReset">Вернуть стандартные</button><span class="muted" style="font-size:12px">Нажмите на сочетание, затем любую клавишу или сочетание — подойдут и клавиши цифрового блока (Num 1, Num +). Esc — отмена.</span></div></div>`,
 
-  look: () => `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
-    <div class="card field center">
-      <div>Цвет — тема из 11 вариантов, она меняет только цвета:</div>
-      <div class="row" style="justify-content:center"><span id="themeSlot"></span></div>
-      <div>Форма окон и кнопок:</div>
-      <div class="seg ap" role="group">${[['round', 'Закруглённые'], ['square', 'Квадратные']].map(([k, l]) => `<button type="button" data-ap="corners" data-v="${k}" class="${(S.corners === 'square' ? 'square' : 'round') === k ? 'on' : ''}" aria-pressed="${(S.corners === 'square' ? 'square' : 'round') === k}">${l}</button>`).join('')}</div>
-      <div>Главное меню — где находятся кнопки разделов:</div>
-      <div class="seg ap" role="group">${NAV_POS.map(([k, l]) => `<button type="button" data-ap="navPos" data-v="${k}" class="${(S.navPos || 'left') === k ? 'on' : ''}" aria-pressed="${(S.navPos || 'left') === k}">${l}</button>`).join('')}</div>
-      <div>Оверлей DPS — где находятся кнопки окна:</div>
-      <div class="seg ap" role="group">${BTN_POS.map(([k, l]) => `<button type="button" data-ap="btnPos" data-v="${k}" class="${(S.btnPos || 'top') === k ? 'on' : ''}" aria-pressed="${(S.btnPos || 'top') === k}">${l}</button>`).join('')}</div>
-      <div>Оверлей DPS — вид списка игроков:</div>
-      <div class="seg ap" role="group">${OV_VIEWS.map(([k, l]) => `<button type="button" data-ap="ovView" data-v="${k}" class="${(S.ovView || 'list') === k ? 'on' : ''}" aria-pressed="${(S.ovView || 'list') === k}">${l}</button>`).join('')}</div>
-      <div>Оверлей DPS — что показывать крупно:</div>
-      <div class="seg ap" role="group">${OV_STATS.map(([k, l]) => `<button type="button" data-ap="ovStat" data-v="${k}" class="${(S.ovStat || 'dps') === k ? 'on' : ''}" aria-pressed="${(S.ovStat || 'dps') === k}">${l}</button>`).join('')}</div>
-      <div class="muted" style="font-size:12px">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`,
+  look: () => {
+    const cur = { theme: THEMES[S.theme] ? S.theme : 'midnight', corners: S.corners === 'square' ? 'square' : 'round', navPos: S.navPos || 'left', btnPos: S.btnPos || 'top', ovView: S.ovView || 'list', ovStat: S.ovStat || 'dps' };
+    const tile = (ap, k, label, pv, cls) => `<button type="button" class="tile ${cls || ''}${cur[ap] === k ? ' on' : ''}" data-ap="${ap}" data-v="${k}" aria-pressed="${cur[ap] === k}">${pv}<span class="tl">${label}</span></button>`;
+    const sec = (ico, title, hint, body, cls) => `<div class="card look"><div class="lh"><span class="li">${ico}</span><div><b>${title}</b><small>${hint}</small></div></div><div class="tiles ${cls || ''}">${body}</div></div>`;
+    // миниатюры
+    const th = ([k, t]) => tile('theme', k, t.name, `<i class="ts" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}))"><b style="background:${t.accent}"></b><u style="background:${t.text}"></u><u style="background:${t.muted}"></u></i>`, 'tl-theme');
+    const cr = ['round', 'square'].map(k => tile('corners', k, k === 'round' ? 'Закруглённые' : 'Квадратные', `<i class="pc ${k}"><b></b><u></u></i>`)).join('');
+    const nv = NAV_POS.map(([k, l]) => tile('navPos', k, l, `<i class="mw n-${k}"><b></b><u></u></i>`)).join('');
+    const bt = BTN_POS.map(([k, l]) => tile('btnPos', k, l, `<i class="mw o-${k}"><b></b><u></u><u></u><u></u></i>`)).join('');
+    const A = 'var(--accent)';
+    const V = {
+      list: [10, 20, 30, 40].map((y, i) => `<rect x="6" y="${y - 4}" width="${64 - i * 12}" height="7" rx="3" fill="${A}" opacity="${1 - i * .2}"/>`).join(''),
+      cards: [[6, 7], [41, 7], [6, 28], [41, 28]].map(([x, y], i) => `<rect x="${x}" y="${y}" width="29" height="17" rx="4" fill="${A}" opacity="${1 - i * .2}"/>`).join(''),
+      big: `<rect x="6" y="5" width="64" height="18" rx="4" fill="${A}"/>` + [29, 36, 43].map((y, i) => `<rect x="6" y="${y - 1}" width="${50 - i * 10}" height="4" rx="2" fill="${A}" opacity="${.6 - i * .12}"/>`).join(''),
+      ticker: [7, 14, 21, 28, 35, 42].map((y, i) => `<rect x="6" y="${y - 2}" width="${62 - i * 7}" height="3.4" rx="1.7" fill="${A}" opacity="${1 - i * .13}"/>`).join(''),
+      columns: [0, 1, 2, 3, 4].map(i => `<rect x="${7 + i * 13}" y="${6 + i * 6}" width="10" height="${38 - i * 6}" rx="3" fill="${A}" opacity="${1 - i * .15}"/>`).join(''),
+      rings: [[18, 16], [38, 16], [58, 16], [18, 38], [38, 38], [58, 38]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="${A}" stroke-width="3" opacity="${1 - i * .1}" stroke-dasharray="${44 - i * 5} 60" transform="rotate(-90 ${x} ${y})"/>`).join(''),
+      podium: `<rect x="8" y="22" width="18" height="16" rx="3" fill="${A}" opacity=".6"/><rect x="29" y="12" width="18" height="26" rx="3" fill="${A}"/><rect x="50" y="26" width="18" height="12" rx="3" fill="${A}" opacity=".4"/><rect x="8" y="42" width="60" height="4" rx="2" fill="${A}" opacity=".3"/>`,
+      bars: [0, 1, 2, 3, 4, 5].map(i => `<rect x="${6 + i * 11}" y="${8 + i * 5}" width="8" height="${36 - i * 5}" rx="3" fill="${A}" opacity="${1 - i * .1}"/>`).join(''),
+      console: `<rect x="3" y="4" width="70" height="42" rx="4" fill="#0a0d1c"/>` + [12, 20, 28, 36].map((y, i) => `<rect x="8" y="${y}" width="${10 + i * 2}" height="3" rx="1.5" fill="#9be9b8" opacity=".9"/><rect x="${30}" y="${y}" width="${34 - i * 7}" height="3" rx="1.5" fill="#9be9b8" opacity=".5"/>`).join(''),
+      nearby: `<rect x="8" y="5" width="60" height="9" rx="4" fill="${A}" opacity=".35"/><rect x="5" y="17" width="66" height="16" rx="5" fill="${A}"/><rect x="8" y="36" width="60" height="9" rx="4" fill="${A}" opacity=".35"/>`,
+      donut: `<circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="30 82" opacity="1" transform="rotate(-90 22 25)"/><circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="22 82" stroke-dashoffset="-32" opacity=".6" transform="rotate(-90 22 25)"/><circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="16 82" stroke-dashoffset="-56" opacity=".3" transform="rotate(-90 22 25)"/>` + [12, 22, 32].map((y, i) => `<rect x="44" y="${y}" width="${26 - i * 5}" height="4" rx="2" fill="${A}" opacity="${1 - i * .25}"/>`).join(''),
+    };
+    const vw = OV_VIEWS.map(([k, l]) => tile('ovView', k, l, `<svg class="vp" viewBox="0 0 76 50" aria-hidden="true">${V[k] || ''}</svg>`)).join('');
+    const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
+    const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
+    ${sec(ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '11 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
+    <div class="lookrow">
+    ${sec(ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
+    ${sec(ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
+    </div>
+    ${sec(ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
+    ${sec(ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '11 видов: от простого списка до колец и пончика долей', vw, 'g-view')}
+    ${sec(ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
+    <div class="muted" style="font-size:12px;text-align:center">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`;
+  },
 
   connect: () => {
     const sndSel = k => { const cur = (S.notify.sounds || {})[k] || ''; return `<select class="nsnd" data-k="${k}" title="Звук этого уведомления" style="width:150px;height:34px"><option value=""${cur === '' ? ' selected' : ''}>Общий звук</option><option value="off"${cur === 'off' ? ' selected' : ''}>Без звука</option>${SOUNDS.map(([v, t]) => `<option value="${v}"${cur === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`; };
