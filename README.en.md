@@ -34,11 +34,12 @@
 | 🎥 **Streamer mode** | Player nicknames become “Player NN” in the overlay and the app (`Ctrl+Shift+H`). |
 | ⚡ **Light updates** | New versions (~1.5 MB) download and install in seconds. Start with Windows is optional. |
 | 🔔 **Notifications** | Hide themselves after 8 seconds (3–30 in settings); every kind has its own switch and sound, 6 new soft sounds and 10 styles to choose from. |
-| 🎨 **Look** | 12 themes: colours, overlay layout and the shape of the whole interface; 10 notification styles; Russian and English. The result card follows the theme colours. |
+| 🎨 **Look** | 12 colour themes, corner shape (rounded or square), position of the menu and overlay buttons, 11 damage-list views and a “Damage only” button (`Ctrl+Shift+U`). The Black Flame theme has living effects you can switch off. 10 notification styles, Russian and English. The result card follows the theme colours. |
+| 💜 **Support the author** | The app is free. The About page has a QR code for a voluntary donation via SBP (Russian banks); it unlocks and blocks nothing. |
 
 ## 📸 Screenshots
 
-<p align="center"><img src="docs/screenshots/en-themes.png" alt="12 themes: colours, overlay layout and the shape of the whole interface" width="100%"><br><sub><b>12 themes: colours, overlay layout and the shape of the whole interface</b></sub></p>
+<p align="center"><img src="docs/screenshots/en-themes.png" alt="12 themes and 11 overlay views: colours, corner shape and interface layout" width="100%"><br><sub><b>12 themes and 11 overlay views: colours, corner shape and interface layout</b></sub></p>
 
 <table>
 <tr><td width="33%" align="center"><img src="docs/screenshots/en-overlay.png" alt="Overlay"><br><sub><b>Overlay</b> — group damage, GS and CP, ping</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-solo.png" alt="Solo view"><br><sub><b>Solo view</b> — your DPS and place</sub></td><td width="33%" align="center"><img src="docs/screenshots/en-toast.png" alt="Record"><br><sub><b>Record</b> — toast after the fight</sub></td></tr>

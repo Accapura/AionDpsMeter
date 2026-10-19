@@ -264,7 +264,7 @@ const pages = {
       <label class="field" style="flex:1 1 170px"><span class="lbl">Регион</span><select id="rRegion">${ARMORY_REGIONS.map(([k, n]) => `<option value="${k}" ${R.region === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <label class="field" style="flex:1 1 190px"><span class="lbl">Сервер</span><select id="rServer"><option value="">Все серверы региона</option>
         ${servers.length ? `<optgroup label="Элийцы">${byRace(1).map(opt).join('')}</optgroup><optgroup label="Асмодиане">${byRace(2).map(opt).join('')}</optgroup>` : ''}</select></label>
-      <label class="field" style="flex:2 1 220px"><span class="lbl">Ник персонажа</span><input type="text" id="rName" value="${esc(R.name)}" placeholder="${esc(S.character || 'Ник')}" autocomplete="off" spellcheck="false"></label>
+      <label class="field" style="flex:2 1 220px"><span class="lbl">Ник персонажа</span><input type="text" id="rName" value="${esc(R.name)}" placeholder="Ник" autocomplete="off" spellcheck="false"></label>
       <button type="submit" class="primary">Найти</button>
     </form>
     ${charsBody()}`;
@@ -700,18 +700,7 @@ async function loadServers() {
   const r = await api.armory('servers', { region });
   if (region !== R.region) return;
   R.servers = r.ok ? r.servers : [];
-  if (!R.serverId) {
-    const mine = R.servers.find(x => [x.ru, x.en].includes(S.detectedServer) || [x.ru, x.en].includes(S.server));
-    if (mine) R.serverId = String(mine.id);
-  }
   if (page === 'chars') render();
-  // свой персонаж — сразу при первом открытии
-  if (!R.autoDone && S.character) {
-    R.autoDone = true;
-    const res = await search(S.character);
-    const me = res.ok && res.list.filter(c => c.name.toLowerCase() === S.character.toLowerCase());
-    if (me && me.length === 1) openChar(me[0]);
-  }
 }
 async function search(name) {
   R.name = name; R.busy = true; R.error = ''; R.info = null; render();
