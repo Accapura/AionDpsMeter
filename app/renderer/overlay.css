@@ -112,4 +112,5 @@ body.minimal .shell:hover .minbar{opacity:1}
 body.minimal .minbar button{width:22px;height:18px;padding:0}
 body.minimal .minbar svg.i{width:13px;height:13px}
 body.minimal.locked .minbar{display:none}
-body.minimal .list{padding-top:4px}
+body.minimal .list{padding-top:24px}
+body.minimal.locked .list{padding-top:8px}
