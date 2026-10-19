@@ -67,8 +67,10 @@ body[data-app=right][data-win=main] nav{border-right:0;border-left:1px solid var
 body[data-app=top][data-win=main] nav,body[data-app=dock][data-win=main] nav{width:auto;flex-direction:row;align-items:center;padding:6px 10px;gap:3px;overflow:visible}
 body[data-app=top][data-win=main] nav{border-right:0;border-bottom:1px solid var(--line)}
 body[data-app=dock][data-win=main] nav{border-right:0;border-top:1px solid var(--line);justify-content:center;gap:6px}
-body[data-app=top][data-win=main] nav>button{height:36px;padding:0 13px;font-size:13px}
-body[data-app=dock][data-win=main] nav>button{flex-direction:column;justify-content:center;gap:3px;height:54px;width:92px;padding:0;font-size:11px}
+body[data-app=top][data-win=main] nav>button{height:36px;padding:0 8px;gap:6px;font-size:12.5px;flex:none}
+body[data-app=top][data-win=main] nav>button svg{width:16px;height:16px}
+body[data-app=top][data-win=main] #statusPill #stText{display:none}
+body[data-app=dock][data-win=main] nav>button{flex-direction:column;justify-content:center;gap:3px;height:54px;width:80px;padding:0;font-size:10.5px}
 body[data-app=top][data-win=main] .side-bottom,body[data-app=dock][data-win=main] .side-bottom{margin:0 0 0 auto;padding:0;flex-direction:row;align-items:center}
 body[data-app=dock][data-win=main] .side-bottom{margin:0}
 body[data-app=top][data-win=main] #sideSet,body[data-app=top][data-win=main] .char,body[data-app=top][data-win=main] .sys,body[data-app=top][data-win=main] .authorBadge,body[data-app=dock][data-win=main] #sideSet,body[data-app=dock][data-win=main] .char,body[data-app=dock][data-win=main] .sys,body[data-app=dock][data-win=main] .authorBadge,body[data-app=dock][data-win=main] #statusPill{display:none}

@@ -194,6 +194,7 @@
     'Быстрейшая победа': 'Fastest kill', 'В спину': 'Back attack', 'Ваш DPS': 'Your DPS', 'Ваш лучший DPS': 'Your best DPS',
     'Ваш средний': 'Your average', 'Ваше место': 'Your rank', 'Ваши бои, рекорды по боссам и DPS по классам': 'Your fights, boss records and DPS by class',
     'Ваши навыки в этом бою': 'Your skills in this fight', 'Вернуть стандартные': 'Restore defaults', 'Версия': 'Version',
+    'Цвет, форма окон, положение кнопок и вид оверлея DPS': 'Colour, window shape, button position and DPS overlay view',
     'Включить напоминание': 'Turn reminder on', 'Внешний вид и поведение окна урона поверх игры': 'Look and behaviour of the damage window over the game',
     'Волшебник': 'Sorcerer', 'Восстановить': 'Restore', 'Время': 'Time', 'Время боя': 'Fight time',
     'Вс': 'Sun', 'Пн': 'Mon', 'Вт': 'Tue', 'Ср': 'Wed', 'Чт': 'Thu', 'Пт': 'Fri', 'Сб': 'Sat',
