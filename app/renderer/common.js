@@ -10,6 +10,7 @@ const THEMES = {
   lavender: { name: 'Лаванда', g1: '72,66,140', g2: '32,34,88', accent: '#c0b8ff', accentFg: '#1f1b4a', text: '#f6f5ff', muted: '#c6c3ea', line: 'rgba(210,205,255,.22)', hp: '#ff7a9a' },
   forest: { name: 'Лес', g1: '44,84,50', g2: '20,42,34', accent: '#b4e06a', accentFg: '#14260a', text: '#f6fff0', muted: '#bdd6b0', line: 'rgba(205,240,170,.22)', hp: '#ff7a6b' },
   teal: { name: 'Бирюза', g1: '16,96,100', g2: '8,46,58', accent: '#6ff2e0', accentFg: '#052a2a', text: '#effffd', muted: '#a9dcd8', line: 'rgba(180,255,245,.2)', hp: '#ff7088' },
+  blackflame: { name: 'Чёрное пламя', g1: '52,9,24', g2: '9,5,12', accent: '#ff4057', accentFg: '#1c0307', text: '#fff1f3', muted: '#cfa6ad', line: 'rgba(255,80,100,.26)', hp: '#ff8a3d' },
   midnight: { name: 'Полночь', g1: '34,46,112', g2: '14,18,56', accent: '#86a8ff', accentFg: '#0b1440', text: '#f2f5ff', muted: '#b7c2ec', line: 'rgba(170,190,255,.22)', hp: '#ff6b88' },
 };
 
@@ -337,3 +338,15 @@ function eventIconKey(e) {
 function eventIcon(e, size = 18) {
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${EV_ICON[eventIconKey(e)]}</svg>`;
 }
+
+// Тема «Чёрное пламя»: мягкое пятно света следует за курсором (координаты берёт CSS).
+(() => {
+  let raf = 0, x = 0, y = 0;
+  const set = (a, b) => { document.body.style.setProperty('--mx', a + 'px'); document.body.style.setProperty('--my', b + 'px'); };
+  addEventListener('mousemove', e => {
+    if (!document.body || document.body.dataset.skin !== 'blackflame') return;
+    x = e.clientX; y = e.clientY;
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; set(x, y); });
+  }, { passive: true });
+  document.addEventListener('mouseleave', () => set(-300, -300));
+})();

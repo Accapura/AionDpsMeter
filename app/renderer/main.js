@@ -186,7 +186,7 @@ const pages = {
     const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
     const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
-    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '11 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
+    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '12 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
     ${sec('corners', ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
     ${sec('navPos', ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
     ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
