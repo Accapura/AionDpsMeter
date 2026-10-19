@@ -61,7 +61,7 @@ catch (Exception ex)
     return 2;
 }
 
-var options = new MeterOptions { TargetMode = TargetMode.BossOnly };
+var options = new MeterOptions { TargetMode = TargetMode.BossOnly, DungeonOnly = true };
 var tracker = new CombatTracker(data, options);
 // Полевые боссы: карта -> блок кодов NPC. Известные карты — из field_boss_maps.json, остальные узнаём по замеченным боссам.
 var knownMaps = new Dictionary<int, (int Block, string? Ru)>();
@@ -70,7 +70,10 @@ try
     using var doc = JsonDocument.Parse(AionDps.Bridge.EmbeddedData.ReadAllText(Path.Combine(dataDir, "field_boss_maps.json")));
     foreach (var m in doc.RootElement.GetProperty("maps").EnumerateObject())
         if (int.TryParse(m.Name, out var id))
+        {
             knownMaps[id] = (m.Value.GetProperty("block").GetInt32(), m.Value.TryGetProperty("ru", out var ru) ? ru.GetString() : null);
+            options.FieldBlocks.Add(knownMaps[id].Block);
+        }
 }
 catch { /* не критично */ }
 var seenBlocks = new Dictionary<int, HashSet<int>>();
@@ -87,6 +90,7 @@ tracker.BossNoticed += n =>
     if (n.MapId != 0)
     {
         (seenBlocks.TryGetValue(n.MapId, out var set) ? set : seenBlocks[n.MapId] = new()).Add(n.NpcCode / 1000);
+        options.FieldBlocks.Add(n.NpcCode / 1000);
         if (!string.IsNullOrEmpty(n.Zone)) zoneOfMap[n.MapId] = n.Zone!;
     }
     Emit(new { t = "boss", name = data.NpcName(n.NpcCode), zone = n.Zone, kind = n.Kind.ToString(), serverId = n.ServerId });
@@ -290,7 +294,7 @@ new Thread(() =>
     {
         var parts = line.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0) continue;
-        if (parts[0] == "mode") { var mp = (parts.Length > 1 ? parts[1] : "").Split(' ', StringSplitOptions.RemoveEmptyEntries); var mv = mp.Length > 0 ? mp[0] : ""; options.DummyMode = mv == "dummy"; if (mv == "dummy" && mp.Length > 1 && int.TryParse(mp[1], out var ds)) options.DummySeconds = Math.Clamp(ds, 0, 3600); options.TargetMode = mv == "all" ? TargetMode.All : TargetMode.BossOnly; }
+        if (parts[0] == "mode") { var mp = (parts.Length > 1 ? parts[1] : "").Split(' ', StringSplitOptions.RemoveEmptyEntries); var mv = mp.Length > 0 ? mp[0] : ""; options.DummyMode = mv == "dummy"; if (mv == "dummy" && mp.Length > 1 && int.TryParse(mp[1], out var ds)) options.DummySeconds = Math.Clamp(ds, 0, 3600); options.TargetMode = mv == "all" ? TargetMode.All : TargetMode.BossOnly; options.DungeonOnly = mv != "all" && mv != "dummy"; }
         else if (parts[0] == "reset") tracker.Reset();
         else if (parts[0] == "lang" && parts.Length > 1) data.ReloadNames(dataDir, parts[1] == "en" ? "en" : "ru");
         else if (parts[0] == "detail" && parts.Length > 1) { var dp = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries); if (uint.TryParse(dp[0], out var actor)) EmitDetail(actor, dp.Length > 1 && dp[1] == "c"); }
@@ -354,6 +358,7 @@ while (running)
             title = s.Title,
             zone = s.Zone,
             dungeon = GameData.IsDungeonMap(mapId),
+            mapId,
             active = s.IsActive,
             combatMs = s.CombatMs,
             total = s.TotalDamage,

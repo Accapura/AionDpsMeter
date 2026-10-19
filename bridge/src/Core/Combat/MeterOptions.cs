@@ -10,6 +10,10 @@ public enum TargetMode
 public sealed class MeterOptions
 {
     public TargetMode TargetMode { get; set; } = TargetMode.BossOnly;
+    /// <summary>Режим «Данж: Босс»: считаем только бои в подземельях; в открытом мире (в том числе с мировыми боссами) не считаем.</summary>
+    public bool DungeonOnly { get; set; }
+    /// <summary>Блоки кодов NPC полевых (мировых) боссов: нужны, пока карта неизвестна (метр запущен уже внутри подземелья).</summary>
+    public HashSet<int> FieldBlocks { get; } = new();
     /// <summary>Режим «Манекен»: считаем только удары по тренировочным манекенам; в остальных режимах манекены не считаются.</summary>
     public bool DummyMode { get; set; }
     /// <summary>Длина теста на манекене, секунды (0 — без ограничения). Тест идёт от первого удара.</summary>

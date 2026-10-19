@@ -41,8 +41,8 @@ const NOTIFY_POS = [['tl', 'Слева вверху'], ['tc', 'Сверху по
 const DISCORD_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19.3 5.3A16.6 16.6 0 0 0 15.2 4l-.5 1a15.4 15.4 0 0 0-5.4 0l-.5-1a16.6 16.6 0 0 0-4.1 1.3C2 9.2 1.3 13 1.6 16.8a16.8 16.8 0 0 0 5 2.5l1.1-1.7a10.8 10.8 0 0 1-1.7-.8l.4-.3a11.9 11.9 0 0 0 11.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.7a16.7 16.7 0 0 0 5-2.5c.4-4.4-.7-8.2-3.1-11.5zM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2s1.8.9 1.8 2s-.8 2-1.8 2zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2s1.8.9 1.8 2s-.8 2-1.8 2z"/></svg>';
 
 // Горячие клавиши: id, описание.
-const HOTKEYS = [['overlay', 'показать / скрыть оверлей'], ['lock', 'закрепить: клики проходят сквозь оверлей'], ['reset', 'начать подсчёт заново'], ['share', 'скопировать итог боя (картинка и текст)'], ['chat', 'скопировать одну строку итога для чата игры'], ['streamer', 'режим стримера: скрыть ники'], ['modeBoss', 'режим «Данж: Босс»'], ['modeWorld', 'режим «Мир: Босс»'], ['modeMob', 'режим «Моб»'], ['modeDummy', 'режим «Манекен»'], ['modeNext', 'следующий режим по кругу']];
-const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
+const HOTKEYS = [['overlay', 'показать / скрыть оверлей'], ['lock', 'закрепить: клики проходят сквозь оверлей'], ['reset', 'начать подсчёт заново'], ['share', 'скопировать итог боя (картинка и текст)'], ['chat', 'скопировать одну строку итога для чата игры'], ['streamer', 'режим стримера: скрыть ники'], ['modeBoss', 'режим «Данж: Босс»'], ['modeMob', 'режим «Моб»'], ['modeDummy', 'режим «Манекен»'], ['modeNext', 'следующий режим по кругу']];
+const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
 let hkWait = null, hkErr = {};
 const hkText = id => ((S.hotkeys || {})[id] || HOTKEY_DEFAULTS[id]);
 // Клавиши → имена ускорителей Electron. Можно назначить любую клавишу клавиатуры, включая цифровой блок (Num).
@@ -123,7 +123,7 @@ const pages = {
   todo: todoBody,
   overlay: () => `${head('Оверлей', 'Внешний вид и поведение окна урона поверх игры')}
     <div class="card field"><span class="lbl">Режим подсчёта</span><div class="seg" id="mModes">${MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('')}</div>
-      <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Мир: Босс» — только мировые боссы, «Моб» — весь урон по всем целям, «Манекен» — только тренировочные манекены (в остальных режимах они не считаются).</div>
+      <div class="muted" style="font-size:12px">«Данж: Босс» — только бои с боссами подземелий, «Моб» — весь урон по всем целям, «Манекен» — только тренировочные манекены (в остальных режимах они не считаются).</div>
       ${S.mode === 'dummy' ? `<div class="field" style="margin-top:6px"><span class="lbl">Время теста на манекене</span><div class="seg" id="dSec">${[[10, '10 с'], [30, '30 с'], [60, '1 мин'], [120, '2 мин'], [180, '3 мин'], [300, '5 мин']].map(([v, l]) => `<button type="button" data-ds="${v}" class="${(S.dummySec ?? 60) === v ? 'on' : ''}" aria-pressed="${(S.dummySec ?? 60) === v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px">Тест идёт от первого удара по манекену и сам заканчивается — DPS считается за это время. Следующий тест начнётся после паузы 3 секунды.</div></div>` : ''}
       ${S.profilesOn !== false ? `<div class="profnote"><span>Настройки ниже сохраняются отдельно для режима</span> <b>${esc((MODES.find(m => m[0] === S.mode) || MODES[0])[1])}</b><span>: список, прозрачность, колонки, «Только я», размер и место оверлея.</span></div>` : ''}</div>
     <div class="card field"><span class="lbl">Колонки оверлея</span>
@@ -143,7 +143,7 @@ const pages = {
       <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
       <label class="opt"><input type="checkbox" id="oQuit" ${S.quitWithGame ? 'checked' : ''}> <span><b>Закрываться вместе с игрой</b> — через 20 секунд после выхода из игры</span></label>
       <label class="opt"><input type="checkbox" id="oStream" ${S.streamer ? 'checked' : ''}> <span><b>Режим стримера</b> — ники игроков заменяются на «Игрок NN» в оверлее и приложении (Ctrl+Shift+H)</span></label>
-      <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Мир: Босс» и «Моб»</span></label></div>
+      <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Моб» и «Манекен»</span></label></div>
     <div class="card field"><span class="lbl">Список, прозрачность и масштаб</span>
       <div class="sliders">
         <div class="sl"><label for="mCount">Игроков в списке</label><b class="num" id="vCount">${S.count}</b><input id="mCount" type="range" min="1" max="50" value="${S.count}"></div>

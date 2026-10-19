@@ -3,7 +3,7 @@ using AionMeter.Core.Events;
 
 namespace AionMeter.Core.Game;
 
-public sealed record NpcDef(int Code, string Name, bool IsBoss, bool IsDummy);
+public sealed record NpcDef(int Code, string Name, bool IsBoss, bool IsDummy, int DungeonId = 0);
 
 /// <summary>
 /// Static lookup tables loaded from the <c>data</c> folder (see <c>data/NOTICE.md</c> for formats and sources).
@@ -85,7 +85,7 @@ public sealed class GameData
             data.Npcs.TryGetValue(code, out var prev);
             if (value.ValueKind == JsonValueKind.String)
             {
-                data.Npcs[code] = new NpcDef(code, value.GetString()!, prev?.IsBoss ?? false, prev?.IsDummy ?? false);
+                data.Npcs[code] = new NpcDef(code, value.GetString()!, prev?.IsBoss ?? false, prev?.IsDummy ?? false, prev?.DungeonId ?? 0);
             }
             else if (value.ValueKind == JsonValueKind.Object)
             {
@@ -93,7 +93,9 @@ public sealed class GameData
                 if (name.Length == 0 && prev is not null) name = prev.Name;
                 var boss = value.TryGetProperty("isBoss", out var b) ? b.ValueKind == JsonValueKind.True : prev?.IsBoss ?? false;
                 var dummy = value.TryGetProperty("isDummy", out var d) ? d.ValueKind == JsonValueKind.True : prev?.IsDummy ?? false;
-                data.Npcs[code] = new NpcDef(code, name, boss, dummy);
+                var dungeonId = value.TryGetProperty("dungeonId", out var di) && di.TryGetInt32(out var dv) ? dv : prev?.DungeonId ?? 0;
+                if (dungeonId > 0) InstanceMaps.TryAdd(dungeonId, 0);
+                data.Npcs[code] = new NpcDef(code, name, boss, dummy, dungeonId);
             }
         }
     }
@@ -230,7 +232,10 @@ public sealed class GameData
     public string MapName(int id) => Maps.TryGetValue(id, out var name) ? name : IsDungeonMap(id) ? $"Dungeon {id}" : "Open world";
 
     /// <summary>Instanced dungeons live in the 6xxxxx map range.</summary>
-    public static bool IsDungeonMap(int id) => id is >= 600_000 and < 700_000;
+    public static bool IsDungeonMap(int id) => id is >= 600_000 and < 700_000 || InstanceMaps.ContainsKey(id);
+
+    /// <summary>Instanced content outside the 6xxxxx range (Battle of Awakening, Nightmares…): ids come from the NPC tables' dungeonId.</summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<int, byte> InstanceMaps = new();
 
     /// <summary>
     /// A map's field bosses share one block of a thousand NPC codes (Altgard: 2400xxx), and the in-game boss list

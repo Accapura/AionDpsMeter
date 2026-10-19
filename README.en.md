@@ -22,7 +22,7 @@
 
 | | |
 |---|---|
-| ⚔️ **In-game overlay** | DPS, damage, share, crit and healing for every player. Boss HP, fight timer, phases and kill ETA, your place and the gap to your record. Dungeon: Boss, World: Boss and Mobs modes. Gear score and combat power columns, eDPS / aDPS, ping indicator and lag alert. |
+| ⚔️ **In-game overlay** | DPS, damage, share, crit and healing for every player. Boss HP, fight timer, phases and kill ETA, your place and the gap to your record. Dungeon: Boss (dungeons only), Mobs and Dummy (DPS test on a training dummy) modes. Gear score and combat power columns, eDPS / aDPS, ping indicator and lag alert. |
 | ⏳ **Enrage timer** | A countdown to the boss enrage (5:00 of combat) next to its HP — for bosses with a confirmed time. |
 | 🎯 **Solo view** | Your own DPS, place in the group, damage, share and crit in big numbers instead of the group list. |
 | 🏆 **Records** | A “New record” toast right after the fight, personal bests per boss, comparison with your previous fight and with your class median. |
@@ -88,7 +88,7 @@
 | `Ctrl+Shift+L` | lock the overlay (click-through) |
 | `Ctrl+Shift+R` | reset the meter |
 | `Ctrl+Shift+C` | share the fight summary (image and text, or to a Discord channel) |
-| `Ctrl+Shift+1` / `2` / `3` | Dungeon: Boss / World: Boss / Mobs mode |
+| `Ctrl+Shift+1` / `3` / `4` | Dungeon: Boss / Mobs / Dummy mode |
 | `Ctrl+Shift+M` | next mode (cycle) |
 | `Ctrl+Shift+T` | fight summary as a line for the in-game chat |
 | `Ctrl+Shift+H` | streamer mode (hide nicknames) |

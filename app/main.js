@@ -32,18 +32,18 @@ const DEFAULTS = {
   scale: 100,
   count: 10,
   dummySec: 60,                 // режим «Манекен»: длина теста в секундах
-  mode: 'boss',                 // boss = Данж: Босс · world = Мир: Босс · mob = Моб
+  mode: 'boss',                 // boss = Данж: Босс · mob = Моб · dummy = Манекен
   overlay: { x: null, y: null, width: null, height: null, visible: true },
   compact: false,
   showHeader: true,             // строка с названиями колонок в оверлее
-  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
+  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
   clickThrough: false,
   autoStart: false,             // запускать вместе с Windows (свёрнутой в трей)
   quitWithGame: false,          // закрываться вместе с игрой
   autoHide: true,               // прятать оверлей, когда игра не на экране
   solo: false,                  // режим «Только я»
   profilesOn: true,             // свои настройки оверлея для каждого режима
-  profiles: {},                 // { boss|world|mob: { count, opacity, columns, showHeader, solo, compact, size } }
+  profiles: {},                 // { boss|mob|dummy: { count, opacity, columns, showHeader, solo, compact, size } }
   discordRpc: true,             // статус в Discord
   updateSkip: '',               // версия, о которой больше не напоминать
   lang: 'ru',                   // язык интерфейса: ru | en
@@ -102,6 +102,10 @@ if (settings.settingsResetV !== '1.2.7') {
   settings.settingsResetV = '1.2.7';
   try { fs.mkdirSync(path.dirname(SETTINGS_FILE()), { recursive: true }); fs.writeFileSync(SETTINGS_FILE(), JSON.stringify(settings, null, 2)); } catch { /* не критично */ }
 }
+// Режим «Мир: Босс» убран: тем, у кого он был выбран, включается «Данж: Босс»; его профиль и горячая клавиша удаляются.
+if (settings.mode === 'world') settings.mode = 'boss';
+if (settings.profiles && settings.profiles.world) delete settings.profiles.world;
+if (settings.hotkeys && 'modeWorld' in settings.hotkeys) delete settings.hotkeys.modeWorld;
 // Язык, выбранный при установке, — только для самого первого запуска (потом его меняют в «Настройках»).
 const langArg = process.argv.find(a => a.startsWith('--lang='));
 if (langArg && firstRun && ['ru', 'en'].includes(langArg.slice(7))) settings.lang = langArg.slice(7);
@@ -119,7 +123,7 @@ function save() {
 function onScreen(r) {
   return r && r.x != null && r.y != null && screen.getAllDisplays().some(d => { const a = d.workArea; return r.x + 60 > a.x && r.x < a.x + a.width - 60 && r.y >= a.y - 10 && r.y < a.y + a.height - 40; });
 }
-// Профили оверлея: у «Данж: Босс», «Мир: Босс» и «Моб» свои список, прозрачность, колонки и размер.
+// Профили оверлея: у «Данж: Босс», «Моб» и «Манекен» свои список, прозрачность, колонки и размер.
 const PROFILE_KEYS = ['count', 'opacity', 'columns', 'showHeader', 'solo', 'compact'];
 function profileOf() {
   const p = {};
@@ -749,7 +753,7 @@ async function openDiscord(how) {
 }
 
 // ---------------------------------------------------------------- горячие клавиши
-const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeWorld: 'Ctrl+Shift+2', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
+const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
 const HOTKEY_ACTIONS = {
   overlay: () => toggleOverlay(),
   lock: () => patchSettings({ clickThrough: !settings.clickThrough }),
@@ -758,10 +762,9 @@ const HOTKEY_ACTIONS = {
   chat: () => shareChat(),
   streamer: () => patchSettings({ streamer: !settings.streamer }),
   modeBoss: () => setMode('boss'),
-  modeWorld: () => setMode('world'),
   modeMob: () => setMode('mob'),
   modeDummy: () => setMode('dummy'),
-  modeNext: () => setMode({ boss: 'world', world: 'mob', mob: 'dummy', dummy: 'boss' }[settings.mode] || 'boss'),
+  modeNext: () => setMode({ boss: 'mob', mob: 'dummy', dummy: 'boss' }[settings.mode] || 'boss'),
 };
 // смена режима подсчёта горячей клавишей (оверлей коротко покажет название режима)
 function setMode(m) { if (settings.mode !== m) patchSettings({ mode: m }); }

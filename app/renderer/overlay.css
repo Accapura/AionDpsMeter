@@ -11,7 +11,11 @@ body.hasnick .title .full,body.hasnick .title .short{display:none}
 .head button.icon{width:26px;height:26px;flex:none}
 .head svg.i{width:14px;height:14px}
 .modes{flex:none;padding:6px 8px 0}
-.modes .seg{padding:2px;border-radius:10px}
+.modes{display:flex;gap:6px;align-items:center}
+.modes .seg{padding:2px;border-radius:10px;flex:1;min-width:0}
+.solobtn{flex:none;height:28px;padding:0 9px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.18);color:var(--muted);font-size:11px;font-weight:600;white-space:nowrap}
+.solobtn.on{background:var(--accent);color:var(--accentFg);border-color:transparent}
+.solobtn[hidden]{display:none}
 .modes .seg button{height:24px;font-size:11px;padding:0 4px;border-radius:8px;white-space:nowrap}
 .body{flex:1;min-height:0;display:flex;flex-direction:column}
 .target{flex:none;padding:6px 10px 4px;display:flex;flex-direction:column;gap:4px}

@@ -186,6 +186,15 @@ public sealed partial class CombatTracker
 
     // ---------------------------------------------------------------- events
 
+    /// <summary>Цель в подземелье. Если карта неизвестна (метр запущен внутри подземелья), годится любой босс, кроме полевых.</summary>
+    private bool IsDungeonTarget(NpcInfo npc)
+    {
+        if (npc.NpcCode != 0 && _data.Npcs.TryGetValue(npc.NpcCode, out var def) && def.DungeonId != 0) return true; // справочник: босс подземного контента
+        var map = _entities.MapId;
+        if (map != 0) return GameData.IsDungeonMap(map);
+        return npc.IsBoss && !Options.FieldBlocks.Contains(npc.NpcCode / 1000);
+    }
+
     private bool _dummyLocked;
     private long _dummyLockLastMs;
 
@@ -230,6 +239,7 @@ public sealed partial class CombatTracker
         var npc = _entities.UpsertNpc(target);
         if (npc.Hp == 0) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
         if (npc.IsDummy != Options.DummyMode) return; // манекены считаются только в режиме «Манекен», и только они
+        if (Options.DungeonOnly && !IsDungeonTarget(npc)) return; // «Данж: Босс»: только подземелья
         if (Options.DummyMode && Options.DummySeconds > 0)
         {
             // Тест идёт заданное время от первого удара; после конца новые удары игнорируются, пока не будет паузы 3 с.

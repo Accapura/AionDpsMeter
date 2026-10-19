@@ -17,6 +17,7 @@ $('opacity').oninput = e => { S.opacity = +e.target.value; $('opV').value = S.op
 $('scale').onchange = e => api.set({ scale: +e.target.value });
 $('showHead').onchange = e => api.set({ showHeader: e.target.checked });
 $('solo').onchange = e => api.set({ solo: e.target.checked });
+$('soloBtn').onclick = () => api.set({ solo: !S.solo });
 $('autoHide').onchange = e => api.set({ autoHide: e.target.checked });
 document.querySelectorAll('[data-col]').forEach(c => c.onchange = () => api.set({ columns: { [c.dataset.col]: c.checked } }));
 $('scale').oninput = e => { $('scV').value = e.target.value + '%'; };
@@ -66,6 +67,11 @@ function chrome() {
   $('bCompact').title = S.compact ? 'Показать режимы' : 'Компактно';
   $('modes').innerHTML = MODES.map(([k, l]) => `<button type="button" data-m="${k}" class="${S.mode === k ? 'on' : ''}" aria-pressed="${S.mode === k}">${l}</button>`).join('');
   $('modes').querySelectorAll('button').forEach(b => b.onclick = () => api.set({ mode: b.dataset.m }));
+  // «Моб» и «Манекен»: только список урона и одна кнопка «Только я».
+  const sb = $('soloBtn');
+  sb.hidden = S.mode === 'boss';
+  sb.classList.toggle('on', !!S.solo); sb.setAttribute('aria-pressed', String(!!S.solo));
+  document.body.dataset.mode = S.mode;
   $('count').value = S.count; $('countV').value = S.count;
   $('opacity').value = S.opacity; $('opV').value = S.opacity + '%';
   $('scale').value = S.scale; $('scV').value = S.scale + '%';
@@ -82,14 +88,13 @@ const nm = p => (p.self && String(p.name).startsWith('#') && S.character ? S.cha
 // Показываем только то, что выбрано в режиме.
 function matches(s) {
   if (!s || !s.players || !s.players.length) return false;
-  if (S.mode === 'boss') return !!s.boss && s.dungeon;
-  if (S.mode === 'world') return !!s.boss && !s.dungeon;
+  if (S.mode === 'boss') return !!s.boss; // подземелья отбирает мост: в других местах боя в этом режиме нет
   return true;
 }
 
 function empty() {
   const bad = ['no-npcap', 'no-dotnet', 'error', 'Error', 'disabled'].includes(status.state);
-  const wait = S.mode === 'boss' ? 'Ждём босса подземелья' : S.mode === 'world' ? 'Ждём мирового босса' : S.mode === 'dummy' ? 'Ударьте по манекену' : 'Ждём боя';
+  const wait = S.mode === 'boss' ? 'Ждём босса подземелья' : S.mode === 'dummy' ? 'Ударьте по манекену' : 'Ждём боя';
   const msg = String(status.msg || '').split(' · ')[0];
   const text = bad ? msg : (status.state === 'Capturing' ? wait : (msg || wait));
   return `<div class="empty"><div>${esc(text)}</div>${bad ? '<button type="button" class="primary" data-a="conn">Подробнее</button>' : ''}</div>`;
@@ -162,13 +167,13 @@ function render() {
   // свой персонаж: по метке игры, иначе по нику персонажа, с которого запущен счётчик
   const meName = String(S.character || '').toLowerCase();
   const me = ps.find(p => p.self) || (meName ? ps.find(p => String(p.name).toLowerCase() === meName) : null);
-  const rec = recordLine(me);
+  const rec = S.mode === 'boss' ? recordLine(me) : '';
   const targetHtml = `
     <div class="target" title="${esc(snap.zone || '')}">
       <div class="trow"><div class="tname">${boss?.name || tg?.name ? nt(tName) : esc(tName)}${more}</div>
-        ${hp != null ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
+        ${hp != null && S.mode === 'boss' ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
-      ${hp != null ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
+      ${hp != null && S.mode === 'boss' ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;
   if (S.solo && !me) {
     // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
