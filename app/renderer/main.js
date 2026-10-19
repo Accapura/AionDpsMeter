@@ -306,11 +306,12 @@ const pages = {
       <button type="button" class="primary discord" data-dc="app">${DISCORD_ICON}Написать в Discord</button>
     </div>
     <div class="card donCard" id="donCard">
-      <div class="donTop"><span class="donIc"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.5 3.7 4.5 6.9 4.5c2 0 3.4 1.1 5.1 3 1.7-1.9 3.1-3 5.1-3 3.2 0 5.3 3 4.1 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg></span>
-        <div class="who"><span class="lbl">Поддержка проекта</span><b>Поддержать автора</b><span class="muted">Программа бесплатная. Донат — добровольный, ничего не открывает и не блокирует.</span></div>
-        <button type="button" class="primary" id="donBtn">Показать QR</button></div>
-      <div class="donBody"><div class="donIn"><img class="donQr" src="../assets/donate-qr.png" width="210" height="210" alt="QR" onerror="document.getElementById('donCard').remove()">
-        <div class="donTx"><b>Отсканируйте камерой или в приложении банка</b><span class="muted">Перевод по СБП. Спасибо — это помогает развивать программу!</span></div></div></div>
+      <i class="donGlow"></i>
+      <div class="donTop"><span class="donIc"><i></i><i></i><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M12 21.2s-8.200-5-9.900-10.300C.900 7 3.200 3.800 6.700 3.800c2.100 0 3.700 1.200 5.300 3.200 1.600-2 3.200-3.200 5.300-3.200 3.500 0 5.800 3.200 4.600 7.100-1.700 5.300-9.900 10.300-9.900 10.300z"/></svg></span>
+        <div class="who"><span class="lbl">Поддержка проекта</span><b class="donH">Поддержать автора</b><span class="muted">Программа бесплатная, донат — добровольный: он ничего не открывает и не блокирует.</span></div>
+        <button type="button" class="primary donB" id="donBtn">Показать QR</button></div>
+      <div class="donBody"><div class="donIn"><span class="donFrame"><img class="donQr" src="../assets/donate-qr.png" width="225" height="225" alt="QR" onerror="document.getElementById('donCard').remove()"><i class="donScan"></i><u></u><u></u><u></u><u></u></span>
+        <div class="donTx"><b>Наведите камеру или откройте приложение банка</b><span class="muted">Перевод по СБП. Спасибо — вы помогаете развивать программу!</span><span class="tags"><span>СБП</span><span>Добровольно</span><span>Спасибо ♥</span></span></div></div></div>
     </div>`,
 };
 

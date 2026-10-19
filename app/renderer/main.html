@@ -227,19 +227,36 @@ table.ft tr.me td{color:var(--accent);font-weight:600}
 .ghTags span{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.1);color:var(--muted)}
 .ghRepo{font:600 12.5px ui-monospace,Consolas,monospace;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.3);border:1px solid var(--line);color:var(--accent)}
 
-.donCard{display:block;padding:0;overflow:hidden;border-radius:20px}
-.donTop{display:flex;align-items:center;gap:16px;padding:18px 22px;flex-wrap:wrap}
-.donTop .who{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
-.donIc{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;flex:none;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line))}
-.donIc svg{animation:donBeat 2.4s ease-in-out infinite;transform-origin:center}
-@keyframes donBeat{0%,100%{transform:scale(1)}12%{transform:scale(1.14)}24%{transform:scale(1)}36%{transform:scale(1.1)}48%{transform:scale(1)}}
-.donBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.4,0,.2,1)}
+.donCard{position:relative;display:block;padding:0;overflow:hidden;border-radius:22px;border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,transparent),transparent 62%)}
+.donGlow{position:absolute;right:-70px;top:-90px;width:300px;height:300px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 30%,transparent),transparent 68%);opacity:.7;transition:opacity .4s}
+.donCard.open .donGlow{opacity:1}
+.donTop{position:relative;display:flex;align-items:center;gap:18px;padding:20px 24px;flex-wrap:wrap}
+.donTop .who{flex:1;min-width:220px;display:flex;flex-direction:column;gap:3px}
+.donH{font-size:21px;letter-spacing:.2px}
+.donIc{position:relative;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid color-mix(in srgb,var(--accent) 50%,var(--line))}
+.donIc i{position:absolute;inset:-1px;border-radius:50%;border:1.5px solid var(--accent);opacity:0;animation:donRing 2.8s ease-out infinite}
+.donIc i+i{animation-delay:1.4s}
+.donIc svg{position:relative;animation:donBeat 2.8s ease-in-out infinite;filter:drop-shadow(0 0 7px color-mix(in srgb,var(--accent) 70%,transparent))}
+@keyframes donBeat{0%,100%{transform:scale(1)}10%{transform:scale(1.16)}20%{transform:scale(1)}32%{transform:scale(1.1)}44%{transform:scale(1)}}
+@keyframes donRing{0%{transform:scale(1);opacity:.55}100%{transform:scale(1.7);opacity:0}}
+.donB{height:40px;padding:0 20px;font-weight:700}
+.donBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.4,0,.2,1)}
 .donCard.open .donBody{grid-template-rows:1fr}
-.donIn{overflow:hidden;min-height:0;display:flex;align-items:center;gap:22px;padding:0 22px;flex-wrap:wrap;opacity:0;transition:opacity .3s,padding .35s}
-.donCard.open .donIn{opacity:1;padding:4px 22px 22px}
-.donQr{border-radius:14px;background:#fff;padding:10px;box-sizing:content-box;image-rendering:pixelated}
-.donTx{display:flex;flex-direction:column;gap:6px;max-width:300px}
-@media (prefers-reduced-motion:reduce){.donIc svg{animation:none}}
+.donIn{position:relative;overflow:hidden;min-height:0;display:flex;align-items:center;gap:26px;padding:0 24px;flex-wrap:wrap;opacity:0;transition:opacity .35s,padding .4s}
+.donCard.open .donIn{opacity:1;padding:2px 24px 24px}
+.donFrame{position:relative;flex:none;margin:6px;padding:12px;border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.4),0 0 0 4px color-mix(in srgb,var(--accent) 24%,transparent)}
+.donQr{display:block;border-radius:6px;image-rendering:pixelated}
+.donFrame u{position:absolute;width:22px;height:22px;border:3px solid var(--accent);pointer-events:none}
+.donFrame u:nth-of-type(1){left:-5px;top:-5px;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+.donFrame u:nth-of-type(2){right:-5px;top:-5px;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+.donFrame u:nth-of-type(3){left:-5px;bottom:-5px;border-right:0;border-top:0;border-radius:0 0 0 14px}
+.donFrame u:nth-of-type(4){right:-5px;bottom:-5px;border-left:0;border-top:0;border-radius:0 0 14px 0}
+.donScan{position:absolute;left:12px;right:12px;top:12px;height:2px;border-radius:2px;background:var(--accent);box-shadow:0 0 12px var(--accent);opacity:.85;animation:donScan 3s ease-in-out infinite;will-change:transform}
+@keyframes donScan{0%,100%{transform:translateY(0)}50%{transform:translateY(221px)}}
+.donTx{display:flex;flex-direction:column;gap:9px;max-width:320px}
+.donTx b{font-size:16px;line-height:1.35}
+@media (prefers-reduced-motion:reduce){.donIc svg,.donIc i,.donScan{animation:none}}
+body[data-fx=off] .donIc svg,body[data-fx=off] .donIc i,body[data-fx=off] .donScan{animation:none}
 .ghLinks{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .ghLinks button{height:30px;padding:0 13px;font-size:12.5px;border-radius:10px;transition:transform .15s,background .15s}
 .ghLinks button:hover{transform:translateY(-1px);background:rgba(255,255,255,.18)}
