@@ -41,10 +41,11 @@ const DEFAULTS = {
   overlay: { x: null, y: null, width: null, height: null, visible: true },
   compact: false,
   showHeader: true,             // строка с названиями колонок в оверлее
-  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
+  hotkeys: { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', minimal: 'Ctrl+Shift+U', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' }, // меняются в «Оверлей»
   clickThrough: false,
   autoStart: false,             // запускать вместе с Windows (свёрнутой в трей)
   quitWithGame: false,          // закрываться вместе с игрой
+  minimal: false,               // оверлей только с уроном: без кнопок, режимов и заголовка
   autoHide: true,               // прятать оверлей, когда игра не на экране
   solo: false,                  // режим «Только я»
   profilesOn: true,             // свои настройки оверлея для каждого режима
@@ -771,7 +772,7 @@ async function openDiscord(how) {
 }
 
 // ---------------------------------------------------------------- горячие клавиши
-const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
+const HOTKEY_DEFAULTS = { overlay: 'Ctrl+Shift+D', lock: 'Ctrl+Shift+L', reset: 'Ctrl+Shift+R', share: 'Ctrl+Shift+C', chat: 'Ctrl+Shift+T', streamer: 'Ctrl+Shift+H', minimal: 'Ctrl+Shift+U', modeBoss: 'Ctrl+Shift+1', modeMob: 'Ctrl+Shift+3', modeDummy: 'Ctrl+Shift+4', modeNext: 'Ctrl+Shift+M' };
 const HOTKEY_ACTIONS = {
   overlay: () => toggleOverlay(),
   lock: () => patchSettings({ clickThrough: !settings.clickThrough }),
@@ -779,6 +780,7 @@ const HOTKEY_ACTIONS = {
   share: () => shareFight(),
   chat: () => shareChat(),
   streamer: () => patchSettings({ streamer: !settings.streamer }),
+  minimal: () => patchSettings({ minimal: !settings.minimal }),
   modeBoss: () => setMode('boss'),
   modeMob: () => setMode('mob'),
   modeDummy: () => setMode('dummy'),

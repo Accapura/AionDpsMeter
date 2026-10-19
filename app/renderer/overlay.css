@@ -101,3 +101,15 @@ body.locked #bShare{display:none}
 .pmenu button{all:unset;cursor:pointer;padding:6px 8px;border-radius:7px;font-size:12.5px;color:#efe9ff}
 .pmenu button:hover:not(:disabled){background:rgba(255,198,107,.18)}
 .pmenu button:disabled{opacity:.4;cursor:default}
+
+/* Только урон: без шапки, режимов, цели и подвала. Полоска с кнопкой «показать» появляется при наведении сверху */
+.minbar{display:none}
+body.minimal .head,body.minimal .modes,body.minimal .target,body.minimal .cols,body.minimal .foot,body.minimal .mflash{display:none!important}
+body.minimal .shell:has(>.head){display:flex!important;flex-direction:column}
+body.minimal .body{grid-column:auto;grid-row:auto}
+body.minimal .minbar{display:flex;align-items:center;justify-content:space-between;position:absolute;left:0;right:0;top:0;height:20px;padding:0 4px 0 8px;z-index:7;opacity:0;transition:opacity .15s;background:linear-gradient(180deg,rgba(var(--g2),.85),transparent);color:var(--muted);cursor:move}
+body.minimal .shell:hover .minbar{opacity:1}
+body.minimal .minbar button{width:22px;height:18px;padding:0}
+body.minimal .minbar svg.i{width:13px;height:13px}
+body.minimal.locked .minbar{display:none}
+body.minimal .list{padding-top:4px}

@@ -1,7 +1,10 @@
 'use strict';
 let S = null, status = {}, snap = null, records = {};
 const $ = id => document.getElementById(id);
-$('bMain').innerHTML = ICON.win; $('bHide').innerHTML = ICON.close; $('bReset').innerHTML = ICON.reset;
+$('bMain').innerHTML = ICON.win; $('bMin').innerHTML = ICON.eyeOff; $('bRestore').innerHTML = ICON.eye;
+$('bMin').onclick = () => api.set({ minimal: true });
+$('bRestore').onclick = () => api.set({ minimal: false });
+$('bHide').innerHTML = ICON.close; $('bReset').innerHTML = ICON.reset;
 $('bShare').innerHTML = ICON.share;
 $('bShare').onclick = () => api.share();
 $('bHide').onclick = () => api.win('hide');
@@ -32,6 +35,7 @@ function chrome() {
   document.body.classList.toggle('hasnick', !!S.character);
   document.body.classList.toggle('locked', !!S.clickThrough);
   document.body.classList.toggle('compact', !!S.compact);
+  document.body.classList.toggle('minimal', !!S.minimal);
   document.body.classList.toggle('nohead', S.showHeader === false);
   $('bLock').innerHTML = S.clickThrough ? ICON.lock : ICON.unlock;
   $('bLock').style.color = S.clickThrough ? 'var(--accent)' : '';
@@ -42,6 +46,7 @@ function chrome() {
   $('bLock').title = S.clickThrough ? 'Закреплён — ' + hk.lock : 'Закрепить (' + hk.lock + ')';
   $('bReset').title = 'Начать заново (' + hk.reset + ')'; $('bReset').setAttribute('aria-label', 'Начать подсчёт заново (' + hk.reset + ')');
   $('bHide').title = 'Скрыть (' + hk.overlay + ')'; $('bHide').setAttribute('aria-label', 'Скрыть оверлей (' + hk.overlay + ')');
+  $('bMin').title = 'Только урон: скрыть кнопки (' + hkLabel((S.hotkeys || {}).minimal || 'Ctrl+Shift+U') + ')'; $('bMin').setAttribute('aria-label', 'Скрыть кнопки, оставить только урон');
   $('bCompact').innerHTML = S.compact ? ICON.chevDown : ICON.chevUp;
   $('bCompact').setAttribute('aria-label', S.compact ? 'Показать режимы' : 'Скрыть режимы');
   $('bCompact').title = S.compact ? 'Показать режимы' : 'Компактно';
