@@ -55,7 +55,7 @@
 
 <p align="center"><img src="docs/screenshots/en-zombie.png" alt="Zombie theme: a swaying crowd and a green lightning along the border of the window, overlay and notifications" width="100%"><br><sub><b>Zombie theme: a swaying crowd and a green lightning along the border of the window, overlay and notifications</b></sub></p>
 
-<p align="center"><img src="docs/screenshots/ru-installer.png" alt="Installer" width="70%"><br><sub><b>Installer</b> in the app’s style</sub></p>
+<p align="center"><img src="docs/screenshots/en-installer.png" alt="Installer" width="70%"><br><sub><b>Installer</b> in the app’s style</sub></p>
 
 ## 📥 Install
 
