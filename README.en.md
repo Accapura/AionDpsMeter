@@ -34,7 +34,10 @@
 | 🎥 **Streamer mode** | Player nicknames become “Player NN” in the overlay and the app (`Ctrl+Shift+H`). |
 | ⚡ **Light updates** | New versions (~1.5 MB) download and install in seconds. Start with Windows is optional. |
 | 🔔 **Notifications** | Hide themselves after 8 seconds (3–30 in settings); every kind has its own switch and sound, 6 new soft sounds and 10 styles to choose from. |
-| 🎨 **Look** | 12 colour themes, corner shape (rounded or square), position of the menu and overlay buttons, 11 damage-list views and a “Damage only” button (`Ctrl+Shift+U`). The Black Flame theme has living effects you can switch off. 10 notification styles, Russian and English. The result card follows the theme colours. |
+| 🎨 **Look** | 13 colour themes, corner shape (rounded or square), position of the menu and overlay buttons, 14 damage-list views (three compact ones — just your DPS) and a “Damage only” button (`Ctrl+Shift+U`). The Black Flame and Zombie themes have living effects you can switch off. 10 notification styles, Russian and English. The result card follows the theme colours. |
+| 🔊 **Event sounds** | Personal best, death, phase change, boss kill and fight start — each with its own sound and volume; muted in streamer mode. |
+| 🖼️ **Fight card** | A picture with the fight summary: copy, save or send to Discord. Three styles, compact and full view. |
+| 📊 **Session and tempo** | The Session tab summarizes your play session by fights and bosses; Tempo shows damage uptime and main skill usage. |
 | 💜 **Support the author** | The app is free. The About page has a QR code for a voluntary donation via SBP (Russian banks); it unlocks and blocks nothing. |
 
 ## 📸 Screenshots

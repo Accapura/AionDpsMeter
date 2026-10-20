@@ -74,3 +74,27 @@ body[data-skin=blackflame][data-win=toast][data-fx=off] .t::after{animation:none
 @media (prefers-reduced-motion:reduce){body[data-skin=blackflame][data-win=toast] .t::after{animation:none}}
 
 body[data-skin=blackflame][data-win=overlay] #body{contain:paint;transform:translateZ(0)}
+
+/* ---- «Зомби»: картинка с качающейся толпой (canvas, common.js), затемнение и огненный оранжевый градиент ---- */
+body[data-skin=zombie] .shell{isolation:isolate;background:linear-gradient(155deg,rgba(var(--g1),var(--a)) 0%,rgba(var(--g2),var(--a)) 100%)}
+.shell>.zfx{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;border-radius:inherit;opacity:var(--a)}
+.zfx canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.zfx i{position:absolute;inset:0;display:block}
+.zov{background:linear-gradient(180deg,rgba(4,14,9,.84) 0%,rgba(4,14,9,.64) 48%,rgba(4,12,8,.80) 100%)}
+body[data-win=overlay] .zov{background:linear-gradient(180deg,rgba(4,14,9,.90) 0%,rgba(4,14,9,.76) 50%,rgba(4,12,8,.86) 100%)}
+.zfire{background:radial-gradient(85% 38% at 50% 118%,rgba(255,106,20,.46),transparent 72%);animation:zFire 4.2s ease-in-out infinite;will-change:opacity}
+@keyframes zFire{0%,100%{opacity:.75}35%{opacity:1}60%{opacity:.82}80%{opacity:.95}}
+body[data-fx=off] .zfire{animation:none}
+@media (prefers-reduced-motion:reduce){.zfire{animation:none}}
+body[data-skin=zombie] .card{background:linear-gradient(160deg,rgba(14,40,28,.74),rgba(5,14,10,.86));border-color:rgba(255,138,43,.26);box-shadow:0 10px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,170,90,.14)}
+body[data-skin=zombie] .card .card{box-shadow:none;background:rgba(0,0,0,.25)}
+body[data-skin=zombie] nav>button.on{background:linear-gradient(90deg,rgba(255,138,43,.30),rgba(255,138,43,.05));box-shadow:inset 3px 0 0 var(--accent)}
+body[data-skin=zombie] .seg button.on,body[data-skin=zombie] button.primary,body[data-skin=zombie] .langsw i{background:linear-gradient(135deg,#ffb04a,#e0510c);color:#1d0a02;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+body[data-skin=zombie] .tile.on{background:linear-gradient(160deg,rgba(255,138,43,.22),rgba(255,138,43,.05));box-shadow:0 0 0 1px var(--accent)}
+body[data-skin=zombie][data-win=overlay] .hpbar i{background:linear-gradient(90deg,#e0390c,#ffb04a)}
+body[data-skin=zombie] .top .t,body[data-skin=zombie][data-win=overlay] .title{background:linear-gradient(90deg,#fff 25%,#ffb36b);-webkit-background-clip:text;background-clip:text;color:transparent}
+body[data-skin=zombie] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#ff8a2b,#6b2a08);border-radius:8px}
+body[data-skin=zombie] ::selection{background:rgba(255,138,43,.45);color:#fff}
+
+/* молния по рамке: окно, оверлей, уведомления */
+.zbolt{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:57;border-radius:inherit}

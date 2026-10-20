@@ -32,7 +32,29 @@ alld=set()
 for d in dirs:
     while d: alld.add(d); d=os.path.dirname(d)
 for d in sorted(alld,key=lambda d:-d.count('/')): U.append(f'  RMDir "$INSTDIR\\{win(d)}"')
-nsi=(open('setup.nsi.in').read().replace('@VER@',VER).replace('@FILES@','\n'.join(L))
+import json, io, contextlib
+with contextlib.redirect_stdout(io.StringIO()):
+    import eula
+def esc(x): return x.replace('$','$$').replace('"','$\\"')
+def efill(items):
+    o=[]
+    for i,(h,b) in enumerate(items):
+        if i: o+=['  Push ""','  Push 2','  Call EulaPara']
+        o+=[f'  Push "{esc(h)}"','  Push 0','  Call EulaPara',f'  Push "{esc(b)}"','  Push 1','  Call EulaPara']
+    return '\n'.join(o)
+lay=json.load(open('art/layout.json')) if os.path.exists('art/layout.json') else json.load(open('layout.json'))
+K=range(1,10)
+rep={'@EULARU@':efill(eula.RU),'@EULAEN@':efill(eula.EN),'@SLOTVARS@':'\n'.join(f'Var HB{k}\nVar HC{k}\nVar HF{k}a\nVar HF{k}b\nVar HF{k}c\nVar HF{k}d' for k in K),
+ '@HOVMAP@':'\n'.join(f'  ${{If}} $2 == $HB{k}\n    StrCpy $Hov {k}\n  ${{EndIf}}' for k in K),
+ '@HOVSTEPS@':'\n'.join(f'  !insertmacro HOVSTEP {k}' for k in K),
+ '@CLEARSLOTS@':'\n'.join(f'  StrCpy $HB{k} ""' for k in K),
+ '@FREESLOTS@':'\n'.join(f'  !insertmacro FREESLOT {k}' for k in K)}
+for lg in ('ru','en'):
+    r=lay['shark_'+lg]
+    for n,v,d in zip(('X','Y','W','H'),r,(-10,-10,20,20)): rep[f'@SH{n}_{lg.upper()}@']=str(v+d)
+src=open('setup.nsi.in',encoding='utf-8').read()
+for a,b in rep.items(): src=src.replace(a,b)
+nsi=(src.replace('@VER@',VER).replace('@FILES@','\n'.join(L))
      .replace('@UNFILES@','\n'.join(U)).replace('@NPARTS@',str(N)).replace('@SIZEKB@',str(len(data)//1024+sum(s for r,s in files if not r.startswith('AionDpsMeter.exe.'))//1024)))
-open('setup.nsi','w').write(nsi)
+open('setup.nsi','w',encoding='utf-8').write(nsi)
 print(len(files),'files',total)

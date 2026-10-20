@@ -1,5 +1,5 @@
-; Aion DPS Meter — установщик в стиле приложения. Автор: Accapura. GPL-3.0.
-; Вся графика (тексты, кнопки, фоны) нарисована заранее Manrope со сглаживанием и масштабируется GDI+ под DPI экрана.
+; Aion DPS Meter — установщик в стиле приложения (тёмная лаванда). Автор: Accapura. GPL-3.0.
+; Вся графика (тексты, кнопки, фоны) нарисована заранее и масштабируется GDI+ под DPI экрана. Живыми остаются путь, проценты и подписи.
 ; Установка идёт в фоновом потоке NSIS (страница instfiles), поэтому окно не «зависает».
 ; Тихий режим /S — для автообновления: ставит поверх установленной версии и запускает программу.
 Unicode true
@@ -13,7 +13,9 @@ RequestExecutionLevel user
 !define EXE "AionDpsMeter.exe"
 !define REG "Software\AionDpsMeter"
 !define UNKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\AionDpsMeter"
+!define RUNKEY "Software\Microsoft\Windows\CurrentVersion\Run"
 !define ART "$PLUGINSDIR\art"
+!define REPO "https://github.com/Accapura/aiondpsmeter"
 
 Name "${APP}"
 Caption "${APP} ${VER}"
@@ -40,6 +42,8 @@ VIAddVersionKey /LANG=0 "ProductVersion" "${VER}"
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
 !include "WinMessages.nsh"
+!include "WordFunc.nsh"
+!insertmacro WordFind
 
 LoadLanguageFile "${NSISDIR}\Contrib\Language files\Russian.nlf"
 LoadLanguageFile "${NSISDIR}\Contrib\Language files\English.nlf"
@@ -47,8 +51,12 @@ LoadLanguageFile "${NSISDIR}\Contrib\Language files\English.nlf"
 Var L
 Var Upd
 Var Desk
+Var Auto
 Var Wipe
 Var Fail
+Var Net
+Var Pcap
+Var View
 Var Scale
 Var WinW
 Var WinH
@@ -57,47 +65,48 @@ Var Bmp
 Var BgImg
 Var FText
 Var FPct
+Var FSt
 Var Lbl
 Var Fill
 Var FillW
 Var FillH
+Var Frm
 Var Edit
-Var Box
-Var TOn
-Var TOff
+Var Box1
+Var Box2
+Var TOn1
+Var TOff1
+Var TOn2
+Var TOff2
 Var Alpha
 Var Cur
 Var Hov
 Var Down
 Var Tk
-Var HB1
-Var HB2
-Var HB3
-Var HB4
-Var HC1
-Var HC2
-Var HC3
-Var HC4
-Var HF1a
-Var HF1b
-Var HF1c
-Var HF1d
-Var HF2a
-Var HF2b
-Var HF2c
-Var HF2d
-Var HF3a
-Var HF3b
-Var HF3c
-Var HF3d
-Var HF4a
-Var HF4b
-Var HF4c
-Var HF4d
+Var FF0
+Var FF1
+Var FF2
+Var FF3
+Var FF4
+Var FF5
+Var FF6
+Var FF7
+Var CIc1
+Var CIc2
+Var CLb1
+Var CLb2
+Var CPc1
+Var CPc2
+Var CFl1
+Var CFl2
+Var CFW
+Var CFH
+Var CSp
+Var CDone
+@SLOTVARS@
 
-Page custom PgLang
+Page custom PgMain
 Page custom PgEula
-Page custom PgPath
 Page instfiles "" InstShow ""
 Page custom PgDone
 UninstPage custom un.PgConfirm
@@ -128,7 +137,7 @@ UninstPage custom un.PgDone
   Call ${UN}LoadPng
   SendMessage ${out} 0x172 0 $R3
 !macroend
-; кнопка-картинка с плавной подсветкой (4 кадра), slot 1..4
+; кнопка-картинка с плавной подсветкой (4 кадра), slot 1..10
 !macro IBTN UN slot x y w hh name fn
   nsDialogs::CreateControl STATIC 0x5400010E 0 0 0 1u 1u ""
   Pop $HB${slot}
@@ -149,18 +158,46 @@ UninstPage custom un.PgDone
   StrCpy $HC${slot} 0
   ${NSD_OnClick} $HB${slot} ${fn}
 !macroend
-; переключатель-картинка (квадрат с галочкой и подпись), $Box
-!macro TOGGLE UN x y name fn
+; переключатель-карточка (две картинки: выкл/вкл), idx 1..2
+!macro TOGGLE UN idx x y name fn
   nsDialogs::CreateControl STATIC 0x5400010E 0 0 0 1u 1u ""
-  Pop $Box
-  !insertmacro POS $Box ${x} ${y} 460 26
+  Pop $Box${idx}
+  !insertmacro POS $Box${idx} ${x} ${y} 344 58
   StrCpy $R0 "${ART}\t_${name}_1.png"
   Call ${UN}LoadPng
-  StrCpy $TOn $R3
+  StrCpy $TOn${idx} $R3
   StrCpy $R0 "${ART}\t_${name}_0.png"
   Call ${UN}LoadPng
-  StrCpy $TOff $R3
-  ${NSD_OnClick} $Box ${fn}
+  StrCpy $TOff${idx} $R3
+  ${NSD_OnClick} $Box${idx} ${fn}
+!macroend
+!macro RELSLOT k name
+  ${If} $HB${k} != ""
+    System::Call '*(i 0, i 0, i 0, i 0) p .r1'
+    System::Call 'user32::GetWindowRect(p $HB${k}, p r1)'
+    System::Call '*$1(i .r2, i .r3, i .r4, i .r5)'
+    System::Free $1
+    IntOp $R7 $4 - $2
+    IntOp $R8 $5 - $3
+    System::Call 'gdi32::DeleteObject(p $HF${k}a)'
+    System::Call 'gdi32::DeleteObject(p $HF${k}b)'
+    System::Call 'gdi32::DeleteObject(p $HF${k}c)'
+    System::Call 'gdi32::DeleteObject(p $HF${k}d)'
+    StrCpy $R0 "${ART}\b_${name}_0.png"
+    Call LoadPng
+    StrCpy $HF${k}a $R3
+    StrCpy $R0 "${ART}\b_${name}_1.png"
+    Call LoadPng
+    StrCpy $HF${k}b $R3
+    StrCpy $R0 "${ART}\b_${name}_2.png"
+    Call LoadPng
+    StrCpy $HF${k}c $R3
+    StrCpy $R0 "${ART}\b_${name}_3.png"
+    Call LoadPng
+    StrCpy $HF${k}d $R3
+    SendMessage $HB${k} 0x172 0 $HF${k}a
+    StrCpy $HC${k} 0
+  ${EndIf}
 !macroend
 !macro HOVSTEP k
   ${If} $HB${k} != ""
@@ -205,7 +242,7 @@ UninstPage custom un.PgDone
 
 ; ======================================================== общее для установки и удаления
 !macro SHARED UN
-; PNG → HBITMAP нужного размера (GDI+, высокое качество масштабирования). $R0 файл, $R7×$R8 размер → $R3
+; PNG/JPG → HBITMAP нужного размера (GDI+, высокое качество масштабирования). $R0 файл, $R7×$R8 размер → $R3
 Function ${UN}LoadPng
   Push $1
   Push $2
@@ -227,7 +264,7 @@ Function ${UN}LoadPng
   System::Call 'gdiplus::GdipDrawImageRectRectI(p r3, p r1, i 0, i 0, i R7, i R8, i 0, i 0, i r4, i r5, i 2, p r6, p 0, p 0)'
   System::Call 'gdiplus::GdipDisposeImageAttributes(p r6)'
   System::Call 'gdiplus::GdipDeleteGraphics(p r3)'
-  System::Call 'gdiplus::GdipCreateHBITMAPFromBitmap(p r2, *p .R3, i 0xFF1F1835)'
+  System::Call 'gdiplus::GdipCreateHBITMAPFromBitmap(p r2, *p .R3, i 0xFF0B0722)'
   System::Call 'gdiplus::GdipDisposeImage(p r2)'
   System::Call 'gdiplus::GdipDisposeImage(p r1)'
   lp_end:
@@ -246,9 +283,9 @@ Function ${UN}InitGui
   ${EndIf}
   IntOp $Scale $0 * 100
   IntOp $Scale $Scale / 96
-  IntOp $WinW 760 * $Scale
+  IntOp $WinW 780 * $Scale
   IntOp $WinW $WinW / 100
-  IntOp $WinH 660 * $Scale
+  IntOp $WinH 720 * $Scale
   IntOp $WinH $WinH / 100
   ; окно без рамки Windows, прозрачное до первого появления
   System::Call 'user32::SetWindowLongW(p $HWNDPARENT, i -16, i 0x90000000)'
@@ -256,7 +293,7 @@ Function ${UN}InitGui
   StrCpy $Alpha 0
   System::Call 'user32::SetLayeredWindowAttributes(p $HWNDPARENT, i 0, i 0, i 2)'
   ; тёмный фон окна вместо белого
-  System::Call 'gdi32::CreateSolidBrush(i 0x35181F) p .r1'
+  System::Call 'gdi32::CreateSolidBrush(i 0x22070B) p .r1'
   System::Call 'user32::SetClassLongPtrW(p $HWNDPARENT, i -10, p r1)'
   System::Call 'user32::GetSystemMetrics(i 0) i .r3'
   System::Call 'user32::GetSystemMetrics(i 1) i .r4'
@@ -265,24 +302,21 @@ Function ${UN}InitGui
   IntOp $4 $4 - $WinH
   IntOp $4 $4 / 2
   System::Call 'user32::SetWindowPos(p $HWNDPARENT, p 0, i r3, i r4, i $WinW, i $WinH, i 0x24)'
-  ; скруглённые углы окна
-  IntOp $1 32 * $Scale
-  IntOp $1 $1 / 100
-  IntOp $3 $WinW + 1
-  IntOp $4 $WinH + 1
-  System::Call 'gdi32::CreateRoundRectRgn(i 0, i 0, i r3, i r4, i r1, i r1) p .r2'
-  System::Call 'user32::SetWindowRgn(p $HWNDPARENT, p r2, i 1)'
+  ; окно с прямыми углами (скруглены только внутренние элементы)
   ; графика и шрифт Manrope (только для этого окна, в систему не ставится)
   InitPluginsDir
   SetOutPath "${ART}"
   File "art\*.png"
+  File "art\*.jpg"
   SetOutPath "$PLUGINSDIR"
   File "/oname=$PLUGINSDIR\mr.ttf" "ManropeDPS-Regular.ttf"
   File "/oname=$PLUGINSDIR\mb.ttf" "ManropeDPS-Bold.ttf"
+  File "/oname=$PLUGINSDIR\comp.ps1" "comp.ps1"
   System::Call 'gdi32::AddFontResourceExW(w "$PLUGINSDIR\mr.ttf", i 0x10, p 0)'
   System::Call 'gdi32::AddFontResourceExW(w "$PLUGINSDIR\mb.ttf", i 0x10, p 0)'
   !insertmacro MKFONT $FText 14 "Manrope DPS"
-  !insertmacro MKFONT $FPct 15 "Manrope DPS Bold"
+  !insertmacro MKFONT $FSt 13 "Manrope DPS"
+  !insertmacro MKFONT $FPct 16 "Manrope DPS Bold"
   ; GDI+
   System::Alloc 24
   Pop $0
@@ -325,6 +359,16 @@ Function ${UN}FadeInSync
     Sleep 15
   ${Loop}
 FunctionEnd
+Function ${UN}FadeDip
+  ${DoWhile} $Alpha > 60
+    IntOp $Alpha $Alpha - 48
+    ${If} $Alpha < 40
+      StrCpy $Alpha 40
+    ${EndIf}
+    System::Call 'user32::SetLayeredWindowAttributes(p $HWNDPARENT, i 0, i $Alpha, i 2)'
+    Sleep 10
+  ${Loop}
+FunctionEnd
 Function ${UN}FadeOut
   ${DoWhile} $Alpha > 0
     IntOp $1 $Alpha / 3
@@ -340,30 +384,22 @@ FunctionEnd
 
 ; подсветка кнопок под курсором + перетаскивание окна за свободное место
 Function ${UN}HoverTick
+  ; стандартная разделительная линия и подписи NSIS иногда возвращаются поверх страницы — прячем каждый такт
+  Call ${UN}HideOthers
   System::Call 'user32::GetCursorPos(*l .r1)'
   System::Call 'user32::WindowFromPoint(l r1) p .r2'
   StrCpy $Hov 0
-  ${If} $2 == $HB1
-    StrCpy $Hov 1
-  ${ElseIf} $2 == $HB2
-    StrCpy $Hov 2
-  ${ElseIf} $2 == $HB3
-    StrCpy $Hov 3
-  ${ElseIf} $2 == $HB4
-    StrCpy $Hov 4
-  ${EndIf}
+@HOVMAP@
   ${If} $Hov != 0
-  ${OrIf} $2 == $Box
+  ${OrIf} $2 == $Box1
+  ${OrIf} $2 == $Box2
     System::Call 'user32::LoadCursorW(p 0, i 32649) p .r3'
     System::Call 'user32::SetCursor(p r3)'
   ${EndIf}
   ; подсветка меняется на 1 кадр каждые ~30 мс (4 кадра ≈ 0,1 с)
   IntOp $Tk 1 - $Tk
   ${If} $Tk == 1
-  !insertmacro HOVSTEP 1
-  !insertmacro HOVSTEP 2
-  !insertmacro HOVSTEP 3
-  !insertmacro HOVSTEP 4
+@HOVSTEPS@
   ${EndIf}
   ; перетаскивание: при нажатии на свободное место отдаём перемещение самой Windows (плавно, с частотой экрана)
   System::Call 'user32::GetAsyncKeyState(i 1) i .r3'
@@ -391,13 +427,28 @@ Function ${UN}PageBase
   Pop $Dlg
   System::Call 'user32::SetWindowPos(p $Dlg, p 0, i 0, i 0, i $WinW, i $WinH, i 0x14)'
   Call ${UN}HideStd
-  SetCtlColors $Dlg "" 1F1835
-  StrCpy $HB1 ""
-  StrCpy $HB2 ""
-  StrCpy $HB3 ""
-  StrCpy $HB4 ""
-  StrCpy $Box ""
+  System::Call 'user32::SetWindowPos(p $Dlg, p 0, i 0, i 0, i 0, i 0, i 0x13)'
+  SetCtlColors $Dlg "" 0B0722
+  System::Call 'gdi32::CreateSolidBrush(i 0x22070B) p .r1'
+  System::Call 'user32::SetClassLongPtrW(p $Dlg, i -10, p r1)'
+  Call ${UN}ClearSlots
+  StrCpy $Box1 ""
+  StrCpy $Box2 ""
   StrCpy $Edit ""
+FunctionEnd
+Function ${UN}ClearSlots
+@CLEARSLOTS@
+FunctionEnd
+Function ${UN}HideOthers
+  Push $7
+  System::Call 'user32::GetWindow(p $HWNDPARENT, i 5) p .r7'
+  ${While} $7 != 0
+    ${If} $7 != $Dlg
+      ShowWindow $7 ${SW_HIDE}
+    ${EndIf}
+    System::Call 'user32::GetWindow(p r7, i 2) p .r7'
+  ${EndWhile}
+  Pop $7
 FunctionEnd
 Function ${UN}HideStd
   ${ForEach} $5 1 3 + 1
@@ -413,29 +464,54 @@ Function ${UN}HideStd
   GetDlgItem $6 $HWNDPARENT 1256
   ShowWindow $6 ${SW_HIDE}
   System::Call 'user32::SetWindowPos(p r6, p 0, i -4000, i -4000, i 0, i 0, i 0x15)'
+  Call ${UN}HideOthers
 FunctionEnd
-; фон страницы ($R1 — имя картинки), показ, уборка
-Function ${UN}ShowPage
+; фон страницы ($R1 — имя картинки без bg_ и расширения)
+Function ${UN}MakeBg
   nsDialogs::CreateControl STATIC 0x5400000E 0 0 0 1u 1u ""
   Pop $Bmp
   System::Call 'user32::SetWindowPos(p $Bmp, p 1, i 0, i 0, i $WinW, i $WinH, i 0x10)'
-  StrCpy $R0 "${ART}\bg_$R1.png"
+  StrCpy $R0 "${ART}\bg_$R1.jpg"
   StrCpy $R7 $WinW
   StrCpy $R8 $WinH
   Call ${UN}LoadPng
   StrCpy $BgImg $R3
   SendMessage $Bmp 0x172 0 $BgImg
+FunctionEnd
+Function ${UN}FreeAll
+@FREESLOTS@
+  ${If} $Box1 != ""
+    System::Call 'gdi32::DeleteObject(p $TOn1)'
+    System::Call 'gdi32::DeleteObject(p $TOff1)'
+  ${EndIf}
+  ${If} $Box2 != ""
+    System::Call 'gdi32::DeleteObject(p $TOn2)'
+    System::Call 'gdi32::DeleteObject(p $TOff2)'
+  ${EndIf}
+  System::Call 'gdi32::DeleteObject(p $BgImg)'
+FunctionEnd
+Function ${UN}ShowPage
+  Call ${UN}MakeBg
   Call ${UN}AnimStart
   nsDialogs::Show
-  System::Call 'gdi32::DeleteObject(p $BgImg)'
-  !insertmacro FREESLOT 1
-  !insertmacro FREESLOT 2
-  !insertmacro FREESLOT 3
-  !insertmacro FREESLOT 4
-  ${If} $Box != ""
-    System::Call 'gdi32::DeleteObject(p $TOn)'
-    System::Call 'gdi32::DeleteObject(p $TOff)'
-  ${EndIf}
+  Call ${UN}FreeAll
+FunctionEnd
+Function ${UN}Lock
+  SendMessage $Dlg 0xB 0 0
+FunctionEnd
+Function ${UN}Unlock
+  SendMessage $Dlg 0xB 1 0
+  System::Call 'user32::RedrawWindow(p $Dlg, p 0, p 0, i 0x181)'
+FunctionEnd
+; убрать все элементы страницы (для перерисовки на лету, например при смене языка)
+Function ${UN}KillChildren
+  ${Do}
+    System::Call 'user32::GetWindow(p $Dlg, i 5) p .r1'
+    ${If} $1 == 0
+      ${Break}
+    ${EndIf}
+    System::Call 'user32::DestroyWindow(p r1)'
+  ${Loop}
 FunctionEnd
 
 ; страница хода установки/удаления поверх стандартной instfiles: $R1 — фон
@@ -443,41 +519,85 @@ Function ${UN}WorkPage
   FindWindow $Dlg "#32770" "" $HWNDPARENT
   System::Call 'user32::SetWindowPos(p $Dlg, p 0, i 0, i 0, i $WinW, i $WinH, i 0x14)'
   Call ${UN}HideStd
+  System::Call 'user32::SetWindowPos(p $Dlg, p 0, i 0, i 0, i 0, i 0, i 0x13)'
   ${ForEach} $5 1000 1040 + 1
     GetDlgItem $6 $Dlg $5
     ShowWindow $6 ${SW_HIDE}
   ${Next}
-  StrCpy $HB1 ""
-  StrCpy $HB2 ""
-  StrCpy $HB3 ""
-  StrCpy $HB4 ""
-  ; полоса: золото-оранжевая заливка, видимая часть задаётся областью
-  !insertmacro SCALE 40 304 680 12
+  Call ${UN}ClearSlots
+  ; полоса: заливка с бегущим бликом (8 кадров), видимая часть задаётся областью
+  !insertmacro SCALE 64 324 652 14
   StrCpy $FillW $R7
   StrCpy $FillH $R8
   System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x5400000E, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
   StrCpy $Fill $1
-  StrCpy $R0 "${ART}\fill.png"
+  StrCpy $R0 "${ART}\fill_0.png"
   Call ${UN}LoadPng
-  SendMessage $Fill 0x172 0 $R3
+  StrCpy $FF0 $R3
+  StrCpy $R0 "${ART}\fill_1.png"
+  Call ${UN}LoadPng
+  StrCpy $FF1 $R3
+  StrCpy $R0 "${ART}\fill_2.png"
+  Call ${UN}LoadPng
+  StrCpy $FF2 $R3
+  StrCpy $R0 "${ART}\fill_3.png"
+  Call ${UN}LoadPng
+  StrCpy $FF3 $R3
+  StrCpy $R0 "${ART}\fill_4.png"
+  Call ${UN}LoadPng
+  StrCpy $FF4 $R3
+  StrCpy $R0 "${ART}\fill_5.png"
+  Call ${UN}LoadPng
+  StrCpy $FF5 $R3
+  StrCpy $R0 "${ART}\fill_6.png"
+  Call ${UN}LoadPng
+  StrCpy $FF6 $R3
+  StrCpy $R0 "${ART}\fill_7.png"
+  Call ${UN}LoadPng
+  StrCpy $FF7 $R3
+  SendMessage $Fill 0x172 0 $FF0
   System::Call 'gdi32::CreateRectRgn(i 0, i 0, i 0, i 0) p .r2'
   System::Call 'user32::SetWindowRgn(p $Fill, p r2, i 1)'
   ; проценты
-  !insertmacro SCALE 560 270 160 24
+  !insertmacro SCALE 596 232 120 30
   System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "0%", i 0x50000002, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
   StrCpy $Lbl $1
-  SetCtlColors $Lbl FFB45A 1F1835
+  SetCtlColors $Lbl C9B8FF 1F1650
   SendMessage $Lbl ${WM_SETFONT} $FPct 1
   ; фон
   System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x5400000E, i 0, i 0, i $WinW, i $WinH, p $Dlg, p 0, p 0, p 0) p .r1'
   StrCpy $Bmp $1
   System::Call 'user32::SetWindowPos(p $Bmp, p 1, i 0, i 0, i 0, i 0, i 0x13)'
-  StrCpy $R0 "${ART}\bg_$R1.png"
+  StrCpy $R0 "${ART}\bg_$R1.jpg"
   StrCpy $R7 $WinW
   StrCpy $R8 $WinH
   Call ${UN}LoadPng
   SendMessage $Bmp 0x172 0 $R3
   StrCpy $Cur 0
+  StrCpy $Frm 0
+FunctionEnd
+
+; кадр блика на полосе: $Frm mod 8
+Function ${UN}FillFrame
+  IntOp $Frm $Frm + 1
+  IntOp $R0 $Frm % 8
+  ${If} $R0 == 0
+    SendMessage $Fill 0x172 0 $FF0
+  ${ElseIf} $R0 == 1
+    SendMessage $Fill 0x172 0 $FF1
+  ${ElseIf} $R0 == 2
+    SendMessage $Fill 0x172 0 $FF2
+  ${ElseIf} $R0 == 3
+    SendMessage $Fill 0x172 0 $FF3
+  ${ElseIf} $R0 == 4
+    SendMessage $Fill 0x172 0 $FF4
+  ${ElseIf} $R0 == 5
+    SendMessage $Fill 0x172 0 $FF5
+  ${ElseIf} $R0 == 6
+    SendMessage $Fill 0x172 0 $FF6
+  ${Else}
+    SendMessage $Fill 0x172 0 $FF7
+  ${EndIf}
 FunctionEnd
 
 ; Push промилле (0..1000) — плавно доводим полосу
@@ -507,6 +627,7 @@ Function ${UN}SetProgress
     IntOp $R6 $FillH + 1
     System::Call 'gdi32::CreateRoundRectRgn(i 0, i 0, i R5, i R6, i $FillH, i $FillH) p .R4'
     System::Call 'user32::SetWindowRgn(p $Fill, p R4, i 1)'
+    Call ${UN}FillFrame
     Sleep 10
   ${Next}
   StrCpy $Cur $0
@@ -539,6 +660,23 @@ Function ${UN}OnFinish
   Call ${UN}FadeOut
   SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
 FunctionEnd
+Function ${UN}OnMin
+  Pop $0
+  ShowWindow $HWNDPARENT 6
+FunctionEnd
+Function ${UN}OnWClose
+  Pop $0
+  Call ${UN}FadeOut
+  SendMessage $HWNDPARENT ${WM_COMMAND} 2 0
+FunctionEnd
+Function ${UN}WinBtns
+  !insertmacro IBTN "${UN}" 8 700 12 26 26 wmin_$L ${UN}OnMin
+  !insertmacro IBTN "${UN}" 9 732 12 26 26 wclose_$L ${UN}OnWClose
+FunctionEnd
+Function ${UN}OnRepo
+  Pop $0
+  ExecShell "open" "${REPO}"
+FunctionEnd
 
 ; Закрыть запущенную программу (и модуль чтения), чтобы файлы можно было заменить или удалить.
 Function ${UN}CloseApp
@@ -556,7 +694,9 @@ FunctionEnd
 Function .onInit
   StrCpy $Upd 0
   StrCpy $Desk 1
+  StrCpy $Auto 0
   StrCpy $Fail 0
+  StrCpy $View 0
   ReadRegStr $L HKCU "${REG}" "Lang"
   ; $INSTDIR уже задан: /D=папка (автообновление ставит туда, где программа сейчас) или запись в реестре
   ${If} ${FileExists} "$INSTDIR\${EXE}"
@@ -577,75 +717,190 @@ Function .onGUIInit
   Call InitGui
 FunctionEnd
 
-; ---------- 1. язык
-Function PgLang
+; .NET 10 и Npcap: найдены ли на этом компьютере → $Net, $Pcap (1/0)
+Function CheckComps
+  StrCpy $Net 0
+  FindFirst $0 $1 "$PROGRAMFILES64\dotnet\shared\Microsoft.NETCore.App\10.*"
+  ${If} $1 != ""
+    StrCpy $Net 1
+  ${EndIf}
+  FindClose $0
+  StrCpy $Pcap 0
+  ${If} ${FileExists} "$SYSDIR\Npcap\wpcap.dll"
+    StrCpy $Pcap 1
+  ${Else}
+    ReadRegStr $0 HKLM "SOFTWARE\Npcap" ""
+    ${If} $0 != ""
+      StrCpy $Pcap 1
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+; ---------- 1. главная: язык, компоненты, папка, параметры
+Function PgMain
   ${If} $Upd == 1
     Abort
   ${EndIf}
+  Call CheckComps
   Call PageBase
-  ${If} $L == "en"
-    !insertmacro IBTN "" 1 40 196 330 130 card_ru_d OnRu
-    !insertmacro IBTN "" 2 390 196 330 130 card_en_g OnEn
-  ${Else}
-    !insertmacro IBTN "" 1 40 196 330 130 card_ru_g OnRu
-    !insertmacro IBTN "" 2 390 196 330 130 card_en_d OnEn
-  ${EndIf}
-  !insertmacro IBTN "" 3 520 546 200 38 cancel_bi OnCancel
-  StrCpy $R1 "lang"
+  Call BuildMain
   Call ShowPage
+FunctionEnd
+Function BuildMain
+  Call WinBtns
+  ; переключатель языка RU / EN
+  ${If} $L == "en"
+    !insertmacro IBTN "" 1 643 47 46 28 segru_i OnRu
+    !insertmacro IBTN "" 2 691 47 46 28 segen_a OnEn
+  ${Else}
+    !insertmacro IBTN "" 1 643 47 46 28 segru_a OnRu
+    !insertmacro IBTN "" 2 691 47 46 28 segen_i OnEn
+  ${EndIf}
+  ; кнопки «Скачать» у недостающих компонентов
+  ${If} $Net == 0
+    !insertmacro IBTN "" 5 294 312 192 34 getnet_$L OnGetNet
+  ${EndIf}
+  ${If} $Pcap == 0
+    !insertmacro IBTN "" 6 532 312 192 34 getpcap_$L OnGetPcap
+  ${EndIf}
+  ; путь установки
+  nsDialogs::CreateControl EDIT 0x50000080 0 0 0 1u 1u "$INSTDIR"
+  Pop $Edit
+  SetCtlColors $Edit FBF7FF 120C30
+  SendMessage $Edit ${WM_SETFONT} $FText 1
+  !insertmacro POS $Edit 74 434 512 22
+  !insertmacro IBTN "" 3 612 420 110 50 browse_$L OnBrowse
+  ; параметры
+  !insertmacro TOGGLE "" 1 40 526 desk_$L OnDesk
+  !insertmacro TOGGLE "" 2 396 526 auto_$L OnAuto
+  Call PaintToggles
+  ; установить
+  !insertmacro IBTN "" 4 186 584 408 80 install_$L OnInstall
+  ; акула → репозиторий
+  ${If} $L == "en"
+    !insertmacro IBTN "" 7 @SHX_EN@ @SHY_EN@ @SHW_EN@ @SHH_EN@ shark_$L OnRepo
+  ${Else}
+    !insertmacro IBTN "" 7 @SHX_RU@ @SHY_RU@ @SHW_RU@ @SHH_RU@ shark_$L OnRepo
+  ${EndIf}
+  StrCpy $R1 "main"
+  StrCpy $R1 "$R1$Net"
+  StrCpy $R1 "$R1$Pcap"
+  StrCpy $R1 "$R1_$L"
+FunctionEnd
+; перерисовка главной на лету (смена языка): путь, переключатели и состояние сохраняются
+Function RebuildMain
+  ${NSD_GetText} $Edit $INSTDIR
+  Call Lock
+  Call KillChildren
+  Call FreeAll
+  Call ClearSlots
+  Call BuildMain
+  Call MakeBg
+  Call Unlock
+FunctionEnd
+; смена языка на лету: те же элементы, меняются только картинки (без пересоздания — ничего не мигает)
+Function Relang
+  System::Call 'user32::LockWindowUpdate(p $Dlg)'
+  ${If} $L == "en"
+    !insertmacro RELSLOT 1 segru_i
+    !insertmacro RELSLOT 2 segen_a
+  ${Else}
+    !insertmacro RELSLOT 1 segru_a
+    !insertmacro RELSLOT 2 segen_i
+  ${EndIf}
+  !insertmacro RELSLOT 3 browse_$L
+  !insertmacro RELSLOT 4 install_$L
+  !insertmacro RELSLOT 5 getnet_$L
+  !insertmacro RELSLOT 6 getpcap_$L
+  !insertmacro RELSLOT 7 shark_$L
+  !insertmacro RELSLOT 8 wmin_$L
+  !insertmacro RELSLOT 9 wclose_$L
+  ${If} $L == "en"
+    !insertmacro POS $HB7 @SHX_EN@ @SHY_EN@ @SHW_EN@ @SHH_EN@
+  ${Else}
+    !insertmacro POS $HB7 @SHX_RU@ @SHY_RU@ @SHW_RU@ @SHH_RU@
+  ${EndIf}
+  ; карточки-переключатели
+  System::Call 'gdi32::DeleteObject(p $TOn1)'
+  System::Call 'gdi32::DeleteObject(p $TOff1)'
+  System::Call 'gdi32::DeleteObject(p $TOn2)'
+  System::Call 'gdi32::DeleteObject(p $TOff2)'
+  !insertmacro SCALE 0 0 344 58
+  StrCpy $R0 "${ART}\t_desk_$L_1.png"
+  Call LoadPng
+  StrCpy $TOn1 $R3
+  StrCpy $R0 "${ART}\t_desk_$L_0.png"
+  Call LoadPng
+  StrCpy $TOff1 $R3
+  StrCpy $R0 "${ART}\t_auto_$L_1.png"
+  Call LoadPng
+  StrCpy $TOn2 $R3
+  StrCpy $R0 "${ART}\t_auto_$L_0.png"
+  Call LoadPng
+  StrCpy $TOff2 $R3
+  Call PaintToggles
+  ; фон страницы
+  StrCpy $R1 "main"
+  StrCpy $R1 "$R1$Net"
+  StrCpy $R1 "$R1$Pcap"
+  StrCpy $R1 "$R1_$L"
+  StrCpy $R0 "${ART}\bg_$R1.jpg"
+  StrCpy $R7 $WinW
+  StrCpy $R8 $WinH
+  Call LoadPng
+  SendMessage $Bmp 0x172 0 $R3
+  System::Call 'gdi32::DeleteObject(p $BgImg)'
+  StrCpy $BgImg $R3
+  System::Call 'user32::LockWindowUpdate(p 0)'
+  System::Call 'user32::RedrawWindow(p $Dlg, p 0, p 0, i 0x181)'
 FunctionEnd
 Function OnRu
-  StrCpy $L "ru"
-  Call OnNext
+  Pop $0
+  ${If} $L != "ru"
+    StrCpy $L "ru"
+    Call FadeDip
+    Call Relang
+    Call FadeInSync
+  ${EndIf}
 FunctionEnd
 Function OnEn
-  StrCpy $L "en"
-  Call OnNext
-FunctionEnd
-
-; ---------- 2. соглашение
-Function PgEula
-  ${If} $Upd == 1
-    Abort
+  Pop $0
+  ${If} $L != "en"
+    StrCpy $L "en"
+    Call FadeDip
+    Call Relang
+    Call FadeInSync
   ${EndIf}
-  Call PageBase
-  !insertmacro IBTN "" 1 560 546 160 38 agree_$L OnNext
-  !insertmacro IBTN "" 2 390 546 160 38 cancel_$L OnCancel
-  !insertmacro IBTN "" 3 40 546 120 38 back_$L OnBack
-  StrCpy $R1 "eula_$L"
-  Call ShowPage
 FunctionEnd
-
-; ---------- 3. папка
-Function PgPath
-  ${If} $Upd == 1
-    Abort
-  ${EndIf}
-  Call PageBase
-  nsDialogs::CreateControl EDIT 0x50010080 0 0 0 1u 1u "$INSTDIR"
-  Pop $Edit
-  SetCtlColors $Edit FBF7FF 2A2244
-  SendMessage $Edit ${WM_SETFONT} $FText 1
-  !insertmacro POS $Edit 56 172 528 22
-  !insertmacro IBTN "" 1 610 160 110 44 browse_$L OnBrowse
-  !insertmacro TOGGLE "" 40 256 desk_$L OnDesk
-  Call PaintDesk
-  !insertmacro IBTN "" 2 560 546 160 38 install_$L OnInstall
-  !insertmacro IBTN "" 3 40 546 120 38 back_$L OnBack
-  StrCpy $R1 "path_$L"
-  Call ShowPage
-FunctionEnd
-Function PaintDesk
+Function PaintToggles
   ${If} $Desk == 1
-    SendMessage $Box 0x172 0 $TOn
+    SendMessage $Box1 0x172 0 $TOn1
   ${Else}
-    SendMessage $Box 0x172 0 $TOff
+    SendMessage $Box1 0x172 0 $TOff1
+  ${EndIf}
+  ${If} $Auto == 1
+    SendMessage $Box2 0x172 0 $TOn2
+  ${Else}
+    SendMessage $Box2 0x172 0 $TOff2
   ${EndIf}
 FunctionEnd
 Function OnDesk
   Pop $0
   IntOp $Desk 1 - $Desk
-  Call PaintDesk
+  Call PaintToggles
+FunctionEnd
+Function OnAuto
+  Pop $0
+  IntOp $Auto 1 - $Auto
+  Call PaintToggles
+FunctionEnd
+Function OnGetNet
+  Pop $0
+  ExecShell "open" "https://dotnet.microsoft.com/download/dotnet/10.0/runtime"
+FunctionEnd
+Function OnGetPcap
+  Pop $0
+  ExecShell "open" "https://npcap.com/#download"
 FunctionEnd
 Function OnBrowse
   Pop $0
@@ -689,7 +944,66 @@ Function OnInstall
   SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
 FunctionEnd
 
-; ---------- 4. установка (в фоновом потоке)
+; ---------- 2. соглашение (текст — настоящее поле только для чтения: выделяется и копируется)
+Function EulaPara
+  Pop $R4
+  Pop $R2
+  ${If} $R4 == 0
+    StrCpy $R5 105
+    StrCpy $R6 "Manrope DPS Bold"
+    StrCpy $R7 0xFFDCE6
+  ${ElseIf} $R4 == 1
+    StrCpy $R5 125
+    StrCpy $R6 "Manrope DPS"
+    StrCpy $R7 0xF5DCE3
+  ${Else}
+    StrCpy $R5 60
+    StrCpy $R6 "Manrope DPS"
+    StrCpy $R7 0xF5DCE3
+  ${EndIf}
+  IntOp $R8 $R5 * 15
+  IntOp $R8 $R8 * $Scale
+  IntOp $R8 $R8 / 1000
+  System::Call '*(i 92, i 0xE0000001, i 0, i R8, i 0, i R7, &i1 1, &i1 0, &w32 "$R6") p .r1'
+  SendMessage $Edit 0xB1 -1 -1
+  SendMessage $Edit 0x444 1 $1
+  System::Free $1
+  StrCpy $R2 "$R2$\r$\n"
+  SendMessage $Edit 0xC2 0 "STR:$R2"
+FunctionEnd
+Function EulaFillRu
+@EULARU@
+FunctionEnd
+Function EulaFillEn
+@EULAEN@
+FunctionEnd
+
+Function PgEula
+  ${If} $Upd == 1
+    Abort
+  ${EndIf}
+  Call PageBase
+  Call WinBtns
+  !insertmacro IBTN "" 1 560 608 180 52 eagree_$L OnNext
+  !insertmacro IBTN "" 2 400 608 150 52 ecancel_$L OnCancel
+  !insertmacro IBTN "" 3 40 608 130 52 eback_$L OnBack
+  System::Call 'kernel32::LoadLibraryW(w "riched20.dll")'
+  nsDialogs::CreateControl RichEdit20W 0x50000944 0 0 0 1u 1u ""
+  Pop $Edit
+  !insertmacro POS $Edit 62 210 656 372
+  SendMessage $Edit 0x443 0 0x50161F
+  ${If} $L == "en"
+    Call EulaFillEn
+  ${Else}
+    Call EulaFillRu
+  ${EndIf}
+  SendMessage $Edit 0xB1 0 0
+  SendMessage $Edit 0x115 6 0
+  StrCpy $R1 "eula_$L"
+  Call ShowPage
+FunctionEnd
+
+; ---------- 3. установка (в фоновом потоке)
 Function InstShow
   ${If} $Upd == 1
     StrCpy $R1 "work_upd_$L"
@@ -775,6 +1089,10 @@ Function DoInstall
   ${If} $Desk == 1
     CreateShortCut "$DESKTOP\${APP}.lnk" "$INSTDIR\${EXE}" "" "$INSTDIR\${EXE}" 0 "" "" "${APP}"
   ${EndIf}
+  ; запуск вместе с Windows (так же, как это делает сама программа: свёрнутой в трей)
+  ${If} $Auto == 1
+    WriteRegStr HKCU "${RUNKEY}" "${APP}" '"$INSTDIR\${EXE}" --hidden'
+  ${EndIf}
   ; «Установка и удаление программ»
   WriteRegStr HKCU "${UNKEY}" "DisplayName" "${APP}"
   WriteRegStr HKCU "${UNKEY}" "DisplayVersion" "${VER}"
@@ -807,63 +1125,290 @@ Function DoInstall
   done:
 FunctionEnd
 
-; ---------- 5. готово: проверка компонентов и запуск
+; ---------- 4. готово: проверка компонентов, докачка, запуск
 Function PgDone
   Call PageBase
+  StrCpy $View 0
   ${If} $Fail == 1
-    !insertmacro IBTN "" 1 560 546 160 38 close_$L OnFinish
+    Call WinBtns
+    !insertmacro IBTN "" 1 560 608 180 52 failclose_$L OnFinish
     StrCpy $R1 "fail_$L"
     Call ShowPage
     Return
   ${EndIf}
-  ; .NET 10 и Npcap
-  StrCpy $3 0
-  FindFirst $0 $1 "$PROGRAMFILES64\dotnet\shared\Microsoft.NETCore.App\10.*"
-  ${If} $1 != ""
-    StrCpy $3 1
-  ${EndIf}
-  FindClose $0
-  StrCpy $4 0
-  ${If} ${FileExists} "$SYSDIR\Npcap\wpcap.dll"
-    StrCpy $4 1
-  ${Else}
-    ReadRegStr $0 HKLM "SOFTWARE\Npcap" ""
-    ${If} $0 != ""
-      StrCpy $4 1
-    ${EndIf}
-  ${EndIf}
-  ${If} $3 == 1
-    !insertmacro IMG "" $0 556 251 150 30 "${ART}\have_$L.png"
-  ${Else}
-    !insertmacro IBTN "" 1 580 247 124 38 get_$L OnGetNet
-  ${EndIf}
-  ${If} $4 == 1
-    !insertmacro IMG "" $0 556 327 150 30 "${ART}\have_$L.png"
-  ${Else}
-    !insertmacro IBTN "" 2 580 323 124 38 get_$L OnGetPcap
-  ${EndIf}
-  !insertmacro IBTN "" 3 560 546 160 38 launch_$L OnLaunch
-  !insertmacro IBTN "" 4 390 546 160 38 close_$L OnFinish
-  ${If} $Upd == 1
-    StrCpy $R1 "doneupd_$L"
-  ${Else}
-    StrCpy $R1 "done_$L"
-  ${EndIf}
+  Call CheckComps
+  Call BuildDone
   Call ShowPage
 FunctionEnd
-Function OnGetNet
-  Pop $0
-  ExecShell "open" "https://dotnet.microsoft.com/download/dotnet/10.0"
-FunctionEnd
-Function OnGetPcap
-  Pop $0
-  ExecShell "open" "https://npcap.com/#download"
+Function BuildDone
+  Call WinBtns
+  ${If} $Net == 1
+  ${AndIf} $Pcap == 1
+    !insertmacro IBTN "" 1 400 546 340 76 launch_$L OnLaunch
+    !insertmacro IBTN "" 2 40 556 170 56 close_$L OnFinish
+  ${Else}
+    !insertmacro IBTN "" 1 170 546 440 76 compgo_$L OnCompGo
+    !insertmacro IBTN "" 2 240 622 300 32 skip_$L OnFinish
+  ${EndIf}
+  StrCpy $R1 "done"
+  StrCpy $R1 "$R1$Upd"
+  StrCpy $R1 "$R1$Net"
+  StrCpy $R1 "$R1$Pcap"
+  StrCpy $R1 "$R1_$L"
 FunctionEnd
 Function OnLaunch
   Pop $0
   Exec '"$INSTDIR\${EXE}" --lang=$L'
   Call FadeOut
   SendMessage $HWNDPARENT ${WM_COMMAND} 1 0
+FunctionEnd
+
+; ---------- скачивание и установка недостающих компонентов
+Function OnCompGo
+  Pop $0
+  ; готовим папку обмена и запускаем скрытый PowerShell-скрипт
+  RMDir /r "$TEMP\dpscomp"
+  CreateDirectory "$TEMP\dpscomp"
+  StrCpy $R2 0
+  StrCpy $R3 0
+  ${If} $Net == 0
+    StrCpy $R2 1
+  ${EndIf}
+  ${If} $Pcap == 0
+    StrCpy $R3 1
+  ${EndIf}
+  ExecShell "open" "$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$PLUGINSDIR\comp.ps1" -Dir "$TEMP\dpscomp" -Net $R2 -Pcap $R3' SW_HIDE
+  StrCpy $View 1
+  StrCpy $CSp 0
+  StrCpy $CDone 0
+  Call RebuildComp
+FunctionEnd
+Function RebuildComp
+  Call Lock
+  Call KillChildren
+  Call FreeAll
+  Call ClearSlots
+  Call BuildComp
+  Call MakeBg
+  Call Unlock
+  GetFunctionAddress $1 CompTick
+  nsDialogs::CreateTimer $1 150
+FunctionEnd
+Function BuildComp
+  Call WinBtns
+  !insertmacro IBTN "" 1 290 600 200 48 ccancel_$L OnCompCancel
+  ; значки, подписи, проценты и полосы двух строк
+  !insertmacro SCALE 108 294 592 10
+  StrCpy $CFW $R7
+  StrCpy $CFH $R8
+  !insertmacro IMG "" $CIc1 62 236 30 30 "${ART}\i0_wait_$L.png"
+  !insertmacro IMG "" $CIc2 62 354 30 30 "${ART}\i1_wait_$L.png"
+  !insertmacro SCALE 108 258 470 22
+  System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x50000000, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
+  StrCpy $CLb1 $1
+  SetCtlColors $CLb1 D9CCFF 1F1650
+  SendMessage $CLb1 ${WM_SETFONT} $FSt 1
+  !insertmacro SCALE 108 376 470 22
+  System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x50000000, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
+  StrCpy $CLb2 $1
+  SetCtlColors $CLb2 D9CCFF 1F1650
+  SendMessage $CLb2 ${WM_SETFONT} $FSt 1
+  !insertmacro SCALE 600 230 120 28
+  System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x50000002, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
+  StrCpy $CPc1 $1
+  SetCtlColors $CPc1 C9B8FF 1F1650
+  SendMessage $CPc1 ${WM_SETFONT} $FPct 1
+  !insertmacro SCALE 600 348 120 28
+  System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x50000002, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
+  StrCpy $CPc2 $1
+  SetCtlColors $CPc2 C9B8FF 1F1650
+  SendMessage $CPc2 ${WM_SETFONT} $FPct 1
+  !insertmacro SCALE 108 294 592 10
+  System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x5400000E, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
+  StrCpy $CFl1 $1
+  StrCpy $R0 "${ART}\fill_3.png"
+  Call LoadPng
+  SendMessage $CFl1 0x172 0 $R3
+  System::Call 'gdi32::CreateRectRgn(i 0, i 0, i 0, i 0) p .r2'
+  System::Call 'user32::SetWindowRgn(p $CFl1, p r2, i 1)'
+  !insertmacro SCALE 108 412 592 10
+  System::Call 'user32::CreateWindowExW(i 0, w "STATIC", w "", i 0x5400000E, i R5, i R6, i R7, i R8, p $Dlg, p 0, p 0, p 0) p .r1'
+  StrCpy $CFl2 $1
+  SendMessage $CFl2 0x172 0 $R3
+  System::Call 'gdi32::CreateRectRgn(i 0, i 0, i 0, i 0) p .r2'
+  System::Call 'user32::SetWindowRgn(p $CFl2, p r2, i 1)'
+  StrCpy $R1 "comp_$L"
+FunctionEnd
+
+; разбор строки состояния «статус % а b .» → $1 статус, $2 процент, $3 а, $4 b; пусто, если файла нет
+Function ReadRow
+  StrCpy $1 ""
+  StrCpy $2 0
+  StrCpy $3 0
+  StrCpy $4 0
+  ClearErrors
+  FileOpen $5 $0 r
+  ${If} ${Errors}
+    Return
+  ${EndIf}
+  FileRead $5 $6
+  FileClose $5
+  ${WordFind} $6 " " "+1" $1
+  ${WordFind} $6 " " "+2" $2
+  ${WordFind} $6 " " "+3" $3
+  ${WordFind} $6 " " "+4" $4
+FunctionEnd
+; нарисовать строку: $R9 — номер (1/2), $1.. из ReadRow
+Function PaintRow
+  ; подпись
+  ${If} $L == "ru"
+    ${If} $1 == "dl"
+      StrCpy $8 "Скачиваю… $3 из $4 МБ"
+    ${ElseIf} $1 == "inst"
+      StrCpy $8 "Устанавливаю… разрешите запрос Windows"
+    ${ElseIf} $1 == "run"
+      StrCpy $8 "Открыт установщик Npcap: нажмите «I Agree», «Install», «Finish»"
+    ${ElseIf} $1 == "ok"
+      StrCpy $8 "Готово"
+    ${ElseIf} $1 == "skip"
+      StrCpy $8 "Уже установлен"
+    ${ElseIf} $1 == "fail"
+      StrCpy $8 "Не получилось. Нажмите «Отмена» и скачайте вручную"
+    ${Else}
+      StrCpy $8 "В очереди"
+    ${EndIf}
+  ${Else}
+    ${If} $1 == "dl"
+      StrCpy $8 "Downloading… $3 of $4 MB"
+    ${ElseIf} $1 == "inst"
+      StrCpy $8 "Installing… allow the Windows prompt"
+    ${ElseIf} $1 == "run"
+      StrCpy $8 "Npcap installer is open: click “I Agree”, “Install”, “Finish”"
+    ${ElseIf} $1 == "ok"
+      StrCpy $8 "Done"
+    ${ElseIf} $1 == "skip"
+      StrCpy $8 "Already installed"
+    ${ElseIf} $1 == "fail"
+      StrCpy $8 "Failed. Click Cancel and download it manually"
+    ${Else}
+      StrCpy $8 "Waiting"
+    ${EndIf}
+  ${EndIf}
+  ; процент полосы
+  StrCpy $9 0
+  ${If} $1 == "dl"
+    StrCpy $9 $2
+  ${ElseIf} $1 == "inst"
+  ${OrIf} $1 == "run"
+  ${OrIf} $1 == "ok"
+  ${OrIf} $1 == "skip"
+    StrCpy $9 100
+  ${EndIf}
+  ; значок: крутилка (8 кадров) / галочка / крестик / ожидание
+  ${If} $1 == "dl"
+  ${OrIf} $1 == "inst"
+  ${OrIf} $1 == "run"
+    IntOp $7 $CSp % 8
+    StrCpy $R0 "${ART}\i$R8_$7_$L.png"
+  ${ElseIf} $1 == "ok"
+  ${OrIf} $1 == "skip"
+    StrCpy $R0 "${ART}\i$R8_ok_$L.png"
+  ${ElseIf} $1 == "fail"
+    StrCpy $R0 "${ART}\i$R8_fail_$L.png"
+  ${Else}
+    StrCpy $R0 "${ART}\i$R8_wait_$L.png"
+  ${EndIf}
+  !insertmacro SCALE 0 0 30 30
+  Call LoadPng
+  ${If} $R9 == 1
+    SendMessage $CIc1 0x172 0 $R3 $0
+    SendMessage $CLb1 ${WM_SETTEXT} 0 "STR:$8"
+    ${If} $1 == "dl"
+      SendMessage $CPc1 ${WM_SETTEXT} 0 "STR:$9%"
+    ${Else}
+      SendMessage $CPc1 ${WM_SETTEXT} 0 "STR:"
+    ${EndIf}
+    IntOp $5 $CFW * $9
+    IntOp $5 $5 / 100
+    ${If} $5 > 0
+    ${AndIf} $5 < $CFH
+      StrCpy $5 $CFH
+    ${EndIf}
+    IntOp $6 $5 + 1
+    IntOp $7 $CFH + 1
+    System::Call 'gdi32::CreateRoundRectRgn(i 0, i 0, i r6, i r7, i $CFH, i $CFH) p .r4'
+    System::Call 'user32::SetWindowRgn(p $CFl1, p r4, i 1)'
+  ${Else}
+    SendMessage $CIc2 0x172 0 $R3 $0
+    SendMessage $CLb2 ${WM_SETTEXT} 0 "STR:$8"
+    ${If} $1 == "dl"
+      SendMessage $CPc2 ${WM_SETTEXT} 0 "STR:$9%"
+    ${Else}
+      SendMessage $CPc2 ${WM_SETTEXT} 0 "STR:"
+    ${EndIf}
+    IntOp $5 $CFW * $9
+    IntOp $5 $5 / 100
+    ${If} $5 > 0
+    ${AndIf} $5 < $CFH
+      StrCpy $5 $CFH
+    ${EndIf}
+    IntOp $6 $5 + 1
+    IntOp $7 $CFH + 1
+    System::Call 'gdi32::CreateRoundRectRgn(i 0, i 0, i r6, i r7, i $CFH, i $CFH) p .r4'
+    System::Call 'user32::SetWindowRgn(p $CFl2, p r4, i 1)'
+  ${EndIf}
+  ; старую картинку значка освобождаем (SendMessage вернул её в $0)
+  ${If} $0 != 0
+    System::Call 'gdi32::DeleteObject(p r0)'
+  ${EndIf}
+FunctionEnd
+Function CompTick
+  IntOp $CSp $CSp + 1
+  StrCpy $R8 0
+  StrCpy $R9 1
+  StrCpy $0 "$TEMP\dpscomp\net.txt"
+  Call ReadRow
+  ${If} $1 == ""
+    StrCpy $1 "wait"
+  ${EndIf}
+  StrCpy $R8 0
+  Call PaintRow
+  StrCpy $R9 2
+  StrCpy $R8 1
+  StrCpy $0 "$TEMP\dpscomp\pcap.txt"
+  Call ReadRow
+  ${If} $1 == ""
+    StrCpy $1 "wait"
+  ${EndIf}
+  Call PaintRow
+  ; всё сделано?
+  ${If} ${FileExists} "$TEMP\dpscomp\done.txt"
+    IntOp $CDone $CDone + 1
+    ; ~0,9 с на то, чтобы увидеть итог, затем возвращаемся на экран итога уже с обновлёнными галочками
+    ${If} $CDone >= 6
+      Call BackToDone
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+Function BackToDone
+  GetFunctionAddress $1 CompTick
+  nsDialogs::KillTimer $1
+  StrCpy $View 0
+  Call CheckComps
+  Call Lock
+  Call KillChildren
+  Call FreeAll
+  Call ClearSlots
+  Call BuildDone
+  Call MakeBg
+  Call Unlock
+FunctionEnd
+Function OnCompCancel
+  Pop $0
+  ; просим скрипт остановиться и возвращаемся на экран итога
+  FileOpen $1 "$TEMP\dpscomp\cancel.flag" w
+  FileClose $1
+  Call BackToDone
 FunctionEnd
 
 ; ======================================================== удаление
@@ -886,22 +1431,23 @@ Function un.PgConfirm
   Call un.PageBase
   ${NSD_CreateLabel} 0 0 1u 1u "$INSTDIR"
   Pop $0
-  SetCtlColors $0 FFC66B 2A2244
+  SetCtlColors $0 E6DCFF 120C30
   SendMessage $0 ${WM_SETFONT} $FText 1
   ${NSD_AddStyle} $0 0x8000
-  !insertmacro POS $0 56 182 648 22
-  !insertmacro TOGGLE "un." 40 232 wipe_$L un.OnWipe
+  !insertmacro POS $0 58 238 664 26
+  Call un.WinBtns
+  !insertmacro TOGGLE "un." 1 40 300 wipe_$L un.OnWipe
   Call un.PaintWipe
-  !insertmacro IBTN "un." 1 560 546 160 38 uninst_$L un.OnNext
-  !insertmacro IBTN "un." 2 390 546 160 38 cancel_$L un.OnCancel
+  !insertmacro IBTN "un." 1 560 608 180 52 uninst_$L un.OnNext
+  !insertmacro IBTN "un." 2 400 608 150 52 uncancel_$L un.OnCancel
   StrCpy $R1 "un_$L"
   Call un.ShowPage
 FunctionEnd
 Function un.PaintWipe
   ${If} $Wipe == 1
-    SendMessage $Box 0x172 0 $TOn
+    SendMessage $Box1 0x172 0 $TOn1
   ${Else}
-    SendMessage $Box 0x172 0 $TOff
+    SendMessage $Box1 0x172 0 $TOff1
   ${EndIf}
 FunctionEnd
 Function un.OnWipe
@@ -931,7 +1477,8 @@ SectionEnd
 
 Function un.PgDone
   Call un.PageBase
-  !insertmacro IBTN "un." 1 560 546 160 38 close_$L un.OnFinish
+  Call un.WinBtns
+  !insertmacro IBTN "un." 1 560 608 180 52 unclose_$L un.OnFinish
   StrCpy $R1 "undone_$L"
   Call un.ShowPage
 FunctionEnd
@@ -944,6 +1491,7 @@ Function un.DoRemove
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\${APP}.lnk"
   Delete "$DESKTOP\${APP}.lnk"
+  DeleteRegValue HKCU "${RUNKEY}" "${APP}"
   DeleteRegKey HKCU "${UNKEY}"
   ${If} $Wipe == 1
     RMDir /r "$APPDATA\${APP}"

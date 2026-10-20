@@ -43,6 +43,7 @@ function render() {
   document.querySelectorAll('[data-k]').forEach(b => b.onclick = () => api.toastClose(b.dataset.k));
   document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => api.toastAction(b.dataset.key, b.dataset.act));
   if (typeof translate === 'function') translate(document.body, data.lang);
+  if (typeof zboltScan === 'function') zboltScan();
 }
 api.on('toasts', d => {
   data = d; render();

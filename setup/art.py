@@ -37,7 +37,7 @@ def make_base():
     lay = Image.new('RGBA', im.size, (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
     d.rounded_rectangle((0, 0, w - 1, h - 1), radius=16 * S, outline=(255, 255, 255, 46), width=S)
     im = Image.alpha_composite(im, lay)
-    L = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app', 'assets', 'icon.png')).convert('RGBA').resize((56 * S, 56 * S), Image.LANCZOS)
+    L = Image.open('/home/claude/build/AionDps/app/assets/icon.png').convert('RGBA').resize((56 * S, 56 * S), Image.LANCZOS)
     m = Image.new('L', L.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, L.size[0] - 1, L.size[1] - 1), radius=14 * S, fill=255)
     L.putalpha(ImageChops.multiply(L.split()[3], m))
     sh = Image.new('RGBA', im.size, (0, 0, 0, 0)); ImageDraw.Draw(sh).rounded_rectangle((22 * S, 22 * S, 78 * S, 78 * S), radius=14 * S, fill=(0, 0, 0, 150))

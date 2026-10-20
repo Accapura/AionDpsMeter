@@ -36,7 +36,7 @@ function chrome() {
   document.body.classList.toggle('hasnick', !!S.character);
   document.body.classList.toggle('locked', !!S.clickThrough);
   document.body.classList.toggle('compact', !!S.compact);
-  document.body.classList.toggle('minimal', !!S.minimal);
+  document.body.classList.toggle('minimal', !!S.minimal || COMPACT_VIEWS.includes(S.ovView));
   document.body.classList.toggle('nohead', S.showHeader === false);
   $('bLock').innerHTML = S.clickThrough ? ICON.lock : ICON.unlock;
   $('bLock').style.color = S.clickThrough ? 'var(--accent)' : '';
@@ -161,6 +161,17 @@ function render() {
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
       ${hp != null && S.mode !== 'dummy' ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;
+  if (COMPACT_VIEWS.includes(S.ovView)) { // компактные виды: только ваш результат, без списка и заголовка цели
+    const who = me || ps[0], val = SV[ST](who), place = ps.indexOf(who) + 1, best = me && boss?.name ? records[boss.name] : 0;
+    const d = best && me.dps && (snap.combatMs || 0) >= 20000 ? me.dps / best - 1 : null;
+    const lab = me ? `${SL[ST][0] === '%' ? 'доля' : SL[ST][0]}` : 'группа';
+    const html = S.ovView === 'mini'
+      ? `<div class="cv cv-mini"><b class="num">${val}</b><small>${lab} · ${me ? 'вы' + ' · ' : ''}#${place}${ps.length > 1 ? '/' + ps.length : ''}</small></div>`
+      : S.ovView === 'strip'
+        ? `<div class="cv cv-strip"><div class="cvt"><b class="num">${val}</b><small>${lab}</small><span class="pill num">#${place}</span></div><div class="cvb"><i style="width:${Math.max(3, who.dmg / top * 100).toFixed(1)}%"></i></div></div>`
+        : `<div class="cv cv-line"><b class="num">${val}</b><span class="cvt num">${clock(snap.combatMs)}</span><span class="cvd num ${d == null ? '' : d >= 0 ? 'up' : 'dn'}" title="${d == null ? '' : 'К рекорду на этом боссе'}">${d == null ? ((who.share || 0) * 100).toFixed(0) + '%' : (d >= 0 ? '+' : '−') + Math.abs(d * 100).toFixed(1).replace('.', ',') + '%'}</span></div>`;
+    setHtml(body, html); setHtml($('stats'), ''); return;
+  }
   if (S.solo && !me) {
     // «Только я»: пока свой персонаж не нанёс урон — не показываем чужой список, ждём свой
     // ни HP моба, ни таймер, ни суммы чужого боя не показываем: бой «начинается» для оверлея, когда урон нанёс сам персонаж

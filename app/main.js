@@ -55,6 +55,11 @@ const DEFAULTS = {
   updateSkip: '',               // версия, о которой больше не напоминать
   lang: 'ru',                   // язык интерфейса: ru | en
   notify: { m15: true, m5: true, m1: false, sound: true, soundName: 'beep', volume: 50, position: 'br', style: 'timer', hideSec: 7, sounds: { ev: 'marimba', fb: 'kark', feed: 'drop', phase: 'ma-bae', lag: 'drop' } }, // position: tl tc tr bl bc br; style: glass solid accent minimal banner
+  card: { nick: true, skills: true, group: false, badge: true, style: 'lavender', view: 'compact' }, // карточка боя: что показывать
+  sfx: { master: 70, streamerMute: true,   // звуки событий боя (отдельно от уведомлений)
+    pb: { on: true, name: 'marimba', vol: 80 }, death: { on: true, name: 'glass', vol: 80 }, phase: { on: true, name: 'chime', vol: 60 },
+    kill: { on: true, name: 'stars', vol: 70 }, start: { on: false, name: 'drop', vol: 50 } },
+  overlayPrev: null,            // размер оверлея до включения компактного вида
   events: [],
   character: '',               // ник персонажа — приходит из игры
   characterClass: '',
@@ -167,6 +172,24 @@ function applyProfile(mode) {
     settings.overlay = { ...settings.overlay, ...nb };
   }
 }
+// Компактные виды оверлея ужимают окно, прежний размер запоминается и возвращается при выходе из них.
+const COMPACT_SIZE = { mini: [250, 64], strip: [250, 86], line: [290, 48] };
+const isCompact = v => !!COMPACT_SIZE[v];
+function applyOverlayView() {
+  const w = wins.overlay; if (!w || w.isDestroyed()) return;
+  const b = w.getBounds(), c = COMPACT_SIZE[settings.ovView];
+  if (c) {
+    if (!settings.overlayPrev && b.width > 400) settings.overlayPrev = { width: b.width, height: b.height };
+    w.setMinimumSize(120, 40);
+    w.setBounds({ x: b.x, y: b.y, width: Math.round(c[0] * settings.scale / 100), height: Math.round(c[1] * settings.scale / 100) });
+  } else {
+    w.setMinimumSize(240, 150);
+    const pv = settings.overlayPrev || { width: 330, height: 280 };
+    if (b.width < 240 || b.height < 150 || settings.overlayPrev) w.setBounds({ x: b.x, y: b.y, width: Math.max(240, pv.width), height: Math.max(150, pv.height) });
+    settings.overlayPrev = null;
+  }
+  save();
+}
 function patchSettings(patch) {
   const prevMode = settings.mode, prevScale = settings.scale;
   if (settings.profilesOn && patch.mode && patch.mode !== prevMode) settings.profiles[prevMode] = profileOf();
@@ -181,6 +204,7 @@ function patchSettings(patch) {
   broadcast('settings', settings);
   if (settings.mode !== prevMode || (settings.mode === 'dummy' && 'dummySec' in patch)) bridge.setMode(settings.mode);
   if (settings.scale !== prevScale) for (const w of Object.values(wins)) if (w && !w.isDestroyed()) w.webContents.setZoomFactor(settings.scale / 100);
+  if ('ovView' in patch) applyOverlayView();
   if ('clickThrough' in patch) applyClickThrough();
   if ('autoHide' in patch) applyOverlayVisibility();
   if ('autoStart' in patch) { try { app.setLoginItemSettings({ openAtLogin: !!settings.autoStart, args: ['--hidden'] }); } catch { /* не критично */ } }
@@ -254,7 +278,7 @@ function overlayBounds() {
 function openOverlay() {
   const b = overlayBounds();
   const w = makeWindow('overlay', {
-    ...b, minWidth: 240, minHeight: 150,
+    ...b, minWidth: isCompact(settings.ovView) ? 120 : 240, minHeight: isCompact(settings.ovView) ? 40 : 150,
     resizable: false, // размер — своей ручкой: прозрачные окна Windows не тянутся за край
     alwaysOnTop: true, skipTaskbar: true, maximizable: false, minimizable: false, fullscreenable: false,
   }, 'overlay.html');
@@ -355,13 +379,21 @@ function checkPhases(s) {
     return;
   }
   phase.min = Math.min(phase.min, frac);
-  if (settings.phaseToast === false) return;
   for (const t of [75, 50, 25]) {
     if (frac * 100 <= t && !phase.done.has(t)) {
       phase.done.add(t);
+      playSfx('phase');
+      if (settings.phaseToast === false) continue;
       showToast({ key: 'phase' + t, type: 'info', icon: 'info', start: null, name: `${b.name || T('Босс')}: ${t}% HP`, text: `${T('Бой')} ${mmss(s.combatMs)}` });
     }
   }
+}
+// Звук начала боя: снимок стал «боевым» после паузы (не чаще раза в 15 секунд, без манекена).
+let sfxWasActive = false, sfxStartAt = 0;
+function sfxStartCheck(s) {
+  const act = !!(s && s.active && s.players && s.players.length && (settings.mode !== 'boss' || s.boss));
+  if (act && !sfxWasActive && settings.mode !== 'dummy' && Date.now() - sfxStartAt > 15000) { sfxStartAt = Date.now(); playSfx('start'); }
+  sfxWasActive = act;
 }
 let lastPing = -1; // пинг до игрового сервера, мс (-1 — неизвестен)
 let lastPingDbg = null; // сколько навыков увидено и сопоставлено (для подсказки)
@@ -404,6 +436,7 @@ const bridge = {
         if (ov && !ov.isDestroyed() && ov.isVisible()) ov.webContents.send('snap', lastSnap);
         rpc.update();
         checkPhases(lastSnap);
+        sfxStartCheck(lastSnap);
         const me = lastSnap?.players?.find(x => x.self);
         if (me && me.name && !me.name.startsWith('#') && me.name !== settings.character) patchSettings({ character: me.name });
         if (me && me.cls && me.cls !== 'Unknown' && me.cls !== settings.characterClass) patchSettings({ characterClass: me.cls });
@@ -498,7 +531,10 @@ function addFight(f) {
   const pb = personalBest(f);
   fights.unshift(f);
   fights.length = Math.min(fights.length, 500);
-  if (pb && settings.mode !== 'dummy') showToast(pb);
+  if (settings.mode !== 'dummy') {
+    if (pb) { if (settings.pbToast !== false) showToast(pb); playSfx('pb'); }
+    else if (f.result === 'Kill' && !f.partial && f.boss) playSfx('kill');
+  }
   try { fs.writeFileSync(FIGHTS_FILE(), JSON.stringify(fights)); } catch { /* не критично */ }
   broadcast('fights', fights);
   broadcast('records', records());
@@ -530,7 +566,7 @@ function sysTick() {
 setInterval(sysTick, 5000);
 // Лучший результат побит: сравнение с прежними боями на этом боссе (до добавления нового).
 function personalBest(f) {
-  if (settings.pbToast === false || !f.boss || f.partial) return null;
+  if (!f.boss || f.partial) return null;
   const me = (f.players || []).find(p => p.self);
   if (!me || !(me.dps > 0)) return null;
   const prev = fights.filter(x => x.boss === f.boss && !x.partial);
@@ -572,6 +608,7 @@ function addDeath(m) {
   deaths.length = Math.min(deaths.length, 50);
   try { fs.writeFileSync(DEATHS_FILE(), JSON.stringify(deaths)); } catch { /* не критично */ }
   broadcast('deaths', deaths);
+  playSfx('death');
   if (settings.deathToast !== false) {
     const k = killerOf(d);
     showToast({ key: 'death' + d.at, type: 'death', icon: 'skull', start: null, name: T('Ваш персонаж погиб'), text: k ? `${k.src} · ${k.skill} · ${nf(k.amt)}` : T('Разбор — в «Статистике»'), actions: [{ id: 'death', label: T('Разбор'), primary: true }] });
@@ -723,12 +760,34 @@ function showToast(t) {
   if (t.misc && settings.miscToast === false) return;
   const kind = toastKind(t), cs = settings.notify.sounds && settings.notify.sounds[kind];
   if (kind && cs && !t.snd) t = { ...t, snd: cs };
+  if (SFX_TOAST.includes(kind)) t = { ...t, snd: 'off' }; // звук рекорда, смерти и фаз — в «Звуках событий»
   // исчезает само через N секунд (настройка); «липкие» (обновление) — только по кнопке
   const prev = toasts.find(x => x.key === t.key);
   t = prev && prev.exp && !t.fresh && !t.sticky ? { ...t, exp: prev.exp, at0: prev.at0 } : { ...t, at0: Date.now(), exp: t.sticky ? 0 : Date.now() + toastSec() * 1000 };
   toasts = [t, ...toasts.filter(x => x.key !== t.key)].slice(0, 3);
   renderToasts();
 }
+// ---------------------------------------------------------------- звуки событий боя
+const SFX_TOAST = ['pb', 'death', 'phase'];
+let sfxWin = null, sfxTimer = null;
+function playSfx(kind) {
+  const c = settings.sfx && settings.sfx[kind];
+  if (!c || !c.on || !c.name || c.name === 'off') return;
+  if (settings.streamer && settings.sfx.streamerMute !== false) return;
+  const vol = Math.round(clamp(Number(c.vol) || 0, 0, 100) * clamp(Number(settings.sfx.master ?? 70), 0, 100) / 100);
+  if (vol <= 0) return;
+  const live = w => w && !w.isDestroyed() && !w.webContents.isLoading();
+  const target = [wins.overlay, wins.main, wins.toast].find(live);
+  if (target) { target.webContents.send('sfx', { name: c.name, vol }); return; }
+  // окон нет (программа в трее) — на время звука создаём невидимое окно
+  const send = () => { try { sfxWin.webContents.send('sfx', { name: c.name, vol }); } catch { /* окно закрыто */ } clearTimeout(sfxTimer); sfxTimer = setTimeout(() => { try { sfxWin.destroy(); } catch { /* уже закрыто */ } sfxWin = null; }, 8000); };
+  if (!sfxWin || sfxWin.isDestroyed()) {
+    sfxWin = new BrowserWindow({ show: false, width: 1, height: 1, skipTaskbar: true, focusable: false, webPreferences: { preload: path.join(ROOT, 'preload.js'), contextIsolation: true, nodeIntegration: false, autoplayPolicy: 'no-user-gesture-required' } });
+    sfxWin.loadFile(path.join(ROOT, 'renderer', 'sfx.html'));
+    sfxWin.webContents.once('did-finish-load', () => setTimeout(send, 150));
+  } else send();
+}
+ipcMain.on('sfx-test', (_e, kind) => { const c = settings.sfx && settings.sfx[kind]; if (!c) return; const was = c.on, ws = settings.streamer; c.on = true; settings.streamer = false; try { playSfx(kind); } finally { c.on = was; settings.streamer = ws; } });
 function renderToasts() {
   clearTimeout(showToast.timer);
   const now = Date.now();
@@ -815,6 +874,29 @@ ipcMain.handle('report', () => saveReport());
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
 ipcMain.on('fights-clear', () => { fights = []; try { fs.writeFileSync(FIGHTS_FILE(), '[]'); } catch { /* ignore */ } broadcast('fights', fights); broadcast('records', {}); });
 ipcMain.on('share', (_e, fightId) => shareFight(fightId));
+// Карточка боя: предпросмотр, копирование, сохранение и отправка в Discord.
+const cardFight = id => (id ? loadFights().find(x => x.id === id) : null);
+ipcMain.handle('card-render', async (_e, id, o) => { const f = cardFight(id); if (!f) return null; const img = await cardPng(f, o); return img && !img.isEmpty() ? img.toDataURL() : null; });
+ipcMain.handle('card-copy', async (_e, id) => {
+  const f = cardFight(id); if (!f) return { ok: false };
+  const img = await cardPng(f); if (!img || img.isEmpty()) return { ok: false };
+  clipboard.writeImage(img); return { ok: true };
+});
+ipcMain.handle('card-save', async (_e, id) => {
+  const f = cardFight(id); if (!f) return { ok: false };
+  const img = await cardPng(f); if (!img || img.isEmpty()) return { ok: false };
+  const name = fnameSafe((f.boss || f.title || 'fight') + ' ' + new Date(f.at || Date.now()).toISOString().slice(0, 10)) + '.png';
+  const r = await dialog.showSaveDialog(wins.main && !wins.main.isDestroyed() ? wins.main : undefined, { defaultPath: path.join(app.getPath('desktop'), name), filters: [{ name: 'PNG', extensions: ['png'] }] });
+  if (r.canceled || !r.filePath) return { ok: false, canceled: true };
+  try { fs.writeFileSync(r.filePath, img.toPNG()); return { ok: true, path: r.filePath }; } catch (e) { return { ok: false, error: e.message }; }
+});
+ipcMain.handle('card-discord', async (_e, id) => {
+  const f = cardFight(id); if (!f) return { ok: false, error: T('Бой не найден') };
+  if (!WEBHOOK_RE.test(settings.webhook?.url || '')) return { ok: false, error: T('Сначала вставьте ссылку вебхука в «Настройках»') };
+  const img = await cardPng(f); if (!img || img.isEmpty()) return { ok: false, error: T('Не удалось собрать картинку') };
+  return webhookSend(settings.webhook.url, fightEmbed(f, true), img.toPNG());
+});
+
 ipcMain.on('fight-delete', (_e, id) => {
   loadFights();
   const n = fights.length;
@@ -1173,16 +1255,73 @@ function cardHtml(f) {
 <div class="bs">${badge}</div>${hero}${chart ? `<div class="c">${chart}</div>` : ''}<div class="c">${rows}</div>
 <div class="f"><span>Aion DPS Meter</span><span>${escH(settings.character || '')}</span></div></body>`;
 }
-async function cardPng(f) {
+// Новая карточка боя (компактная): итог одним взглядом — для чата и Discord. «Расширенная» — прежний вид с графиком и таблицей группы.
+const CARD_STYLES = {
+  lavender: { bg: 'radial-gradient(120% 90% at 0% 0%,#4a2a90 0%,#1a1236 55%,#0d0a1e 100%)', tx: '#f1edff', mu: '#a89fc8', ac: '#b9a2ff', b1: '#8a6bff', b2: '#d6c6ff', box: 'rgba(255,255,255,.08)', line: 'rgba(255,255,255,.12)', glow: 'rgba(214,198,255,.33)', big: 'linear-gradient(90deg,#fff,#cdbcff)' },
+  dark: { bg: 'linear-gradient(135deg,#23232d 0%,#121217 55%,#0a0a0d 100%)', tx: '#f2f2f6', mu: '#9a9aa8', ac: '#8fb4ff', b1: '#4f7bd8', b2: '#a9c6ff', box: 'rgba(255,255,255,.07)', line: 'rgba(255,255,255,.1)', glow: 'rgba(143,180,255,.25)', big: 'linear-gradient(90deg,#fff,#b9cdf5)' },
+  light: { bg: 'linear-gradient(135deg,#ffffff 0%,#efeaff 60%,#e3dcfa 100%)', tx: '#1d1536', mu: '#6f6590', ac: '#6a4bd8', b1: '#6a4bd8', b2: '#a58cf5', box: 'rgba(60,40,120,.07)', line: 'rgba(60,40,120,.14)', glow: 'rgba(106,75,216,.18)', big: 'linear-gradient(90deg,#2a1a63,#6a4bd8)' },
+};
+function cardStyleOf(name) {
+  if (name === 'theme') {
+    const t = themePalette();
+    if (t) return { bg: `linear-gradient(135deg,rgb(${t.g1}) 0%,rgb(${t.g2}) 70%)`, tx: t.text, mu: t.muted, ac: t.accent, b1: t.accent, b2: t.text, box: 'rgba(255,255,255,.09)', line: 'rgba(255,255,255,.14)', glow: 'rgba(255,255,255,.18)', big: `linear-gradient(90deg,${t.text},${t.accent})` };
+  }
+  return CARD_STYLES[name] || CARD_STYLES.lavender;
+}
+const CARD_CLASS = { Gladiator: 'Гладиатор', Templar: 'Страж', Ranger: 'Стрелок', Assassin: 'Убийца', Sorcerer: 'Волшебник', Elementalist: 'Заклинатель', Cleric: 'Целитель', Chanter: 'Чародей', Brawler: 'Боец' };
+function cardOpts(o) { return { ...DEFAULTS.card, ...(settings.card || {}), ...(o || {}) }; }
+function cardHtmlCompact(f, o) {
+  const st = cardStyleOf(o.style);
+  const all = (f.players || []).filter(p => p.dmg > 0), me = all.find(p => p.self) || all[0];
+  const rank = me ? all.indexOf(me) + 1 : 0;
+  const date = f.at ? new Date(f.at).toLocaleDateString(settings.lang === 'en' ? 'en-GB' : 'ru-RU', { day: 'numeric', month: 'long' }) : '';
+  let badge = '';
+  if (o.badge && me && f.boss && !f.partial && me.self) {
+    const prev = Math.max(0, ...loadFights().filter(x => x.id !== f.id && x.boss === f.boss && !x.partial).map(x => (x.players || []).find(p => p.self)?.dps || 0));
+    if (prev > 0 && me.dps > prev) badge = `<span class="rec">★ ${escH(T('ЛИЧНЫЙ РЕКОРД'))}</span>`;
+  }
+  const dthN = (loadDeaths() || []).filter(d => d.at >= (f.at || 0) && d.at <= (f.at || 0) + (f.combatMs || 0) + 5000).length;
+  const sk = ((f.details || [])[0]?.skills || []).slice().sort((a, b) => (b.share || 0) - (a.share || 0)).slice(0, 4);
+  const skMax = Math.max(0.0001, ...sk.map(k => k.share || 0));
+  const grp = all.slice(0, 6), gMax = Math.max(1, ...grp.map(p => p.dps));
+  const icon = p => (p.cls && p.cls !== 'Unknown' ? `<img src="${pathToFileURL(path.join(ASSETS, 'classes', String(p.cls).toLowerCase() + '.png')).href}">` : '');
+  const who = o.nick && me ? `<div class="who">${icon(me)}<span>${escH(settings.streamer ? T('Игрок') : me.name)}${me.cls && CARD_CLASS[me.cls] ? ' · ' + escH(settings.lang === 'en' ? me.cls : CARD_CLASS[me.cls]) : ''}</span></div>` : '';
+  const kp = (l, v) => `<div><small>${escH(l)}</small><b>${v}</b></div>`;
+  const pct = x => (x * 100).toFixed(0) + '%';
+  return `<!doctype html><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}html{overflow:hidden}body{width:560px;overflow:hidden;font:14px 'Manrope','Segoe UI',sans-serif;color:${st.tx};background:${st.bg};padding:24px;position:relative}
+body:before{content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,${st.glow},transparent 65%)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative}.t{font-size:22px;font-weight:800;line-height:1.15}.s{color:${st.mu};margin-top:4px;font-size:13px}
+.rec{background:#ffc66b;color:#2a1a00;font-weight:800;padding:5px 11px;border-radius:99px;font-size:11px;white-space:nowrap}
+.who{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;color:${st.ac};position:relative}.who img{width:22px;height:22px}
+.big{font-size:58px;font-weight:800;letter-spacing:-.02em;margin:8px 0 0;line-height:1.05;background:${st.big};-webkit-background-clip:text;color:transparent;position:relative}
+.sub{color:${st.mu};margin-top:2px;position:relative}
+.kp{display:flex;gap:10px;margin:14px 0 16px;position:relative}.kp div{flex:1;padding:9px 11px;border-radius:13px;background:${st.box}}.kp small{display:block;color:${st.mu};font-size:11px}.kp b{font-size:17px}
+.sk{display:grid;grid-template-columns:150px 1fr 44px;gap:10px;align-items:center;margin:7px 0;font-size:13px;position:relative}.sk span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sk em{font-style:normal;text-align:right;font-weight:700}
+.bar{height:9px;border-radius:5px;background:${st.box};overflow:hidden}.bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,${st.b1},${st.b2})}
+.hd{color:${st.mu};font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 4px;position:relative}
+.g{display:grid;grid-template-columns:20px 22px 130px 1fr 66px;gap:8px;align-items:center;margin:5px 0;font-size:13px;padding:2px 6px;border-radius:9px;position:relative}.g.me{background:${st.box}}.g img{width:20px;height:20px}.g .n{color:${st.mu};text-align:right}.g b{text-align:right}.g .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.ft{display:flex;justify-content:space-between;margin-top:16px;color:${st.mu};font-size:11px;border-top:1px solid ${st.line};padding-top:10px;position:relative}
+</style><body><div class="top"><div><div class="t">${escH(f.boss || f.title || T('Бой'))}</div><div class="s">${escH(T('Бой'))} ${mmss(f.combatMs)} · ${escH(date)} · ${escH(T('Группа из'))} ${all.length}</div></div>${badge}</div>
+${who}<div class="big">${nf(me ? me.dps : f.partyDps)}</div><div class="sub">DPS${rank ? ` · ${escH(T('место'))} ${rank} ${escH(T('из'))} ${all.length}` : ''}</div>
+<div class="kp">${kp(T('Урон за бой'), me ? (me.dmg >= 1e6 ? (me.dmg / 1e6).toFixed(2).replace('.', settings.lang === 'en' ? '.' : ',') + ' ' + T('млн') : nf(me.dmg)) : '—')}${kp(T('Крит'), me && me.crit != null ? pct(me.crit) : '—')}${kp(T('Доля группы'), me ? pct(me.share || 0) : '—')}${kp(T('Смертей'), String(dthN))}</div>
+${o.skills && sk.length ? sk.map(k => `<div class="sk"><span data-n>${escH(k.name)}</span><div class="bar"><i style="width:${Math.max(3, (k.share || 0) / skMax * 100).toFixed(1)}%"></i></div><em>${pct(k.share || 0)}</em></div>`).join('') : ''}
+${o.group && grp.length > 1 ? `<div class="hd">${escH(T('Группа'))}</div>${grp.map((p, i) => `<div class="g${p.self ? ' me' : ''}"><span class="n">${i + 1}</span>${icon(p) || '<i></i>'}<span class="nm">${escH(settings.streamer && !p.self ? T('Игрок') + ' ' + (i + 1) : p.name)}</span><div class="bar"><i style="width:${(p.dps / gMax * 100).toFixed(1)}%"></i></div><b>${nf(p.dps)}</b></div>`).join('')}` : ''}
+<div class="ft"><span>Aion DPS Meter · Accapura</span><span>v${escH(APP_VERSION)}</span></div></body>`;
+}
+
+async function cardPng(f, o) {
   const file = path.join(app.getPath('userData'), 'card.html');
   let win;
+  o = cardOpts(o);
+  const compact = o.view !== 'full', cw = compact ? 560 : 760;
   try {
-    fs.writeFileSync(file, themeCard(cardHtml(f)));
-    win = new BrowserWindow({ show: false, width: 1520, height: 800, useContentSize: true, webPreferences: { zoomFactor: 2, backgroundThrottling: false } });
+    fs.writeFileSync(file, compact ? cardHtmlCompact(f, o) : themeCard(cardHtml(f)));
+    win = new BrowserWindow({ show: false, width: cw * 2, height: 800, useContentSize: true, webPreferences: { zoomFactor: 2, backgroundThrottling: false } });
     await win.loadFile(file);
     await new Promise(r => setTimeout(r, 250));
     const h = await win.webContents.executeJavaScript('document.body.scrollHeight');
-    win.setContentSize(1520, Math.max(400, h * 2));
+    win.setContentSize(cw * 2, Math.max(400, h * 2));
     await new Promise(r => setTimeout(r, 150));
     return await win.webContents.capturePage();
   } catch { return null; } finally { try { if (win && !win.isDestroyed()) win.destroy(); } catch { /* ignore */ } try { fs.unlinkSync(file); } catch { /* ignore */ } }

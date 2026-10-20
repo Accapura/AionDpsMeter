@@ -166,3 +166,16 @@ body[data-ov=rings][data-win=overlay] .cols,body[data-ov=podium][data-win=overla
 .list.a-donut .lgi i{width:10px;height:10px;border-radius:3px;flex:none}
 .list.a-donut .lgi .name{flex:1;text-align:left}
 .list.a-donut .lgi.me{box-shadow:inset 0 0 0 1px var(--accent)}
+
+/* ---- оверлей: компактные виды (только ваш DPS в маленьком окне) ---- */
+body[data-win=overlay]:is([data-ov=mini],[data-ov=strip],[data-ov=line]) .body{justify-content:center;-webkit-app-region:drag}
+body[data-win=overlay]:is([data-ov=mini],[data-ov=strip],[data-ov=line]) .empty{font-size:12px;padding:4px 10px;gap:4px}
+.cv{display:flex;align-items:center;gap:10px;padding:6px 12px;min-width:0;white-space:nowrap}
+.cv small{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.cv-mini b{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.cv-strip{flex-direction:column;align-items:stretch;justify-content:center;gap:6px}
+.cv-strip .cvt{display:flex;align-items:baseline;gap:8px}.cv-strip b{font-size:20px;font-weight:800}
+.cv-strip .pill{margin-left:auto;padding:1px 9px;border-radius:99px;background:rgba(255,255,255,.12);color:var(--accent);font-size:12px;font-weight:700}
+.cvb{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}.cvb i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 40%,#fff));transition:width .35s}
+.cv-line{justify-content:space-between}.cv-line b{font-size:17px;font-weight:800}.cv-line .cvt{color:var(--muted);font-size:12px}.cv-line .cvd{font-size:12.5px;font-weight:700;color:var(--muted)}
+.cv-line .cvd.up{color:#7fe3a4}.cv-line .cvd.dn{color:#ff9a8a}

@@ -11,6 +11,7 @@ const THEMES = {
   forest: { name: 'Лес', g1: '44,84,50', g2: '20,42,34', accent: '#b4e06a', accentFg: '#14260a', text: '#f6fff0', muted: '#bdd6b0', line: 'rgba(205,240,170,.22)', hp: '#ff7a6b' },
   teal: { name: 'Бирюза', g1: '16,96,100', g2: '8,46,58', accent: '#6ff2e0', accentFg: '#052a2a', text: '#effffd', muted: '#a9dcd8', line: 'rgba(180,255,245,.2)', hp: '#ff7088' },
   blackflame: { name: 'Чёрное пламя', g1: '52,9,24', g2: '9,5,12', accent: '#ff4057', accentFg: '#1c0307', text: '#fff1f3', muted: '#cfa6ad', line: 'rgba(255,80,100,.26)', hp: '#ff8a3d' },
+  zombie: { name: 'Зомби', g1: '16,52,34', g2: '5,15,11', accent: '#ff8a2b', accentFg: '#210d02', text: '#f3fff4', muted: '#a9cdb2', line: 'rgba(255,150,60,.26)', hp: '#ff6a1f' },
   midnight: { name: 'Полночь', g1: '34,46,112', g2: '14,18,56', accent: '#86a8ff', accentFg: '#0b1440', text: '#f2f5ff', muted: '#b7c2ec', line: 'rgba(170,190,255,.22)', hp: '#ff6b88' },
 };
 
@@ -22,7 +23,8 @@ const MODES = [['boss', 'Данж: Босс'], ['mob', 'Моб'], ['dummy', 'М�
 // Положение кнопок и форма интерфейса не зависят от темы: их выбирают в вкладке «Оформление».
 const NAV_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // главное меню
 const BTN_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // кнопки в оверлее
-const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы'], ['rings', 'Кольца'], ['podium', 'Подиум'], ['bars', 'Гистограмма'], ['console', 'Консоль'], ['nearby', 'Я и соседи'], ['donut', 'Пончик']];
+const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы'], ['rings', 'Кольца'], ['podium', 'Подиум'], ['bars', 'Гистограмма'], ['console', 'Консоль'], ['nearby', 'Я и соседи'], ['donut', 'Пончик'], ['mini', 'Мини'], ['strip', 'Полоска'], ['line', 'Строка']];
+const COMPACT_VIEWS = ['mini', 'strip', 'line']; // компактные виды: только ваш DPS в маленьком окне
 const OV_STATS = [['dps', 'DPS'], ['dmg', 'Урон'], ['pct', 'Доля']];
 // Кэш темы: окно открывается мгновенно в цветах последней темы, а не в стандартных (иначе секунду виден «старый» цвет).
 const THEME_KEYS = ['theme', 'corners', 'navPos', 'btnPos', 'ovView', 'fx'];
@@ -52,6 +54,8 @@ function _applyTheme(s, opacityOverride) {
     d.ov = OV_VIEWS.some(v => v[0] === s.ovView) ? s.ovView : 'list';
     d.fx = s.fx === 'off' ? 'off' : 'on';
     bfSync(d.skin === 'blackflame');
+    zfxSync(d.skin === 'zombie');
+    if (d.skin === 'zombie') zboltScan(); else if (ZB.items.length) zboltClear();
   }
 }
 // Ротация: по строке на навык, по оси — время боя; золотые штрихи — криты. rot = { names, c: [[мс, навык, урон, флаги]], dur }.
@@ -363,6 +367,128 @@ function bfSync(on) {
   const mk = (cls, html) => { const d = document.createElement('div'); d.className = 'bfx ' + cls; d.setAttribute('aria-hidden', 'true'); d.innerHTML = html; return d; };
   sh.prepend(mk('bfx-b', BF_BACK)); sh.append(mk('bfx-f', BF_FRONT));
 }
+
+// Тема «Зомби»: картинка на canvas. Толпа раскачивается: нижняя часть картинки режется на полоски, каждая наклоняется от земли со своей фазой.
+// Герой в центре стоит неподвижно. При «Анимации темы: выкл» и prefers-reduced-motion рисуется один статичный кадр.
+const ZFX = { img: null, cv: null, raf: 0, last: 0, t: 0, N: 40, ph: null, off: null };
+function zfxStop() { if (ZFX.raf) cancelAnimationFrame(ZFX.raf); ZFX.raf = 0; }
+function zfxFrame(ts) {
+  ZFX.raf = 0;
+  const cv = ZFX.cv, img = ZFX.img;
+  if (!cv || !cv.isConnected || !img || !img.complete || !img.naturalWidth) return;
+  const still = document.body.dataset.fx === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dt = ZFX.last ? Math.min(0.1, (ts - ZFX.last) / 1000) : 0; ZFX.last = ts; ZFX.t += dt;
+  const sc = document.body.dataset.win === 'overlay' ? 0.6 : 0.85;
+  const W = Math.max(2, Math.round(cv.clientWidth * sc)), H = Math.max(2, Math.round(cv.clientHeight * sc));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; ZFX.off = null; }
+  const g = cv.getContext('2d'), iw = img.naturalWidth, ih = img.naturalHeight;
+  const s = Math.max(W / iw, H / ih), dw = iw * s, dh = ih * s, ox = (W - dw) / 2, oy = H - dh; // cover, привязка к низу
+  g.clearRect(0, 0, W, H);
+  g.drawImage(img, ox, oy, dw, dh);
+  if (!still || !ZFX.drawnStill) {
+    const N = ZFX.N, y0 = 0.30, fade = 0.10; // качается всё ниже 30% высоты картинки, верх плавно растворяется
+    if (!ZFX.off) ZFX.off = document.createElement('canvas');
+    const o = ZFX.off; o.width = W; o.height = H;
+    const og = o.getContext('2d'), sy = ih * y0, dy = oy + dh * y0, foot = oy + dh;
+    const t = still ? 0 : ZFX.t;
+    for (let i = 0; i < N; i++) {
+      const u = (i + 0.5) / N, d = Math.abs(u - 0.5);
+      let hero = Math.min(1, Math.max(0, (d - 0.07) / 0.14)); hero = hero * hero * (3 - 2 * hero);
+      const k = still ? 0 : 0.022 * hero * (Math.sin(t * 1.9 + ZFX.ph[i]) + 0.35 * Math.sin(t * 3.7 + ZFX.ph[i] * 1.7));
+      const sx = iw * i / N, sw = iw / N + 1.5;
+      og.setTransform(1, 0, k, 1, -k * foot, 0); // сдвиг растёт вверх от «земли»
+      og.drawImage(img, sx, sy, sw, ih - sy, ox + sx * s, dy, sw * s, foot - dy);
+    }
+    og.setTransform(1, 0, 0, 1, 0, 0);
+    og.globalCompositeOperation = 'destination-in';
+    const m = og.createLinearGradient(0, dy, 0, dy + dh * fade); m.addColorStop(0, 'rgba(0,0,0,0)'); m.addColorStop(1, 'rgba(0,0,0,1)');
+    og.fillStyle = m; og.fillRect(0, 0, W, H); og.globalCompositeOperation = 'source-over';
+    g.drawImage(o, 0, 0);
+    ZFX.drawnStill = still;
+  }
+  if (!still && !document.hidden) ZFX.raf = requestAnimationFrame(ts2 => { if (ts2 - ZFX.last >= 40) zfxFrame(ts2); else ZFX.raf = requestAnimationFrame(zfxFrame); }); // ~25 к/с
+}
+function zfxSync(on) {
+  const sh = document.querySelector('.shell');
+  if (!sh || !['main', 'overlay'].includes(document.body.dataset.win)) return;
+  const has = sh.querySelector(':scope > .zfx');
+  if (!on) { if (has) { zfxStop(); has.remove(); ZFX.cv = null; } return; }
+  if (has) { ZFX.drawnStill = false; if (!ZFX.raf) ZFX.raf = requestAnimationFrame(zfxFrame); return; }
+  const d = document.createElement('div'); d.className = 'zfx'; d.setAttribute('aria-hidden', 'true');
+  d.innerHTML = '<canvas></canvas><i class="zov"></i><i class="zfire"></i>';
+  sh.prepend(d); ZFX.cv = d.firstChild;
+  if (!ZFX.ph) { let r = 7; ZFX.ph = Array.from({ length: ZFX.N }, (_, i) => i * 0.45 + ((r = (r * 1664525 + 1013904223) >>> 0) / 4294967296) * 1.6); }
+  if (!ZFX.img) { ZFX.img = new Image(); ZFX.img.src = '../assets/themes/zombie.jpg'; }
+  const go = () => { ZFX.drawnStill = false; ZFX.last = 0; zfxStop(); ZFX.raf = requestAnimationFrame(zfxFrame); };
+  if (ZFX.img.complete) go(); else ZFX.img.addEventListener('load', go, { once: true });
+  addEventListener('resize', () => { ZFX.drawnStill = false; if (!ZFX.raf && ZFX.cv) ZFX.raf = requestAnimationFrame(zfxFrame); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ZFX.cv && !ZFX.raf) { ZFX.last = 0; ZFX.raf = requestAnimationFrame(zfxFrame); } });
+}
+
+// Тема «Зомби»: тёмно-зелёная молния бежит по рамке окна, оверлея и уведомлений (canvas поверх рамки, ~16 к/с).
+const ZB = { items: [], raf: 0, last: 0, n: 0 };
+function zbPerimeter(w, h, r, step) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2)); const P = [], arc = (cx, cy, a0, a1) => { const n = Math.max(2, Math.ceil(r * Math.abs(a1 - a0) / step)); for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; P.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, nx: Math.cos(a), ny: Math.sin(a) }); } };
+  const line = (x0, y0, x1, y1, nx, ny) => { const L = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(L / step)); for (let i = 0; i < n; i++) P.push({ x: x0 + (x1 - x0) * i / n, y: y0 + (y1 - y0) * i / n, nx, ny }); };
+  const PI = Math.PI;
+  line(r, 0, w - r, 0, 0, -1); arc(w - r, r, -PI / 2, 0); line(w, r, w, h - r, 1, 0); arc(w - r, h - r, 0, PI / 2);
+  line(w - r, h, r, h, 0, 1); arc(r, h - r, PI / 2, PI); line(0, h - r, 0, r, -1, 0); arc(r, r, PI, PI * 1.5);
+  return P;
+}
+function zbDraw(it, t, still) {
+  const el = it.el, cv = it.cv, w = el.clientWidth, h = el.clientHeight;
+  if (w < 20 || h < 20) return;
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr) || !it.P) {
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+    it.P = zbPerimeter(w, h, rad, 7);
+  }
+  const g = cv.getContext('2d'), P = it.P, N = P.length, ins = 1.6;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h); g.lineJoin = 'round'; g.lineCap = 'round';
+  const rnd = () => Math.random();
+  const pt = (i, j) => ({ x: P[i].x - P[i].nx * (ins + j), y: P[i].y - P[i].ny * (ins + j) }); // j — смещение вдоль нормали (внутрь +)
+  // тусклая «жила» по всему периметру
+  g.beginPath(); for (let i = 0; i <= N; i++) { const q = pt(i % N, still ? 0 : (rnd() - .5) * 1.4); i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
+  g.strokeStyle = 'rgba(30,150,70,.34)'; g.lineWidth = 1; g.stroke();
+  // две молнии: головы бегут по кругу с разной скоростью
+  const heads = still ? [0.08, 0.58] : [(t * 0.11) % 1, (0.5 + t * 0.07) % 1];
+  const L = Math.max(10, Math.round(N * 0.2));
+  heads.forEach((u, hi) => {
+    const head = Math.floor(u * N), seg = [];
+    for (let k = 0; k <= L; k++) { const i = (head - k + N * 2) % N, a = still ? 0 : (rnd() - .5) * (hi ? 5 : 6) * (0.5 + 0.5 * Math.sin(k * 0.9 + t * 9)); seg.push({ i, q: pt(i, a), f: 1 - k / L }); }
+    const stroke = (from, to, col, lw) => { g.beginPath(); for (let k = from; k <= to; k++) { const q = seg[k].q; k === from ? g.moveTo(q.x, q.y) : g.lineTo(q.x, q.y); } g.strokeStyle = col; g.lineWidth = lw; g.stroke(); };
+    const CH = 5, per = Math.ceil(L / CH);
+    for (let c = 0; c < CH; c++) { const a = c * per, b = Math.min(L, a + per + 1), f = seg[Math.min(L, a)].f, al = Math.max(0.05, f);
+      stroke(a, b, `rgba(18,130,56,${.22 * al})`, 5); stroke(a, b, `rgba(52,215,100,${.6 * al})`, 2.2); stroke(a, b, `rgba(190,255,210,${.95 * al})`, 1); }
+    // ответвления: короткие зигзаги внутрь окна
+    if (!still) for (let b = 0; b < 2; b++) if (rnd() < 0.4) { const s = seg[Math.floor(rnd() * L * .6)], i = s.i; let x = s.q.x, y = s.q.y; g.beginPath(); g.moveTo(x, y);
+      for (let n = 0; n < 3; n++) { x -= P[i].nx * (3 + rnd() * 4) + (rnd() - .5) * 6; y -= P[i].ny * (3 + rnd() * 4) + (rnd() - .5) * 6; g.lineTo(x, y); }
+      g.strokeStyle = `rgba(80,235,120,${.55 * s.f})`; g.lineWidth = 1; g.stroke(); }
+  });
+}
+function zbLoop(ts) {
+  ZB.raf = 0; ZB.items = ZB.items.filter(it => it.el.isConnected);
+  if (!ZB.items.length || document.hidden) return;
+  if (ts - ZB.last >= 62) { ZB.last = ts; const t = ts / 1000; for (const it of ZB.items) zbDraw(it, t, false); }
+  ZB.raf = requestAnimationFrame(zbLoop);
+}
+function zbStart() {
+  const still = document.body.dataset.fx === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still) { for (const it of ZB.items) zbDraw(it, 0, true); return; }
+  if (!ZB.raf) ZB.raf = requestAnimationFrame(zbLoop);
+}
+function zboltScan() {
+  if (!document.body || document.body.dataset.skin !== 'zombie') return;
+  document.querySelectorAll('.shell, .t').forEach(el => {
+    if (el.querySelector(':scope > .zbolt')) return;
+    const cv = document.createElement('canvas'); cv.className = 'zbolt'; cv.setAttribute('aria-hidden', 'true'); el.append(cv);
+    ZB.items.push({ el, cv, P: null });
+  });
+  zbStart();
+}
+function zboltClear() { ZB.items.forEach(it => it.cv.remove()); ZB.items = []; }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) zbStart(); });
 (() => {
   let raf = 0, x = 0, y = 0;
   const spot = () => document.querySelector('.bf-spot');
@@ -382,3 +508,6 @@ function bfSync(on) {
   } catch {}
   setTimeout(() => document.documentElement.classList.add('ready'), 1200);
 })();
+
+// Звуки событий боя (рекорд, смерть, фаза, убийство, старт): главный процесс присылает имя и громкость.
+if (typeof api !== 'undefined' && api.on) api.on('sfx', d => { if (d && d.name) playSound(d.name, d.vol); });

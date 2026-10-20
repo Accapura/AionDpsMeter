@@ -1,5 +1,6 @@
 'use strict';
 let lookOpen = { theme: true };
+const SFX_EV = [['pb', 'Личный рекорд', 'Побит ваш лучший DPS на этом боссе', '★'], ['death', 'Моя смерть', 'Сразу после гибели персонажа', '☠'], ['phase', 'Смена фазы босса', 'Босс на 75 / 50 / 25 % HP', '⚑'], ['kill', 'Босс убит', 'Победный сигнал', '✓'], ['start', 'Начало боя', 'Тихий сигнал старта', '⏱']];
 let S = null, status = {}, page = 'overlay', version = '', showAddr = false, U = null, rpcAvailable = false;
 // «Игра найдена, читаю бой · 1.2.3.4:7777» → ['Игра найдена, читаю бой', '1.2.3.4:7777']
 const splitStatus = msg => { const i = String(msg || '').indexOf(' · '); return i < 0 ? [msg || '', ''] : [msg.slice(0, i), msg.slice(i + 3)]; };
@@ -181,6 +182,9 @@ const pages = {
       console: `<rect x="3" y="4" width="70" height="42" rx="4" fill="#0a0d1c"/>` + [12, 20, 28, 36].map((y, i) => `<rect x="8" y="${y}" width="${10 + i * 2}" height="3" rx="1.5" fill="#9be9b8" opacity=".9"/><rect x="${30}" y="${y}" width="${34 - i * 7}" height="3" rx="1.5" fill="#9be9b8" opacity=".5"/>`).join(''),
       nearby: `<rect x="8" y="5" width="60" height="9" rx="4" fill="${A}" opacity=".35"/><rect x="5" y="17" width="66" height="16" rx="5" fill="${A}"/><rect x="8" y="36" width="60" height="9" rx="4" fill="${A}" opacity=".35"/>`,
       donut: `<circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="30 82" opacity="1" transform="rotate(-90 22 25)"/><circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="22 82" stroke-dashoffset="-32" opacity=".6" transform="rotate(-90 22 25)"/><circle cx="22" cy="25" r="13" fill="none" stroke="${A}" stroke-width="9" stroke-dasharray="16 82" stroke-dashoffset="-56" opacity=".3" transform="rotate(-90 22 25)"/>` + [12, 22, 32].map((y, i) => `<rect x="44" y="${y}" width="${26 - i * 5}" height="4" rx="2" fill="${A}" opacity="${1 - i * .25}"/>`).join(''),
+      mini: `<rect x="6" y="19" width="64" height="12" rx="6" fill="${A}" opacity=".9"/><rect x="12" y="23" width="22" height="4" rx="2" fill="#000" opacity=".35"/>`,
+      strip: `<rect x="6" y="12" width="64" height="26" rx="6" fill="${A}" opacity=".35"/><rect x="11" y="16" width="26" height="5" rx="2.5" fill="${A}"/><rect x="11" y="28" width="54" height="4" rx="2" fill="${A}" opacity=".3"/><rect x="11" y="28" width="40" height="4" rx="2" fill="${A}"/>`,
+      line: `<rect x="6" y="18" width="64" height="14" rx="5" fill="${A}" opacity=".35"/><rect x="11" y="23" width="16" height="4" rx="2" fill="${A}"/><rect x="34" y="23" width="12" height="4" rx="2" fill="${A}" opacity=".6"/><rect x="54" y="23" width="12" height="4" rx="2" fill="#7fe3a4"/>`,
     };
     const vw = OV_VIEWS.map(([k, l]) => tile('ovView', k, l, `<svg class="vp" viewBox="0 0 76 50" aria-hidden="true">${V[k] || ''}</svg>`)).join('');
     const fxT = [['on', 'Включены', 'Все эффекты темы'], ['off', 'Выключены', 'Без анимаций — легче для слабого ПК']].map(([k, l, d]) => tile('fx', k, l, `<i class="sp fxp">${k === 'on' ? '✦' : '○'}</i>`)).join('');
@@ -191,7 +195,7 @@ const pages = {
     ${sec('corners', ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
     ${sec('navPos', ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
     ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
-    ${sec('ovView', ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '11 видов: от простого списка до колец и пончика долей', vw, 'g-view')}
+    ${sec('ovView', ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '14 видов: от списка до колец и пончика долей, плюс 3 компактных — только ваш DPS в маленьком окне', vw, 'g-view')}
     ${sec('ovStat', ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
     ${sec('fx', ic('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'), 'Анимации темы', 'Эффекты тем вроде «Чёрного пламени»: выключите, если приложение лагает', fxT, 'g-2')}
     <div class="muted" style="font-size:12px;text-align:center">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`;
@@ -217,18 +221,31 @@ const pages = {
       <div class="ddwrap ddsnd ${S.notify.sound ? '' : 'off'}">${(() => { const cur = S.notify.soundName || 'clear-sky', n = (SOUNDS.find(x => x[0] === cur) || SOUNDS[0])[1];
         return dropList('ddSnd', `<span class="pl">${ICON.play}</span><span class="dd-v"${cur === 'beep' ? '' : ' data-notr'}>${n}</span>`, SOUNDS.map(([k, t]) => ({ v: k, on: k === cur, html: `<span class="pl">${ICON.play}</span><span${k === 'beep' ? '' : ' data-notr'}>${t}</span><span class="ck">${ICON.check}</span>` })), { label: 'Звук уведомления' }); })()}</div>
       <div class="sl vol"><label for="nVol">Громкость</label><b id="nVolV">${S.notify.volume ?? 50}%</b><input type="range" id="nVol" min="0" max="100" step="5" value="${S.notify.volume ?? 50}"></div>
-      <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
+      <div class="sl vol"><label for="sfxMaster">Общая громкость звуков боя</label><b id="sfxMasterV">${S.sfx?.master ?? 70}%</b><input type="range" id="sfxMaster" min="0" max="100" step="5" value="${S.sfx?.master ?? 70}"></div>
       <div class="sl vol"><label for="nHide">Скрывать уведомление через</label><b id="nHideV">${S.notify.hideSec ?? 8} с</b><input type="range" id="nHide" min="3" max="30" step="1" value="${S.notify.hideSec ?? 8}"></div>
+      <div class="row" style="justify-content:center"><button type="button" class="primary" id="tt">Проверить уведомление</button><label class="row" style="gap:7px"><input type="checkbox" id="nSound" ${S.notify.sound ? 'checked' : ''}> Звуковой сигнал</label></div>
       <div class="muted" style="font-size:12px">Уведомление об обновлении не исчезает само — только по кнопке.</div>
-      <div style="max-width:560px;margin:6px auto 0;text-align:left"><b>Что показывать:</b></div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nEv" ${S.evToast !== false ? 'checked' : ''}> <span><b>Ивенты расписания</b> — напоминания за 15 / 5 / 1 минуту до начала (когда они включены для ивента)</span></label>${sndSel('ev')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nFb" ${S.fbToast !== false ? 'checked' : ''}> <span><b>Полевые боссы</b> — уведомление, когда по таймеру из игры должен возродиться босс</span></label>${sndSel('fb')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nFeed" ${S.feedToast !== false ? 'checked' : ''}> <span><b>Новые ивенты</b> — когда в расписании появились новые события</span></label>${sndSel('feed')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nPhase" ${S.phaseToast !== false ? 'checked' : ''}> <span><b>Фазы босса</b> — уведомление и звук на 75 / 50 / 25 % HP босса</span></label>${sndSel('phase')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nDeath" ${S.deathToast !== false ? 'checked' : ''}> <span><b>Разбор смерти</b> — кто и чем добил персонажа, с кнопкой «Разбор»</span></label>${sndSel('death')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nPb" ${S.pbToast !== false ? 'checked' : ''}> <span><b>Новый рекорд</b> — после боя, если побит ваш лучший DPS или самое быстрое убийство</span></label>${sndSel('pb')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nLag" ${S.lagAlert !== false ? 'checked' : ''}> <span><b>Скачок пинга</b> — пинг на панели вспыхивает красным и приходит уведомление</span></label>${sndSel('lag')}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:center;width:100%;max-width:620px;margin:6px auto 0;text-align:left"><label class="opt" style="margin:0;text-align:left"><input type="checkbox" id="nMisc" ${S.miscToast !== false ? 'checked' : ''}> <span><b>Короткие подтверждения</b> — «скопировано», «отчёт сохранён» и подобные</span></label>${sndSel('misc')}</div>
+      <div style="max-width:700px;margin:6px auto 0;text-align:left"><b>Что показывать и какие звуки играть:</b></div>
+      <div class="nl">${[
+        ['nEv', S.evToast !== false, 'Ивенты расписания', 'напоминания за 15 / 5 / 1 минуту до начала (когда они включены для ивента)', 'ev'],
+        ['nFb', S.fbToast !== false, 'Полевые боссы', 'уведомление, когда по таймеру из игры должен возродиться босс', 'fb'],
+        ['nFeed', S.feedToast !== false, 'Новые ивенты', 'когда в расписании появились новые события', 'feed'],
+        ['nPhase', S.phaseToast !== false, 'Фазы босса', 'уведомление и звук на 75 / 50 / 25 % HP босса', 'phase', true],
+        ['nDeath', S.deathToast !== false, 'Разбор смерти', 'кто и чем добил персонажа, с кнопкой «Разбор»', 'death', true],
+        ['nPb', S.pbToast !== false, 'Новый рекорд', 'после боя, если побит ваш лучший DPS или самое быстрое убийство', 'pb', true],
+        [null, false, 'Босс убит', 'победный сигнал (только звук)', 'kill', true],
+        [null, false, 'Начало боя', 'тихий сигнал старта (только звук)', 'start', true],
+        ['nLag', S.lagAlert !== false, 'Скачок пинга', 'пинг на панели вспыхивает красным и приходит уведомление', 'lag'],
+        ['nMisc', S.miscToast !== false, 'Короткие подтверждения', '«скопировано», «отчёт сохранён» и подобные', 'misc'],
+      ].map(([id, on, t, d, k, sfx]) => { const c = (S.sfx || {})[k] || {};
+        const cb = id ? `<input type="checkbox" id="${id}" ${on ? 'checked' : ''} aria-label="${t}: уведомление">` : '<span></span>';
+        const snd = sfx ? `<select class="sfxs" data-k="${k}" aria-label="${t}: звук"><option value="off"${c.name === 'off' ? ' selected' : ''}>Без звука</option>${SOUNDS.map(([v, n]) => `<option value="${v}"${c.name === v ? ' selected' : ''}>${n}</option>`).join('')}</select>
+          <input type="range" class="sfxv" data-k="${k}" min="0" max="100" step="5" value="${c.vol ?? 70}" aria-label="${t}: громкость">
+          <button type="button" class="sfxp" data-k="${k}" title="Проверить звук" aria-label="Проверить звук">${ICON.play}</button>
+          <label class="sfxo"><input type="checkbox" class="sfxc" data-k="${k}" ${c.on ? 'checked' : ''}> <span>Звук</span></label>` : `${sndSel(k)}<span></span><span></span><span></span>`;
+        return `<div class="nr">${cb}<div class="sfxt"><b>${t}</b><small>${d}</small></div>${snd}</div>`; }).join('')}</div>
+      <label class="opt" style="max-width:560px;margin:4px auto 0;text-align:left"><input type="checkbox" id="sfxMute" ${S.sfx?.streamerMute !== false ? 'checked' : ''}> <span><b>Не играть звуки боя в режиме стримера</b></span></label>
+    </div>
     <div class="card field center"><span class="lbl">Итог боя в Discord-канал</span>
       <div style="max-width:600px;margin:0 auto"><span>Вставьте ссылку вебхука канала — и кнопка «Поделиться»</span> <b class="kbd" data-notr>${esc(hkLabel(hkText('share')))}</b> <span>будут отправлять таблицу боя прямо в чат гильдии.</span></div>
       <div class="whrow"><input type="password" id="whUrl" value="${esc(S.webhook?.url || '')}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false"><button type="button" id="whTest">Проверить</button></div>
@@ -249,7 +266,7 @@ const pages = {
   },
 
   stats: () => {
-    const tabs = [['history', 'История боёв'], ['compare', 'Сравнение'], ['deaths', 'Разбор смерти'], ['bosses', 'Рекорды по боссам'], ['classes', 'DPS по классам']];
+    const tabs = [['history', 'История боёв'], ['session', 'Сессия'], ['compare', 'Сравнение'], ['deaths', 'Разбор смерти'], ['bosses', 'Рекорды по боссам'], ['classes', 'DPS по классам']];
     return `${head('Статистика', 'Ваши бои, рекорды по боссам и DPS по классам' + (F.list && F.list.length ? ' · сохранено боёв: ' + F.list.length : ''))}
       <div class="seg tabs">${tabs.map(([k, l]) => `<button type="button" data-st="${k}" class="${statTab === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       ${statTab === 'deaths' ? deathsBody() : !F.list ? '<div class="card emptyBox">Загрузка…</div>' : !F.list.length ? '<div class="card emptyBox">Пока нет сохранённых боёв. Бои с боссами и бои дольше минуты записываются сюда сами.</div>' : statsBody()}`;
@@ -392,6 +409,86 @@ const meOf = f => (f.players || []).find(p => p.self);
 const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
 // Ротация: лента ударов по навыкам; грузится по кнопке (хранятся последние 40 боёв).
+
+// Карточка боя: предпросмотр картинки, что на ней показывать, копирование / файл / Discord.
+const CARD_STYLES_UI = [['lavender', 'Лаванда'], ['dark', 'Тёмная'], ['light', 'Светлая'], ['theme', 'Как в программе']];
+const CARD_VIEWS_UI = [['compact', 'Компактная'], ['full', 'Расширенная']];
+let cardSeq = 0;
+function cardBlock(f) {
+  if (!FX.card || FX.card.id !== f.id) return '';
+  const o = { nick: true, skills: true, group: false, badge: true, style: 'lavender', view: 'compact', ...(S.card || {}) };
+  const tg = (k, l) => `<label class="opt"><input type="checkbox" data-co="${k}" ${o[k] ? 'checked' : ''}> <span>${l}</span></label>`;
+  const seg = (k, arr) => `<div class="seg ap">${arr.map(([v, l]) => `<button type="button" data-cs="${k}" data-v="${v}" class="${o[k] === v ? 'on' : ''}" aria-pressed="${o[k] === v}">${l}</button>`).join('')}</div>`;
+  const hook = /^https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\//.test(S.webhook?.url || '');
+  const full = o.view === 'full';
+  return `<div class="cardbox"><div class="cardrow"><div class="cardprev">${FX.card.url ? `<img id="cardImg" src="${FX.card.url}" alt="Карточка боя">` : '<div class="muted" id="cardWait">Собираю картинку…</div><img id="cardImg" hidden alt="Карточка боя">'}</div>
+    <div class="cardopt"><b>Что показать</b>${full ? '<div class="muted" style="font-size:12px">Расширенная карточка: график боя и таблица группы.</div>' : tg('nick', 'Мой ник и класс') + tg('skills', 'Доли умений') + tg('group', 'Весь состав группы') + tg('badge', 'Значок рекорда')}
+      <b>Вид</b>${seg('view', CARD_VIEWS_UI)}<b>Стиль</b>${seg('style', CARD_STYLES_UI)}
+      <div class="row"><button type="button" class="primary" id="cardCopy">Копировать картинку</button><button type="button" id="cardSave">Сохранить PNG</button><button type="button" id="cardDc"${hook ? '' : ' disabled title="Вставьте ссылку вебхука в «Настройках»"'}>В Discord</button></div>
+      <div class="muted" id="cardMsg" style="font-size:12px;min-height:16px">${hook ? '' : 'Для отправки в Discord вставьте ссылку вебхука в «Настройках».'}</div></div></div></div>`;
+}
+async function cardLoad() {
+  const c = FX.card; if (!c) return;
+  const my = ++cardSeq, url = await api.cardRender(c.id);
+  if (my !== cardSeq || FX.card !== c) return;
+  c.url = url;
+  const im = $('cardImg'); if (im && url) { im.src = url; im.hidden = false; const w = $('cardWait'); if (w) w.remove(); }
+  else if (!url) { const w = $('cardWait'); if (w) w.textContent = 'Не удалось собрать картинку'; }
+}
+const cardSay = t => { const m = $('cardMsg'); if (m) m.textContent = T(t); };
+
+// Темп боя: сколько времени вы реально наносили урон, где были простои и как часто применялись главные умения.
+// Игра не присылает данные об усилениях, поэтому считаем по ударам: простои из урона по секундам, умения — из ленты ударов.
+function tempoStats(f, rot) {
+  const a = f.timeline && f.timeline.self; if (!a || a.length < 5) return null;
+  const n = a.length, act = a.map(v => v > 0);
+  const segs = []; let i = 0;
+  while (i < n) { if (!act[i]) { i++; continue; } let j = i; while (j + 1 < n && (act[j + 1] || (j + 2 < n && act[j + 2]))) j++; segs.push([i, j + 1]); i = j + 1; } // дыра в 1 секунду — ещё не простой
+  const gaps = []; let prev = 0;
+  for (const [x, y] of segs) { if (x - prev >= 3) gaps.push([prev, x]); prev = y; }
+  if (n - prev >= 3 && segs.length) gaps.push([prev, n]);
+  const active = segs.reduce((q, [x, y]) => q + (y - x), 0);
+  const down = gaps.reduce((q, [x, y]) => q + (y - x), 0);
+  const me = (f.details || [])[0], top = ((me && me.skills) || []).slice().sort((x, y) => (y.share || 0) - (x.share || 0)).slice(0, 4);
+  const mins = Math.max(1 / 60, (f.combatMs || n * 1000) / 60000);
+  const keys = top.map(k => {
+    const r = { name: k.name, hits: k.hits || 0, share: k.share || 0, perMin: (k.hits || 0) / mins, casts: null, cad: null, poss: null, use: null };
+    if (rot && rot.c && rot.names) {
+      const ix = rot.names.indexOf(k.name);
+      if (ix >= 0) {
+        const t = rot.c.filter(e => e[1] === ix).map(e => e[0]).sort((x, y) => x - y), cs = [];
+        for (const x of t) if (!cs.length || x - cs[cs.length - 1] > 450) cs.push(x); // несколько ударов одного умения подряд — одно применение
+        if (cs.length >= 4) {
+          const iv = []; for (let q = 1; q < cs.length; q++) iv.push(cs[q] - cs[q - 1]);
+          iv.sort((x, y) => x - y);
+          const cad = Math.max(900, iv[Math.floor(iv.length * 0.2)]), dur = Math.max(1000, rot.dur || f.combatMs || 0);
+          r.casts = cs.length; r.cad = cad / 1000; r.poss = Math.max(cs.length, Math.floor(dur / cad) + 1); r.use = Math.min(1, cs.length / r.poss);
+        }
+      }
+    }
+    return r;
+  });
+  return { n, segs, gaps, active, down, up: n ? active / n : 0, keys };
+}
+function tempoCard(f) {
+  const rot = FX.tempo && FX.tempo.id === f.id ? FX.tempo.data : null;
+  const st = tempoStats(f, rot); if (!st) return '';
+  const cls = v => v >= .85 ? 'good' : v >= .6 ? 'warn' : 'bad';
+  const strip = `<div class="tl" role="img" aria-label="Активность по ходу боя">${st.gaps.map(([x, y]) => `<i class="gap" style="left:${(x / st.n * 100).toFixed(2)}%;width:${((y - x) / st.n * 100).toFixed(2)}%"></i>`).join('')}${st.segs.map(([x, y]) => `<i style="left:${(x / st.n * 100).toFixed(2)}%;width:${Math.max(.3, (y - x) / st.n * 100).toFixed(2)}%"></i>`).join('')}</div>`;
+  const big = st.gaps.slice().sort((x, y) => (y[1] - y[0]) - (x[1] - x[0])).slice(0, 3);
+  const keys = st.keys.map(k => `<div class="tp"><span data-notr>${esc(k.name)}</span>${k.use != null ? `<div class="bar"><i style="width:${(k.use * 100).toFixed(0)}%"></i></div><em class="${cls(k.use)}">${Math.round(k.use * 100)}%</em><small>${k.casts} / ≈${k.poss}</small>` : `<div class="bar"><i style="width:${Math.min(100, k.share * 100 * 2).toFixed(0)}%"></i></div><em>${k.perMin.toFixed(1).replace('.', DEC())}</em><small>${T('ударов/мин')}</small>`}</div>`).join('');
+  const weak = st.keys.filter(k => k.use != null && k.use < .65).sort((x, y) => x.use - y.use)[0];
+  const tips = [];
+  if (big[0] && (big[0][1] - big[0][0]) >= 5) tips.push(`${T('Самый долгий простой')}: ${clock(big[0][0] * 1000)} – ${clock(big[0][1] * 1000)} (${big[0][1] - big[0][0]} ${T('с')}).`);
+  if (weak) tips.push(`«${weak.name}»: ${T('применено')} ${weak.casts} ${T('раз из возможных')} ≈${weak.poss}${T(' — можно использовать чаще, примерно раз в')} ${weak.cad.toFixed(1).replace('.', DEC())} ${T('с')}.`);
+  const load = !rot && f.hasRot ? `<button type="button" id="tempoLoad" data-id="${esc(f.id)}">Разобрать умения по ленте ударов</button>` : '';
+  return `<div class="card field"><span class="lbl">Темп боя · аптайм</span>
+    <div class="tp"><span>${T('Урон наносился')}</span>${strip}<em class="${cls(st.up)}">${Math.round(st.up * 100)}%</em><small>${clock(st.active * 1000)}</small></div>
+    <div class="muted" style="font-size:12px">${st.gaps.length ? `${T('Простоев от 3 с')}: ${st.gaps.length} · ${T('всего')} ${clock(st.down * 1000)}` : T('Без заметных простоев')}${big.length ? ' · ' + big.map(([x, y]) => `${clock(x * 1000)} (${y - x} ${T('с')})`).join(', ') : ''}</div>
+    ${keys ? `<div style="margin-top:8px"><b style="font-size:13px">${T('Главные умения')}</b><span class="muted" style="font-size:12px"> · ${rot ? T('использовано / возможно (оценка по самому частому интервалу)') : T('частота ударов')}</span>${keys}</div>` : ''}
+    ${tips.length ? `<div class="tip">💡 <span>${tips.join(' ')}</span></div>` : ''}${load}
+    <div class="muted" style="font-size:11.5px">${T('Игра не отдаёт данные об усилениях, поэтому аптайм считается по вашим ударам.')}</div></div>`;
+}
 function rotCard(f) {
   if (!f.hasRot) return '';
   if (FX.rot && FX.rot.id === f.id) {
@@ -399,6 +496,59 @@ function rotCard(f) {
     return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span>${h || '<div class="muted">Лента ударов этого боя больше не хранится.</div>'}</div>`;
   }
   return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span><div><button type="button" id="rotLoad" data-id="${esc(f.id)}">Показать ротацию</button></div></div>`;
+}
+
+// Сводка за сессию: бои, между которыми не было паузы дольше полутора часов.
+const SES = { idx: 0 };
+function sessionsOf(list) {
+  const a = list.filter(f => f.at && meOf(f)).slice().sort((x, y) => x.at - y.at), out = [];
+  for (const f of a) {
+    const last = out[out.length - 1], end = last ? last.fights[last.fights.length - 1].at + (last.fights[last.fights.length - 1].combatMs || 0) : 0;
+    if (last && f.at - end <= 90 * 60000) last.fights.push(f); else out.push({ fights: [f] });
+  }
+  for (const x of out) { const l = x.fights[x.fights.length - 1]; x.from = x.fights[0].at; x.to = l.at + (l.combatMs || 0); }
+  return out.reverse(); // новые сверху
+}
+function sessionBody() {
+  const ss = sessionsOf(F.list || []);
+  if (!ss.length) return '<div class="card emptyBox">Пока нет боёв с вашим персонажем. Сводка соберётся сама после первых боёв.</div>';
+  const ses = ss[Math.min(SES.idx, ss.length - 1)], fs = ses.fights;
+  const t = ms => new Date(ms).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit' });
+  const day = ms => new Date(ms).toLocaleDateString(LOC(), { day: 'numeric', month: 'long' });
+  const dps = f => meOf(f).dps || 0;
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+  const best = fs.reduce((a, f) => (dps(f) > dps(a) ? f : a), fs[0]);
+  const wins = fs.filter(f => f.result === 'Kill').length;
+  const dl = (D.list || []).filter(d => d.at >= ses.from - 5000 && d.at <= ses.to + 5000);
+  const prev = ss[SES.idx + 1], prevAvg = prev ? mean(prev.fights.map(dps)) : 0, avg = mean(fs.map(dps));
+  const cmp = prevAvg > 0 ? (avg / prevAvg - 1) * 100 : null;
+  const byDeath = {}; for (const d of dl) if (d.boss) byDeath[d.boss] = (byDeath[d.boss] || 0) + 1;
+  const kp = (l, v, sub, cls) => `<div class="kp1"><small>${l}</small><b>${v}</b><span class="${cls || ''}">${sub || ''}</span></div>`;
+  // график: свой DPS по боям
+  const W = 1100, H = 150, pad = 10, mx = Math.max(1, ...fs.map(dps)) * 1.04, lo = Math.min(...fs.map(dps)) * 0.8, n = fs.length;
+  const X = i => n === 1 ? W / 2 : pad + i * (W - 2 * pad) / (n - 1), Y = v => H - 14 - (v - lo) / Math.max(1, mx - lo) * (H - 40);
+  const pts = fs.map((f, i) => [X(i), Y(dps(f))]);
+  const line = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+  const area = pts.length > 1 ? line + ` L${pts[pts.length - 1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H}Z` : '';
+  const bi = fs.indexOf(best);
+  const chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="DPS по боям"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".45"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    ${area ? `<path d="${area}" fill="url(#sg)"/>` : ''}<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>
+    ${pts.map((q, i) => `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${i === bi ? 6 : 3.2}" fill="${i === bi ? '#ffc66b' : 'var(--accent)'}"><title>${esc((fs[i].boss || fs[i].title || '') + ' · ' + fmt(dps(fs[i])) + ' DPS')}</title></circle>`).join('')}
+    <text x="${Math.min(W - 70, Math.max(4, pts[bi][0] - 30)).toFixed(0)}" y="${Math.max(12, pts[bi][1] - 12).toFixed(0)}" fill="#ffc66b" font-size="12" font-weight="700">★ ${T('рекорд')}</text></svg>`;
+  // по боссам
+  const by = {}; for (const f of fs) (by[f.boss || f.title || '—'] = by[f.boss || f.title || '—'] || []).push(f);
+  const rows = Object.entries(by).sort((a, b) => b[1].length - a[1].length).map(([boss, bf]) => {
+    const v = bf.map(dps), half = Math.ceil(v.length / 2);
+    let tr = '<span class="muted">—</span>';
+    if (v.length >= 2) { const a = mean(v.slice(0, v.length - half || 1)), b = mean(v.slice(-half)), d = a > 0 ? (b / a - 1) * 100 : 0;
+      tr = d > 3 ? `<span class="good">▲ ${T('растёт')}</span>` : d < -3 ? `<span class="bad">▼ ${T('просел')}</span>` : `<span class="warn">● ${T('ровно')}</span>`; }
+    return `<tr><td>${nt(boss)}</td><td class="r num">${bf.length}</td><td class="r num">${fmt(Math.max(...v))}</td><td class="r num">${fmt(mean(v))}</td><td class="r num">${byDeath[boss] || 0}</td><td>${tr}</td></tr>`;
+  }).join('');
+  const sel = ss.length > 1 ? `<select id="sesSel" aria-label="Сессия">${ss.map((x, i) => `<option value="${i}"${i === SES.idx ? ' selected' : ''}>${day(x.from)}, ${t(x.from)}–${t(x.to)} · ${x.fights.length}</option>`).join('')}</select>` : '';
+  return `<div class="card field"><div class="row" style="justify-content:space-between;flex-wrap:wrap"><div><b style="font-size:16px">${day(ses.from)}, ${t(ses.from)} – ${t(ses.to)}</b><div class="muted" style="font-size:12px">Бои, между которыми не было пауз дольше 1,5 часа</div></div>${sel}</div>
+    <div class="kpis">${kp('Боёв', fs.length, `${T('побед')} ${wins}`, 'good')}${kp('Средний DPS', fmt(avg), cmp == null ? '' : `${cmp >= 0 ? '▲' : '▼'} ${Math.abs(cmp).toFixed(0)}% ${T('к прошлой сессии')}`, cmp == null ? '' : cmp >= 0 ? 'good' : 'bad')}${kp('Лучший бой', fmt(dps(best)), nt(best.boss || best.title || ''))}${kp('Смертей', dl.length, Object.entries(byDeath).sort((a, b) => b[1] - a[1])[0] ? nt(Object.entries(byDeath).sort((a, b) => b[1] - a[1])[0][0]) : '', dl.length ? 'warn' : 'good')}</div></div>
+    <div class="card field"><span class="lbl">DPS по боям · ваш результат по порядку</span>${chart}</div>
+    <div class="card field"><span class="lbl">По боссам</span><div class="scroll"><table class="ft"><tr><th>Босс</th><th class="r">Боёв</th><th class="r">Лучший DPS</th><th class="r">Средний</th><th class="r">Смертей</th><th>Тренд</th></tr>${rows}</table></div></div>`;
 }
 function statsBody() {
   const list = F.list;
@@ -409,13 +559,15 @@ function statsBody() {
         const me = (f.details || [])[0];
         const hasHeal = f.players.some(p => p.hps > 0);
         const canCmp = f.boss && meOf(f) && list.filter(x => x.boss === f.boss && meOf(x)).length > 1;
-        return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<button type="button" id="fCsv" data-id="${esc(f.id)}">CSV</button><button type="button" id="fJson" data-id="${esc(f.id)}">JSON</button><button type="button" id="fDel" data-id="${esc(f.id)}">Удалить</button><span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
+        return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button><button type="button" id="fCard" data-id="${esc(f.id)}"${FX.card && FX.card.id === f.id ? ' class="on"' : ''}>Карточка</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<button type="button" id="fCsv" data-id="${esc(f.id)}">CSV</button><button type="button" id="fJson" data-id="${esc(f.id)}">JSON</button><button type="button" id="fDel" data-id="${esc(f.id)}">Удалить</button><span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
           <div style="font-size:20px;font-weight:700">${nt(f.boss || f.title)}</div>
           <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${pingStat(f.ping)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
           ${prevLine(f)}${classLine(f)}${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}
+          ${cardBlock(f)}
           <div class="scroll"><table class="ft"><tr><th>#</th><th>Игрок</th><th>Класс</th><th class="r">DPS</th><th class="r">Урон</th><th class="r">%</th><th class="r">Крит</th><th class="r">Макс. удар</th>${hasHeal ? '<th class="r">HPS</th>' : ''}</tr>
           ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nk(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
           ${fightChart(f)}
+          ${tempoCard(f)}
           ${rotCard(f)}
           ${me && me.skills?.length ? `<div class="card field"><span class="lbl">Ваши навыки в этом бою</span><div class="scroll"><table class="ft"><tr><th>Навык</th><th class="r">Урон</th><th class="r">%</th><th class="r">Удары</th><th class="r">Крит</th><th class="r">Макс.</th></tr>
           ${me.skills.map(k => `<tr><td data-notr>${esc(k.name)}</td><td class="r num">${fmt(k.dmg)}</td><td class="r num">${(k.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${k.hits}</td><td class="r num">${k.crit != null ? Math.round(k.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(k.max)}</td></tr>`).join('')}</table></div></div>` : ''}`;
@@ -427,6 +579,7 @@ function statsBody() {
       <div id="fList">${histList()}</div>
       <div class="row"><button type="button" id="fAll">Экспорт истории (CSV)</button><button type="button" id="fClear">Очистить историю</button></div>${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}`;
   }
+  if (statTab === 'session') return sessionBody();
   if (statTab === 'compare') return compareBody();
   if (statTab === 'bosses') {
     const by = {};
@@ -865,6 +1018,15 @@ function render() {
   on('oStream', 'onchange', e => api.set({ streamer: e.target.checked }));
   on('oProf', 'onchange', e => api.set({ profilesOn: e.target.checked }));
   on('rpcOn', 'onchange', e => api.set({ discordRpc: e.target.checked }));
+  on('sesSel', 'onchange', e => { SES.idx = +e.target.value; render(); });
+  on('tempoLoad', 'onclick', async e => { const id = e.currentTarget.dataset.id; FX.tempo = { id, data: await api.fightRot(id) }; render(); });
+  if (page === 'stats' && statTab === 'history' && F.open) { const f = (F.list || []).find(x => x.id === F.open); if (f && f.hasRot && !(FX.tempo && FX.tempo.id === f.id)) { const id = f.id; FX.tempo = { id, data: null, wait: true }; api.fightRot(id).then(d => { if (FX.tempo && FX.tempo.id === id && F.open === id) { FX.tempo = { id, data: d }; render(); } }); } }
+  on('fCard', 'onclick', e => { const id = e.currentTarget.dataset.id; if (FX.card && FX.card.id === id) { FX.card = null; cardSeq++; render(); return; } FX.card = { id, url: null }; render(); cardLoad(); });
+  m.querySelectorAll('[data-co]').forEach(el => el.onchange = () => { api.set({ card: { [el.dataset.co]: el.checked } }); setTimeout(cardLoad, 150); });
+  m.querySelectorAll('[data-cs]').forEach(el => el.onclick = () => { api.set({ card: { [el.dataset.cs]: el.dataset.v } }); setTimeout(cardLoad, 150); });
+  on('cardCopy', 'onclick', async () => { cardSay('Копирую…'); const r = await api.cardCopy(FX.card.id); cardSay(r.ok ? 'Скопировано — вставьте в чат (Ctrl+V)' : 'Не получилось скопировать'); });
+  on('cardSave', 'onclick', async () => { const r = await api.cardSave(FX.card.id); cardSay(r.ok ? 'Сохранено' : r.canceled ? '' : 'Не получилось сохранить'); });
+  on('cardDc', 'onclick', async () => { cardSay('Отправляю…'); const r = await api.cardDiscord(FX.card.id); cardSay(r.ok ? 'Отправлено в Discord ✓' : (r.error || 'Не удалось отправить')); });
   on('fShare', 'onclick', e => api.share(e.currentTarget.dataset.share));
   on('uCheck', 'onclick', async () => { $('uCheck').disabled = true; $('uCheck').textContent = 'Проверяю…'; U = await api.updateCheck(); render(); });
   on('uGo', 'onclick', () => api.updateInstall());
@@ -872,6 +1034,13 @@ function render() {
   on('ct', 'onclick', () => api.set({ clickThrough: !S.clickThrough }));
   on('restart', 'onclick', () => api.restartBridge());
   on('tt', 'onclick', () => api.testToast());
+  on('sfxMaster', 'oninput', e => { $('sfxMasterV').textContent = e.target.value + '%'; });
+  on('sfxMaster', 'onchange', e => api.set({ sfx: { master: +e.target.value } }));
+  on('sfxMute', 'onchange', e => api.set({ sfx: { streamerMute: e.target.checked } }));
+  m.querySelectorAll('.sfxs').forEach(el => el.onchange = () => { api.set({ sfx: { [el.dataset.k]: { name: el.value, on: el.value !== 'off' ? true : undefined } } }); api.sfxTest(el.dataset.k); });
+  m.querySelectorAll('.sfxv').forEach(el => el.onchange = () => { api.set({ sfx: { [el.dataset.k]: { vol: +el.value } } }); api.sfxTest(el.dataset.k); });
+  m.querySelectorAll('.sfxc').forEach(el => el.onchange = () => api.set({ sfx: { [el.dataset.k]: { on: el.checked } } }));
+  m.querySelectorAll('.sfxp').forEach(el => el.onclick = () => api.sfxTest(el.dataset.k));
   on('nSound', 'onchange', e => api.set({ notify: { sound: e.target.checked } }));
   document.querySelectorAll('.nsnd').forEach(el => el.onchange = () => {
     const sounds = { ...(S.notify.sounds || {}) }; sounds[el.dataset.k] = el.value;
@@ -924,7 +1093,7 @@ function render() {
     on('fAll', 'onclick', () => exp(null, 'all'));
     on('fDel', 'onclick', e => { const b = e.currentTarget; if (b.dataset.armed) { api.fightDelete(b.dataset.id); F.open = null; FX.msg = ''; } else { b.dataset.armed = '1'; b.textContent = 'Нажмите ещё раз'; } });
     on('fClear', 'onclick', () => { if (F.clearArmed) { api.fightsClear(); F.clearArmed = false; } else { F.clearArmed = true; $('fClear').textContent = 'Нажмите ещё раз, чтобы удалить'; } });
-    if (statTab === 'deaths' && !D.list) api.deaths().then(l => { D.list = l || []; if (page === 'stats') render(); });
+    if ((statTab === 'deaths' || statTab === 'session') && !D.list) api.deaths().then(l => { D.list = l || []; if (page === 'stats') render(); });
     m.querySelectorAll('[data-death]').forEach(r => r.onclick = () => { D.open = r.dataset.death; render(); });
     on('dBack', 'onclick', () => { D.open = null; render(); });
     on('dClear', 'onclick', () => { if (D.clearArmed) { api.deathsClear(); D.clearArmed = false; } else { D.clearArmed = true; $('dClear').textContent = 'Нажмите ещё раз, чтобы удалить'; } });
