@@ -24,6 +24,8 @@ const MODES = [['boss', 'Данж: Босс'], ['mob', 'Моб'], ['dummy', 'М�
 const NAV_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // главное меню
 const BTN_POS = [['left', 'Слева'], ['top', 'Сверху'], ['bottom', 'Снизу'], ['right', 'Справа']];            // кнопки в оверлее
 const OV_VIEWS = [['list', 'Список'], ['cards', 'Карточки'], ['big', 'Лидер'], ['ticker', 'Строки'], ['columns', 'Столбцы'], ['rings', 'Кольца'], ['podium', 'Подиум'], ['bars', 'Гистограмма'], ['console', 'Консоль'], ['nearby', 'Я и соседи'], ['donut', 'Пончик'], ['mini', 'Мини'], ['strip', 'Полоска'], ['line', 'Строка']];
+// десятичный разделитель по языку: запятая в русском, точка в английском
+const DEC = () => (typeof getLang === 'function' && getLang() === 'en' ? '.' : ',');
 const COMPACT_VIEWS = ['mini', 'strip', 'line']; // компактные виды: только ваш DPS в маленьком окне
 const OV_STATS = [['dps', 'DPS'], ['dmg', 'Урон'], ['pct', 'Доля']];
 // Кэш темы: окно открывается мгновенно в цветах последней темы, а не в стандартных (иначе секунду виден «старый» цвет).
@@ -439,10 +441,10 @@ function zbDraw(it, t, still) {
   const el = it.el, cv = it.cv, w = el.clientWidth, h = el.clientHeight;
   if (w < 20 || h < 20) return;
   const dpr = Math.min(2, devicePixelRatio || 1);
-  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr) || !it.P) {
+  const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0; // скругление может смениться в «Оформлении» без смены размера окна
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr) || !it.P || it.rad !== rad) {
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-    const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
-    it.P = zbPerimeter(w, h, rad, 7);
+    it.rad = rad; it.P = zbPerimeter(w, h, rad, 7);
   }
   const g = cv.getContext('2d'), P = it.P, N = P.length, ins = 1.6;
   g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h); g.lineJoin = 'round'; g.lineCap = 'round';
@@ -474,7 +476,10 @@ function zbLoop(ts) {
   ZB.raf = requestAnimationFrame(zbLoop);
 }
 function zbStart() {
-  const still = document.body.dataset.fx === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const off = document.body.dataset.fx === 'off'; // «Анимации темы» выключены — молнии нет совсем, как пламени у «Чёрного пламени»
+  for (const it of ZB.items) { it.cv.style.display = off ? 'none' : ''; if (off) it.P = null; }
+  if (off) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (still) { for (const it of ZB.items) zbDraw(it, 0, true); return; }
   if (!ZB.raf) ZB.raf = requestAnimationFrame(zbLoop);
 }

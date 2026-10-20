@@ -138,8 +138,8 @@ body[data-ov=rings][data-win=overlay] .cols,body[data-ov=podium][data-win=overla
 .list.a-podium .pr{flex:none;display:flex;align-items:center;gap:8px;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.06);font-size:12px}
 .list.a-podium .pr .name{flex:1;text-align:left}
 .list.a-podium .pr.me{box-shadow:inset 0 0 0 1px var(--accent)}
-.list.a-bars{flex-direction:row;align-items:stretch;gap:6px}
-.list.a-bars .bcol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px}
+.list.a-bars{flex-direction:row;align-items:stretch;justify-content:center;gap:6px}
+.list.a-bars .bcol{flex:1 1 0;min-width:0;max-width:76px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px}
 .list.a-bars .bt{flex:1;width:100%;display:flex;align-items:flex-end;min-height:20px}
 .list.a-bars .bt i{display:block;width:100%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,rgba(var(--c),.95),rgba(var(--c),.45));transition:height .35s}
 .list.a-bars .bcol.me .bt i{box-shadow:0 0 0 2px var(--accent)}

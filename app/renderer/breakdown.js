@@ -4,7 +4,7 @@ let actor = null, D = null, sortKey = 'dmg', sortDir = -1, showRot = false, rotA
 const $ = id => document.getElementById(id);
 windowControls('grip', 'bMax');
 $('bClose').innerHTML = ICON.close; $('bClose').onclick = () => api.win('close');
-const pct = v => (v == null ? '—' : (v * 100).toFixed(1).replace('.', ',') + '%');
+const pct = v => (v == null ? '—' : (v * 100).toFixed(1).replace('.', DEC()) + '%');
 const COLS = [
   ['name', 'Навык'], ['dmg', 'Урон'], ['share', '% урона'], ['dps', 'DPS'], ['hits', 'Удары'], ['avg', 'Средний'], ['max', 'Макс.'], ['crit', 'Крит'], ['back', 'Спина'], ['perfect', 'Идеал.'], ['heavy', 'Тяж.'], ['multi', 'Мульти'], ['dbl', 'Дабл'],
 ];

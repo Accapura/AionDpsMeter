@@ -136,15 +136,15 @@
     }
   ],
   "app": {
-    "version": "1.3.0",
-    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.0/AionDpsMeter.v1.3.0.exe",
-    "sha256": "8742cd605a5ae58c672e513bcb64635ff43b9f66d6f8e5de16591cf09d411447",
-    "size": 112560093,
-    "notes": "• Английский язык: переведены новые разделы 1.2.9 — звуки событий, карточка боя, «Сессия», «Темп боя», компактные виды оверлея\n• Подсказки в оверлее больше не смешивают английский с русским\n• В README — новые скриншоты",
+    "version": "1.3.1",
+    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.1/AionDpsMeter.v1.3.1.exe",
+    "sha256": "1239d8486df1122f9d17ec52e28b9ae3565e7469fcf99f081857ba502c7af94e",
+    "size": 112535390,
+    "notes": "• Молния темы «Зомби» идёт по скруглённому контуру, а «Анимации темы» её выключают\n• «Пончик» и «Кольца» при квадратных углах снова круглые, «Гистограмма» не растягивается на одного игрока\n• В английском доли с точкой, подпись «13 тем»",
     "patch": {
-      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.0.gz",
-      "sha256": "88dde60e3005bdd236e2b444a22f0d8520b19eda554dc1de90c9442d01ebb031",
-      "size": 1711726,
+      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.1.gz",
+      "sha256": "be7109fccd891ca03eb4e7e22a2dfcc45a1c463bf57d968c78d02ff49bef9a87",
+      "size": 1712874,
       "shell": "e33-net10"
     }
   }

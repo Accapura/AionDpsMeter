@@ -191,13 +191,13 @@ const pages = {
     const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
     const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
-    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '12 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
+    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '13 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
     ${sec('corners', ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
     ${sec('navPos', ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
     ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
     ${sec('ovView', ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '14 видов: от списка до колец и пончика долей, плюс 3 компактных — только ваш DPS в маленьком окне', vw, 'g-view')}
     ${sec('ovStat', ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
-    ${sec('fx', ic('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'), 'Анимации темы', 'Эффекты тем вроде «Чёрного пламени»: выключите, если приложение лагает', fxT, 'g-2')}
+    ${sec('fx', ic('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'), 'Анимации темы', 'Эффекты тем «Чёрное пламя» и «Зомби» (пламя, молния, толпа): выключите, если приложение лагает', fxT, 'g-2')}
     <div class="muted" style="font-size:12px;text-align:center">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`;
   },
 
@@ -565,12 +565,12 @@ function statsBody() {
           ${prevLine(f)}${classLine(f)}${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}
           ${cardBlock(f)}
           <div class="scroll"><table class="ft"><tr><th>#</th><th>Игрок</th><th>Класс</th><th class="r">DPS</th><th class="r">Урон</th><th class="r">%</th><th class="r">Крит</th><th class="r">Макс. удар</th>${hasHeal ? '<th class="r">HPS</th>' : ''}</tr>
-          ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nk(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
+          ${f.players.map((p, i) => `<tr class="${p.self ? 'me' : ''}"><td>${i + 1}</td><td>${nk(p.name)}</td><td>${classIcon(p.cls)} ${esc(CLASS_RU[p.cls] || '')}</td><td class="r num">${fmt(p.dps)}</td><td class="r num">${fmt(p.dmg)}</td><td class="r num">${(p.share * 100).toFixed(1).replace('.', DEC())}</td><td class="r num">${p.crit != null ? Math.round(p.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(p.maxHit)}</td>${hasHeal ? `<td class="r num">${p.hps ? fmt(p.hps) : '—'}</td>` : ''}</tr>`).join('')}</table></div></div>
           ${fightChart(f)}
           ${tempoCard(f)}
           ${rotCard(f)}
           ${me && me.skills?.length ? `<div class="card field"><span class="lbl">Ваши навыки в этом бою</span><div class="scroll"><table class="ft"><tr><th>Навык</th><th class="r">Урон</th><th class="r">%</th><th class="r">Удары</th><th class="r">Крит</th><th class="r">Макс.</th></tr>
-          ${me.skills.map(k => `<tr><td data-notr>${esc(k.name)}</td><td class="r num">${fmt(k.dmg)}</td><td class="r num">${(k.share * 100).toFixed(1).replace('.', ',')}</td><td class="r num">${k.hits}</td><td class="r num">${k.crit != null ? Math.round(k.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(k.max)}</td></tr>`).join('')}</table></div></div>` : ''}`;
+          ${me.skills.map(k => `<tr><td data-notr>${esc(k.name)}</td><td class="r num">${fmt(k.dmg)}</td><td class="r num">${(k.share * 100).toFixed(1).replace('.', DEC())}</td><td class="r num">${k.hits}</td><td class="r num">${k.crit != null ? Math.round(k.crit * 100) + '%' : '—'}</td><td class="r num">${fmt(k.max)}</td></tr>`).join('')}</table></div></div>` : ''}`;
       }
     }
     return `<div class="card field"><div class="fbar"><input type="search" id="fQ" value="${esc(FQ.q)}" placeholder="Поиск по боссу или зоне" autocomplete="off" spellcheck="false">
@@ -720,7 +720,6 @@ const T = s => (typeof tr === 'function' ? tr(s, S?.lang) : s);
 
 // ---------------------------------------------------------------- сравнение боёв
 const C = { a: null, b: null };
-const DEC = () => (getLang() === 'en' ? '.' : ',');
 const pct = (a, b) => (b ? (a - b) / b * 100 : 0);
 function delta(a, b, lowerBetter, f = fmt) {
   if (a == null || b == null || !b) return '';

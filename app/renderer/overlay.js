@@ -140,7 +140,7 @@ function render() {
   // Что показывать крупно: DPS, общий урон или долю. Остальные числа сдвигаются на соседние места.
   const ST = ['dps', 'dmg', 'pct'].includes(S.ovStat) ? S.ovStat : 'dps';
   const ORD = { dps: ['dps', 'dmg', 'pct'], dmg: ['dmg', 'dps', 'pct'], pct: ['pct', 'dps', 'dmg'] }[ST];
-  const SV = { dps: p => fmt(p.dps), dmg: p => fmt(p.dmg), pct: p => ((p.share || 0) * 100).toFixed(1).replace('.', ',') + '%' };
+  const SV = { dps: p => fmt(p.dps), dmg: p => fmt(p.dmg), pct: p => ((p.share || 0) * 100).toFixed(1).replace('.', DEC()) + '%' };
   const SL = { dps: ['DPS', 'Урон в секунду'], dmg: ['Урон', 'Общий урон за бой'], pct: ['%', 'Доля от урона всей группы'] };
   const shown = ps.slice(0, S.count), rest = ps.length - shown.length;
   const restShare = ps.slice(S.count).reduce((a, p) => a + (p.share || 0), 0);
@@ -157,7 +157,7 @@ function render() {
   const targetHtml = `
     <div class="target" title="${esc(snap.zone || '')}">
       <div class="trow"><div class="tname">${boss?.name || tg?.name ? nt(tName) : esc(tName)}${more}</div>
-        ${hp != null && S.mode !== 'dummy' ? `<span class="hpp num">${hp.toFixed(1).replace('.', ',')}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
+        ${hp != null && S.mode !== 'dummy' ? `<span class="hpp num">${hp.toFixed(1).replace('.', DEC())}%</span>${etaText(snap, src)}${berserkText(snap)}` : ''}
         <span class="timer num">${ICON.clock}${clock(snap.combatMs)}</span></div>
       ${hp != null && S.mode !== 'dummy' ? `<div class="hpbar"><i style="width:${hp.toFixed(2)}%"></i><span class="num">${fmtHp(src.hp)} / ${fmtHp(src.max)}</span></div>` : ''}
     </div>`;
@@ -169,7 +169,7 @@ function render() {
       ? `<div class="cv cv-mini"><b class="num">${val}</b><small>${lab} · ${me ? 'вы' + ' · ' : ''}#${place}${ps.length > 1 ? '/' + ps.length : ''}</small></div>`
       : S.ovView === 'strip'
         ? `<div class="cv cv-strip"><div class="cvt"><b class="num">${val}</b><small>${lab}</small><span class="pill num">#${place}</span></div><div class="cvb"><i style="width:${Math.max(3, who.dmg / top * 100).toFixed(1)}%"></i></div></div>`
-        : `<div class="cv cv-line"><b class="num">${val}</b><span class="cvt num">${clock(snap.combatMs)}</span><span class="cvd num ${d == null ? '' : d >= 0 ? 'up' : 'dn'}" title="${d == null ? '' : 'К рекорду на этом боссе'}">${d == null ? ((who.share || 0) * 100).toFixed(0) + '%' : (d >= 0 ? '+' : '−') + Math.abs(d * 100).toFixed(1).replace('.', ',') + '%'}</span></div>`;
+        : `<div class="cv cv-line"><b class="num">${val}</b><span class="cvt num">${clock(snap.combatMs)}</span><span class="cvd num ${d == null ? '' : d >= 0 ? 'up' : 'dn'}" title="${d == null ? '' : 'К рекорду на этом боссе'}">${d == null ? ((who.share || 0) * 100).toFixed(0) + '%' : (d >= 0 ? '+' : '−') + Math.abs(d * 100).toFixed(1).replace('.', DEC()) + '%'}</span></div>`;
     setHtml(body, html); setHtml($('stats'), ''); return;
   }
   if (S.solo && !me) {
@@ -184,7 +184,7 @@ function render() {
     body._h = null; body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="${S.lang === 'en' ? 'Click for a skill breakdown, right-click for the menu' : 'Нажмите — разбивка по навыкам, правая кнопка — меню'}">${classIcon(me.cls)}
       <div class="who"><span class="name" data-notr>${esc(aliasOf(nm(me)))}</span><span class="bigdps num">${SV[ST](me)}<small>${SL[ST][0] === '%' ? 'доля' : SL[ST][0]}</small></span></div>
       <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
-      <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
+      <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', DEC())}%</b></div>
       <div><span>Крит</span><b>${me.crit != null ? Math.round(me.crit * 100) + '%' : '—'}</b></div><div><span>Макс. удар</span><b>${fmt(me.maxHit)}</b></div>
       ${me.hps ? `<div><span>HPS</span><b>${fmt(me.hps)}</b></div>` : ''}</div>${rec ? `<div style="text-align:center">${rec}</div>` : ''}</div>`;
     body.querySelector('.me1').onclick = () => { if (me.id != null) api.open('breakdown', +me.id); };
@@ -200,7 +200,7 @@ function render() {
       return `<div class="row${p === me ? ' me' : ''}" style="--c:${c}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="${S.lang === 'en' ? 'Click for a skill breakdown, right-click for the menu' : 'Нажмите — разбивка по навыкам, правая кнопка — меню'}"><div class="bar" style="--p:${(p.dmg / top * 100).toFixed(1)}%;width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
       <span class="r dps">${SV[ORD[0]](p)}</span><span class="r muted c-total">${SV[ORD[1]](p)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${SV[ORD[2]](p).replace('%', '')}</span></div></div>`;
-    }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`);
+    }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', DEC())}%</div>` : ''}</div>`);
   body.querySelectorAll('.row[data-id], .ai[data-id]').forEach(r => r.onclick = () => { if (r.dataset.id) api.open('breakdown', +r.dataset.id); });
   setHtml($('stats'), `<b>${fmt(snap.partyDps)}</b>/с · всего <b>${fmt(snap.total)}</b> · ${snap.fighting || ps.length} в бою${snap.partial ? ' · неполные данные' : ''}`);
   if (rec) $('stats').insertAdjacentHTML('beforeend', ' ' + rec);

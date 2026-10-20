@@ -4,6 +4,18 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    "Молния «Зомби»": "Zombie lightning",
+    "При круглых углах молния теперь идёт по скруглённому контуру окна, оверлея и уведомлений, а не по прямоугольнику": "With rounded corners the lightning now follows the rounded outline of the window, overlay and notifications instead of a rectangle",
+    "Выключение «Анимаций темы» теперь убирает и молнию в теме «Зомби», как пламя в «Чёрном пламени»": "Turning off “Theme animations” now removes the lightning in the Zombie theme too, like the flames in Black Flame",
+    'Эффекты тем «Чёрное пламя» и «Зомби» (пламя, молния, толпа): выключите, если приложение лагает': 'Effects of the “Black Flame” and “Zombie” themes (flames, lightning, the crowd): turn off if the app lags',
+    "Пончик и кольца": "Donut and rings",
+    "При квадратных углах «Пончик» и «Кольца» больше не превращаются в квадраты": "With square corners the Donut and Rings views no longer turn into squares",
+    "Гистограмма": "Bars",
+    "Столбец не растягивается на всё окно, когда в списке один игрок": "A bar no longer stretches across the whole window when the list has one player",
+    "Числа в английском": "Numbers in English",
+    "В английском интерфейсе доли и проценты пишутся с точкой: 17.9, а не 17,9": "In the English interface shares and percentages use a dot: 17.9, not 17,9",
+    "Оформление": "Appearance",
+    "Исправлена подпись: цветовых тем 13, а не 12": "Fixed the label: there are 13 colour themes, not 12",
     'Побит ваш лучший DPS на этом боссе': 'Your best DPS on this boss was beaten',
     'Сразу после гибели персонажа': 'Right after your character dies',
     'Босс на 75 / 50 / 25 % HP': 'Boss at 75 / 50 / 25 % HP',
@@ -13,7 +25,7 @@
     'Все эффекты темы': 'All theme effects',
     'Без анимаций — легче для слабого ПК': 'No animations — easier on a weak PC',
     'Цвет': 'Colour',
-    '12 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно': '12 colour themes: only the colour changes, shape and layout are set separately',
+    '13 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно': '13 colour themes: only the colour changes, shape and layout are set separately',
     'Форма окон и кнопок': 'Shape of windows and buttons',
     'Углы окон, кнопок и карточек': 'Corners of windows, buttons and cards',
     'Главное меню': 'Main menu',

@@ -23,7 +23,7 @@ body[data-skin] .card{box-shadow:none}
 
 /* ---- Квадратные углы: всё, кроме круглых точек, значков и аватаров ---- */
 body[data-corners=square]{--rad:0;--r2:0;--r3:0;--rr:0;--hr:0}
-body[data-corners=square] *:not(.dot):not(.pl):not(.av):not(.avw):not(.pd):not(.pi):not(.n):not(.ic):not(.dd-ch):not(.cls):not(.pc):not(.pc b):not(.pc u){border-radius:0!important}
+body[data-corners=square] *:not(.dot):not(.pl):not(.av):not(.avw):not(.pd):not(.pi):not(.n):not(.ic):not(.dd-ch):not(.cls):not(.pc):not(.pc b):not(.pc u):not(.dn):not(.rc){border-radius:0!important}
 body[data-corners=square] .cls.unknown{border-radius:0!important}
 
 /* ---- «Чёрное пламя»: слои эффектов (#bfx*) создаёт common.js; всё анимируется только transform/opacity на видеокарте ---- */
@@ -98,3 +98,5 @@ body[data-skin=zombie] ::selection{background:rgba(255,138,43,.45);color:#fff}
 
 /* молния по рамке: окно, оверлей, уведомления */
 .zbolt{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:57;border-radius:inherit}
+
+body[data-fx=off] .zbolt{display:none}
