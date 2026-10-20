@@ -181,7 +181,7 @@ function render() {
   }
   if (S.solo && me) {
     const place = ps.indexOf(me) + 1;
-    body._h = null; body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню">${classIcon(me.cls)}
+    body._h = null; body.innerHTML = targetHtml + `<div class="solo"><div class="me1" data-id="${me.id ?? ''}" data-nick="${esc(nm(me))}" title="${S.lang === 'en' ? 'Click for a skill breakdown, right-click for the menu' : 'Нажмите — разбивка по навыкам, правая кнопка — меню'}">${classIcon(me.cls)}
       <div class="who"><span class="name" data-notr>${esc(aliasOf(nm(me)))}</span><span class="bigdps num">${SV[ST](me)}<small>${SL[ST][0] === '%' ? 'доля' : SL[ST][0]}</small></span></div>
       <div class="place num">#${place}<small> / ${ps.length}</small></div></div>
       <div class="kv num"><div><span>Урон</span><b>${fmt(me.dmg)}</b></div><div><span>Доля</span><b>${((me.share || 0) * 100).toFixed(1).replace('.', ',')}%</b></div>
@@ -197,7 +197,7 @@ function render() {
     <div class="cols"><span class="r" title="Место по урону">#</span><span title="Класс">Кл.</span><span title="Ник игрока">Игрок</span><span class="r" title="${SL[ORD[0]][1]}">${SL[ORD[0]][0]}</span><span class="r c-total" title="${SL[ORD[1]][1]}">${SL[ORD[1]][0]}</span>${extra.map(c => `<span class="r" title="${c.t}">${c.h}</span>`).join('')}<span class="r" title="${SL[ORD[2]][1]}">${SL[ORD[2]][0]}</span></div>
     <div class="list">${shown.map((p, i) => {
       const c = CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
-      return `<div class="row${p === me ? ' me' : ''}" style="--c:${c}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"><div class="bar" style="--p:${(p.dmg / top * 100).toFixed(1)}%;width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
+      return `<div class="row${p === me ? ' me' : ''}" style="--c:${c}" data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="${S.lang === 'en' ? 'Click for a skill breakdown, right-click for the menu' : 'Нажмите — разбивка по навыкам, правая кнопка — меню'}"><div class="bar" style="--p:${(p.dmg / top * 100).toFixed(1)}%;width:${(p.dmg / top * 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(${c},.55),rgba(${c},.22))"></div>
       <div class="grid num"><span class="rank">${i + 1}</span>${classIcon(p.cls)}<span class="name" data-notr title="${esc(aliasOf(nm(p)))}">${esc(aliasOf(nm(p)))}</span>
       <span class="r dps">${SV[ORD[0]](p)}</span><span class="r muted c-total">${SV[ORD[1]](p)}</span>${extra.map(c => `<span class="r muted">${c.v(p)}</span>`).join('')}<span class="r pct">${SV[ORD[2]](p).replace('%', '')}</span></div></div>`;
     }).join('')}${rest > 0 ? `<div class="more">+ ещё ${rest} · ${(restShare * 100).toFixed(1).replace('.', ',')}%</div>` : ''}</div>`);
@@ -212,7 +212,7 @@ const ALT_VIEWS = ['rings', 'podium', 'bars', 'console', 'nearby', 'donut'];
 function altList(view, x) {
   const { shown, ps, me, top, SV, ST, SL } = x;
   const cc = p => CLASS_COLOR[p.cls] || CLASS_COLOR.Unknown;
-  const at = p => `data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="Нажмите — разбивка по навыкам, правая кнопка — меню"`;
+  const at = p => `data-id="${p.id ?? ''}" data-nick="${esc(nm(p))}" title="${S.lang === 'en' ? 'Click for a skill breakdown, right-click for the menu' : 'Нажмите — разбивка по навыкам, правая кнопка — меню'}"`;
   const nmh = p => `<span class="name" data-notr>${esc(aliasOf(nm(p)))}</span>`;
   const rel = p => Math.max(2, Math.min(100, p.dmg / top * 100));
   const pc = p => ((p.share || 0) * 100).toFixed(0) + '%';

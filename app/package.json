@@ -1,7 +1,7 @@
 {
   "name": "aion-dps-meter",
   "productName": "Aion DPS Meter",
-  "version": "1.2.9",
+  "version": "1.3.0",
   "description": "Aion DPS Meter — счётчик урона для AION 2",
   "author": "Accapura",
   "main": "boot.js",

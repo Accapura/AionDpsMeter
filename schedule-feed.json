@@ -136,15 +136,15 @@
     }
   ],
   "app": {
-    "version": "1.2.9",
-    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.2.9/AionDpsMeter.v1.2.9.exe",
-    "sha256": "5ed1ed99c1026bd35a79d6ca88ff483d7895ebf8014f37d0050ac1dbd3cff22b",
-    "size": 112558505,
-    "notes": "• Звуки событий: личный рекорд, смерть, смена фазы, убийство босса и начало боя — у каждого свой звук и громкость\n• Карточка боя: копировать, сохранить или отправить в Discord\n• Вкладка «Сессия» и «Темп боя» — итоги вечера, аптайм урона и использование умений\n• Компактные виды оверлея: «Мини», «Полоска», «Строка»\n• Тема «Зомби»: качающаяся толпа и зелёная молния по рамке (анимацию можно выключить)\n• Уведомления и звуки собраны в одном списке в «Настройках»",
+    "version": "1.3.0",
+    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.0/AionDpsMeter.v1.3.0.exe",
+    "sha256": "4760ef829ac59c443c6b20ef08873c088ab1347e4febc502925ee4f1a55699cc",
+    "size": 112559727,
+    "notes": "• Английский язык: переведены новые разделы 1.2.9 — звуки событий, карточка боя, «Сессия», «Темп боя», компактные виды оверлея\n• Подсказки в оверлее больше не смешивают английский с русским\n• В README — новые скриншоты",
     "patch": {
-      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.2.9.gz",
-      "sha256": "b6fcc09c4899fc4d7a6688d34cd7c9c9bc2b77a2b81b91b136ab05145fa0d558",
-      "size": 1708049,
+      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.0.gz",
+      "sha256": "02d4afa9bd53756014b3cc936f3fe97b938590f6e75710ad3ca996bcd09f3943",
+      "size": 1710222,
       "shell": "e33-net10"
     }
   }
