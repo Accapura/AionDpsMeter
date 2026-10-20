@@ -138,13 +138,13 @@
   "app": {
     "version": "1.3.0",
     "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.0/AionDpsMeter.v1.3.0.exe",
-    "sha256": "4760ef829ac59c443c6b20ef08873c088ab1347e4febc502925ee4f1a55699cc",
-    "size": 112559727,
+    "sha256": "b711993adcf9a946a5dad4e54ff565d9aa2ca584ad3e565e59cfb1498188f5fd",
+    "size": 112560090,
     "notes": "• Английский язык: переведены новые разделы 1.2.9 — звуки событий, карточка боя, «Сессия», «Темп боя», компактные виды оверлея\n• Подсказки в оверлее больше не смешивают английский с русским\n• В README — новые скриншоты",
     "patch": {
       "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.0.gz",
-      "sha256": "02d4afa9bd53756014b3cc936f3fe97b938590f6e75710ad3ca996bcd09f3943",
-      "size": 1710222,
+      "sha256": "2be857b10c8919ce5e7ab46ad505059fdf0386340a502e18c942415a2a32651e",
+      "size": 1710637,
       "shell": "e33-net10"
     }
   }

@@ -857,7 +857,7 @@ function registerHotkeys() {
     if (!acc) continue;
     let ok = false;
     try { ok = globalShortcut.register(acc, fn); } catch { ok = false; }
-    if (!ok) hotkeyErrors[id] = 'Сочетание ' + acc.replace(/num(\d)/g, 'Num $1').replace(/numadd/g, 'Num +').replace(/numsub/g, 'Num −') + ' занято другой программой или недопустимо';
+    if (!ok) hotkeyErrors[id] = T('Сочетание ' + acc.replace(/num(\d)/g, 'Num $1').replace(/numadd/g, 'Num +').replace(/numsub/g, 'Num −') + ' занято другой программой или недопустимо');
   }
   broadcast('hotkey-errors', hotkeyErrors);
 }
@@ -916,7 +916,7 @@ ipcMain.handle('fight-export', async (_e, id, kind) => {
   const dtf = ms => new Date(ms).toISOString().replace('T', ' ').slice(0, 19);
   let text, name;
   if (kind === 'all') {
-    const rows = [csvRow(['Дата', 'Босс / бой', 'Зона', 'Итог', 'Время боя, с', 'DPS группы', 'Ваш DPS', 'Ваше место', 'Игроков'])];
+    const rows = [csvRow(['Дата', 'Босс / бой', 'Зона', 'Итог', 'Время боя, с', 'DPS группы', 'Ваш DPS', 'Ваше место', 'Игроков'].map(T))];
     for (const f of fights) {
       const me = (f.players || []).find(p => p.self);
       rows.push(csvRow([dtf(f.at), f.boss || f.title || '', f.zone || '', f.result || '', Math.round((f.combatMs || 0) / 1000), Math.round(f.partyDps || 0), me ? Math.round(me.dps) : '', me ? f.players.indexOf(me) + 1 : '', (f.players || []).length]));
@@ -927,8 +927,8 @@ ipcMain.handle('fight-export', async (_e, id, kind) => {
     if (!f) return { ok: false };
     if (kind === 'json') { text = JSON.stringify(f, null, 2); name = fnameSafe((f.boss || f.title) + ' ' + dtf(f.at).slice(0, 10)) + '.json'; }
     else {
-      const rows = [csvRow(['Бой', f.boss || f.title || '', 'Дата', dtf(f.at), 'Время боя, с', Math.round((f.combatMs || 0) / 1000), 'DPS группы', Math.round(f.partyDps || 0)]), '',
-        csvRow(['#', 'Игрок', 'Класс', 'DPS', 'Урон', 'Доля, %', 'Крит, %', 'Макс. удар', 'HPS'])];
+      const rows = [csvRow([T('Бой'), f.boss || f.title || '', T('Дата'), dtf(f.at), T('Время боя, с'), Math.round((f.combatMs || 0) / 1000), T('DPS группы'), Math.round(f.partyDps || 0)]), '',
+        csvRow(['#', 'Игрок', 'Класс', 'DPS', 'Урон', 'Доля, %', 'Крит, %', 'Макс. удар', 'HPS'].map(T))];
       (f.players || []).forEach((p, i) => rows.push(csvRow([i + 1, p.name, p.cls || '', Math.round(p.dps || 0), Math.round(p.dmg || 0), ((p.share || 0) * 100).toFixed(1), p.crit != null ? Math.round(p.crit * 100) : '', p.maxHit || '', Math.round(p.hps || 0)])));
       text = '\ufeff' + rows.join('\r\n') + '\r\n'; name = fnameSafe((f.boss || f.title) + ' ' + dtf(f.at).slice(0, 10)) + '.csv';
     }
@@ -1020,7 +1020,7 @@ ipcMain.handle('armory', async (_e, kind, p = {}) => {
     }
     if (kind === 'search') {
       const name = String(p.name || '').trim();
-      if (!name) return { ok: false, error: 'введите ник персонажа' };
+      if (!name) return { ok: false, error: T('введите ник персонажа') };
       const d = await armoryGet('https://api-search.plaync.com/aion2global/search/v2/character?' + qs({ keyword: name, serverId: p.serverId, page: 1, size: 40, region, localeInfo: 'en-US' }));
       const srv = id => serversGlobal.find(s => s.id === id);
       return {
@@ -1040,13 +1040,13 @@ ipcMain.handle('armory', async (_e, kind, p = {}) => {
     }
     if (kind === 'info') {
       const d = await armoryGet('https://aion2.plaync.com/api/character/info?' + qs({ region, lang: 'en-US', characterId: p.id, serverId: p.serverId }));
-      if (!d || !d.profile) return { ok: false, error: 'сайт не прислал данные персонажа' };
+      if (!d || !d.profile) return { ok: false, error: T('сайт не прислал данные персонажа') };
       d.profile.characterName = unhtml(d.profile.characterName);
       d.profile.serverNameRu = serversGlobal.find(s => s.id === d.profile.serverId)?.ru;
       return { ok: true, info: d, page: `https://aion2.plaync.com/en-us/characters/${p.serverId}/${encodeURIComponent(p.id)}?region=${region}` };
     }
   } catch (e) { return { ok: false, error: e.message }; }
-  return { ok: false, error: 'неизвестный запрос' };
+  return { ok: false, error: T('неизвестный запрос') };
 });
 
 

@@ -4,6 +4,9 @@
 // по шаблонам и кусочкам. Работает и в главном процессе (меню трея).
 (function (root) {
   const EXACT = {
+    'DPS по боям': 'DPS by fight', 'Активность по ходу боя': 'Activity during the fight',
+    'Aion DPS Meter — разбивка по навыкам': 'Aion DPS Meter — skill breakdown', 'Aion DPS Meter — карта босса': 'Aion DPS Meter — boss map', 'Aion DPS Meter — расписание': 'Aion DPS Meter — schedule', 'Aion DPS Meter — звук': 'Aion DPS Meter — sound', 'Aion DPS Meter — уведомление': 'Aion DPS Meter — notification',
+    'Дата': 'Date', 'Босс / бой': 'Boss / fight', 'Зона': 'Zone', 'Время боя, с': 'Combat time, s', 'Доля, %': 'Share, %', 'Крит, %': 'Crit, %',
     "Английский язык": "English language",
     "Переведены новые разделы 1.2.9: звуки событий, карточка боя, «Сессия», «Темп боя», компактные виды оверлея и подсказки в оверлее": "The new 1.2.9 sections are translated: event sounds, fight card, Session, Tempo, compact overlay views and overlay tooltips",
     "Подсказки": "Tooltips",
@@ -412,6 +415,8 @@
     'Ссылка на профиль скопирована': 'Profile link copied', 'Вставьте её в любой чат Discord — откроется профиль': 'Paste it into any Discord chat — it opens the profile', 'только читает': 'only reads', };
   // Кусочки внутри составных строк — длинные раньше коротких.
   const PARTS = [
+    [': звук',': sound'], [': громкость',': volume'], [': уведомление',': notification'],
+    ['Сочетание ','Shortcut '], [' занято другой программой или недопустимо',' is used by another app or invalid'], ['введите ник персонажа','enter the character name'], ['сайт не прислал данные персонажа','the site returned no character data'], ['неизвестный запрос','unknown request'],
     ["Только урон: скрыть кнопки", "Damage only: hide buttons"],
     ["кнопки, оставить только урон", "buttons, leave only damage"],
     ["Пинг до игрового сервера (весь путь, с ускорителем):", "Ping to the game server (the whole path, with a booster):"],
@@ -488,6 +493,8 @@
     if (lang !== 'en' || !s || !CYR.test(s)) return s;
     const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s), core = m[2];
     if (EXACT[core] != null) return m[1] + EXACT[core] + m[3];
+    const cm = /^([^:]+?)(: (?:звук|громкость|уведомление))$/.exec(core);
+    if (cm && EXACT[cm[1]] != null) return m[1] + EXACT[cm[1]] + tr(cm[2], 'en') + m[3];
     let out = core;
     for (const [re, en] of PARTS) { if (!CYR.test(out)) break; out = out.replace(re, en); }
     return m[1] + out + m[3];
