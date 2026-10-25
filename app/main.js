@@ -49,6 +49,7 @@ const DEFAULTS = {
   minimal: false,               // оверлей только с уроном: без кнопок, режимов и заголовка
   autoHide: true,               // прятать оверлей, когда игра не на экране
   solo: false,                  // режим «Только я»
+  ovLimit: true,                // лимит времени подземелья и босса внизу оверлея
   profilesOn: true,             // свои настройки оверлея для каждого режима
   profiles: {},                 // { boss|mob|dummy: { count, opacity, columns, showHeader, solo, compact, size } }
   discordRpc: true,             // статус в Discord
@@ -283,7 +284,7 @@ function openOverlay() {
     alwaysOnTop: true, skipTaskbar: true, maximizable: false, minimizable: false, fullscreenable: false,
   }, 'overlay.html');
   w.setAlwaysOnTop(true, 'screen-saver');
-  w.on('show', () => { w.webContents.send('snap', lastSnap); w.webContents.send('ping', { ms: lastPing, est: lastPingEst, dbg: lastPingDbg }); }); // пока оверлей скрыт, снимки ему не шлём
+  w.on('show', () => { w.webContents.send('snap', lastSnap); w.webContents.send('timer', lastTimer); w.webContents.send('ping', { ms: lastPing, est: lastPingEst, dbg: lastPingDbg }); }); // пока оверлей скрыт, снимки ему не шлём
   // Место и размер оверлея запоминаются сразу после перетаскивания или изменения размера (и своей ручкой тоже).
   let kt = null;
   const keepNow = () => {
@@ -395,6 +396,7 @@ function sfxStartCheck(s) {
   if (act && !sfxWasActive && settings.mode !== 'dummy' && Date.now() - sfxStartAt > 15000) { sfxStartAt = Date.now(); playSfx('start'); }
   sfxWasActive = act;
 }
+let lastTimer = null; // ближайший таймер подземелья/босса: { kind, startMs, endMs } или null
 let lastPing = -1; // пинг до игрового сервера, мс (-1 — неизвестен)
 let lastPingDbg = null; // сколько навыков увидено и сопоставлено (для подсказки)
 let lastPingEst = false; // true — это оценка (до адреса сервера), а не замер по навыкам персонажа
@@ -453,6 +455,7 @@ const bridge = {
       else if (m.t === 'detail') broadcast('detail', m);
       else if (m.t === 'fight') { saveRot(m); addFight(m); }
       else if (m.t === 'death') addDeath(m);
+      else if (m.t === 'timer') { lastTimer = m.none ? null : { kind: m.kind | 0, startMs: +m.startMs, endMs: +m.endMs }; const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('timer', lastTimer); }
       else if (m.t === 'ping') onPing(m);
       else if (m.t === 'status') { setStatus({ state: m.state, msg: m.msg }); logLine('status: ' + m.state + ' · ' + m.msg); }
       else if (m.t === 'boss') { bossLog.unshift({ ...m, at: Date.now() }); bossLog.length = Math.min(bossLog.length, 40); broadcast('boss-log', bossLog); }
@@ -864,7 +867,7 @@ function registerHotkeys() {
 ipcMain.on('hotkeys-pause', (_e, on) => { if (on) globalShortcut.unregisterAll(); else registerHotkeys(); });
 
 // ---------------------------------------------------------------- IPC
-ipcMain.handle('get-state', () => ({ sys: lastSys, settings, status, snap: lastSnap, bossLog, version: APP_VERSION, ping: lastPing, pingEst: lastPingEst, pingDbg: lastPingDbg, records: records(), whatsNew: whatsNew(), update: updateInfo(), rpcAvailable: !!DISCORD_APP_ID }));
+ipcMain.handle('get-state', () => ({ sys: lastSys, settings, status, snap: lastSnap, timer: lastTimer, bossLog, version: APP_VERSION, ping: lastPing, pingEst: lastPingEst, pingDbg: lastPingDbg, records: records(), whatsNew: whatsNew(), update: updateInfo(), rpcAvailable: !!DISCORD_APP_ID }));
 ipcMain.handle('schedule-data', () => scheduleData());
 ipcMain.handle('fights', () => loadFights());
 ipcMain.handle('deaths', () => loadDeaths());
@@ -874,6 +877,13 @@ ipcMain.handle('report', () => saveReport());
 ipcMain.handle('webhook-test', (_e, url) => webhookSend(url, { content: T('Aion DPS Meter подключён к этому каналу ✓') }));
 ipcMain.on('fights-clear', () => { fights = []; try { fs.writeFileSync(FIGHTS_FILE(), '[]'); } catch { /* ignore */ } broadcast('fights', fights); broadcast('records', {}); });
 ipcMain.on('share', (_e, fightId) => shareFight(fightId));
+ipcMain.on('copy-chat', (_e, fightId) => {
+  const f = loadFights().find(x => x.id === fightId);
+  if (!f) return;
+  const line = chatLine(f);
+  clipboard.writeText(line);
+  showToast({ misc: true, key: 'chat' + Date.now(), name: T('Строка для чата скопирована'), type: 'info', icon: 'app', start: null, text: line });
+});
 // Карточка боя: предпросмотр, копирование, сохранение и отправка в Discord.
 const cardFight = id => (id ? loadFights().find(x => x.id === id) : null);
 ipcMain.handle('card-render', async (_e, id, o) => { const f = cardFight(id); if (!f) return null; const img = await cardPng(f, o); return img && !img.isEmpty() ? img.toDataURL() : null; });
@@ -1464,7 +1474,7 @@ async function saveReport() {
 // и подхватываются загрузчиком boot.js при перезапуске — папка установки не трогается, где бы она ни была.
 // Если новая версия требует другой «оболочки» (Electron), скачивается установщик и ставится тихо в текущую папку.
 // Всё скачивается с докачкой при обрыве и проверяется по SHA-256.
-const newer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+const newer = (a, b) => { const x = String(a).split('-')[0].split('.').map(Number), y = String(b).split('-')[0].split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
 const UPDATE_HOSTS = /^https:\/\/([a-z0-9-]+\.)*(github\.com|githubusercontent\.com)\//;
 const UPD_DIR = () => path.join(app.getPath('userData'), 'updates');
 const updater = { state: 'idle', progress: 0, error: '' };

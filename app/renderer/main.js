@@ -141,6 +141,7 @@ const pages = {
       <div class="muted" style="font-size:12px">Наведите курсор на название колонки в оверлее — появится подсказка, что она показывает.</div></div>
     <div class="card field"><span class="lbl">Поведение</span>
       <label class="opt"><input type="checkbox" id="oSolo" ${S.solo ? 'checked' : ''}> <span><b>Только я</b> — крупно свой DPS, место, урон и крит вместо списка группы</span></label>
+      <label class="opt"><input type="checkbox" id="oLimit" ${S.ovLimit !== false ? 'checked' : ''}> <span><b>Показывать лимит времени</b> — обратный отсчёт подземелья и босса внизу оверлея</span></label>
       <label class="opt"><input type="checkbox" id="oAuto" ${S.autoHide !== false ? 'checked' : ''}> <span><b>Прятать оверлей</b>, когда игра свёрнута или открыто другое окно</span></label>
       <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
       <label class="opt"><input type="checkbox" id="oQuit" ${S.quitWithGame ? 'checked' : ''}> <span><b>Закрываться вместе с игрой</b> — через 20 секунд после выхода из игры</span></label>
@@ -191,7 +192,7 @@ const pages = {
     const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
     const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
-    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '13 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
+    ${sec('theme', ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18" opacity=".0"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/>'), 'Цвет', '15 цветовых тем: меняется только цвет, форма и расположение настраиваются отдельно', Object.entries(THEMES).map(th).join(''), 'g-theme')}
     ${sec('corners', ic('<rect x="4" y="5" width="16" height="14" rx="5"/>'), 'Форма окон и кнопок', 'Углы окон, кнопок и карточек', cr, 'g-2')}
     ${sec('navPos', ic('<path d="M4 7h16M4 12h10M4 17h16"/>'), 'Главное меню', 'Где находятся кнопки разделов', nv, 'g-4')}
     ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
@@ -489,11 +490,21 @@ function tempoCard(f) {
     ${tips.length ? `<div class="tip">💡 <span>${tips.join(' ')}</span></div>` : ''}${load}
     <div class="muted" style="font-size:11.5px">${T('Игра не отдаёт данные об усилениях, поэтому аптайм считается по вашим ударам.')}</div></div>`;
 }
+// Боевой лог: все ваши удары боя по порядку — время, навык, урон и тип удара.
+function combatLogHtml(rot) {
+  if (!rot || !rot.c || !rot.c.length) return '';
+  const tag = fl => [[1, 'Крит'], [2, 'В спину'], [8, 'Идеальный'], [16, 'Мощный'], [32, 'Множественный'], [128, 'Парирован'], [1024, 'Периодический'], [4096, 'Двойной']].filter(([b]) => fl & b).map(([, t]) => `<span class="tg">${T(t)}</span>`).join(' ');
+  const clock = ms => { const s = Math.max(0, ms) / 1000; return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60).toFixed(1); };
+  const MAXR = 2000, rows = rot.c.slice(0, MAXR).map(([ms, ix, dmg, fl]) => `<tr><td class="num">${clock(ms)}</td><td>${esc(rot.names[ix] || 'Неизвестное умение')}</td><td class="r num">${fmt(dmg)}</td><td>${tag(fl)}</td></tr>`).join('');
+  const more = rot.c.length > MAXR ? `<div class="muted" style="font-size:11.5px">${T('Показаны первые')} ${MAXR} ${T('ударов из')} ${rot.c.length}</div>` : '';
+  return `<div class="scroll" style="max-height:340px"><table class="ft"><tr><th>Время</th><th>Навык</th><th class="r">Урон</th><th>Тип удара</th></tr>${rows}</table></div>${more}`;
+}
 function rotCard(f) {
   if (!f.hasRot) return '';
   if (FX.rot && FX.rot.id === f.id) {
     const h = FX.rot.data ? rotationHtml(FX.rot.data) : '';
-    return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span>${h || '<div class="muted">Лента ударов этого боя больше не хранится.</div>'}</div>`;
+    const logBtn = FX.rot.data ? `<div style="margin-top:10px"><button type="button" id="logToggle"${FX.logOn ? ' class="on"' : ''}>${FX.logOn ? 'Скрыть боевой лог' : 'Боевой лог'}</button></div>${FX.logOn ? combatLogHtml(FX.rot.data) : ''}` : '';
+    return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span>${h || '<div class="muted">Лента ударов этого боя больше не хранится.</div>'}${logBtn}</div>`;
   }
   return `<div class="card field"><span class="lbl">Ротация · ваши удары по навыкам</span><div><button type="button" id="rotLoad" data-id="${esc(f.id)}">Показать ротацию</button></div></div>`;
 }
@@ -559,7 +570,7 @@ function statsBody() {
         const me = (f.details || [])[0];
         const hasHeal = f.players.some(p => p.hps > 0);
         const canCmp = f.boss && meOf(f) && list.filter(x => x.boss === f.boss && meOf(x)).length > 1;
-        return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button><button type="button" id="fCard" data-id="${esc(f.id)}"${FX.card && FX.card.id === f.id ? ' class="on"' : ''}>Карточка</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<button type="button" id="fCsv" data-id="${esc(f.id)}">CSV</button><button type="button" id="fJson" data-id="${esc(f.id)}">JSON</button><button type="button" id="fDel" data-id="${esc(f.id)}">Удалить</button><span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
+        return `<div class="card field"><div class="row"><button type="button" id="fBack">← Ко всем боям</button><button type="button" id="fShare" data-share="${esc(f.id)}">Поделиться</button><button type="button" id="fChat" data-id="${esc(f.id)}" title="Одна строка с итогом боя для чата игры">Для чата</button><button type="button" id="fCard" data-id="${esc(f.id)}"${FX.card && FX.card.id === f.id ? ' class="on"' : ''}>Карточка</button>${canCmp ? `<button type="button" id="fCmp" data-cmp="${esc(f.id)}">Сравнить</button>` : ''}<button type="button" id="fCsv" data-id="${esc(f.id)}">CSV</button><button type="button" id="fJson" data-id="${esc(f.id)}">JSON</button><button type="button" id="fDel" data-id="${esc(f.id)}">Удалить</button><span style="flex:1"></span><span class="res ${f.result}">${RES[f.result] || f.result}</span></div>
           <div style="font-size:20px;font-weight:700">${nt(f.boss || f.title)}</div>
           <div class="muted">${dt(f.at)} · ${esc(f.zone || '')} · бой ${clock(f.combatMs)} · DPS группы ${fmt(f.partyDps)}${pingStat(f.ping)}${f.partial ? ' · сервер прислал не весь урон' : ''}</div>
           ${prevLine(f)}${classLine(f)}${FX.msg ? `<div class="muted">${esc(FX.msg)}</div>` : ''}
@@ -1011,6 +1022,7 @@ function render() {
   m.querySelectorAll('[data-mcol]').forEach(c => c.onchange = () => api.set({ columns: { [c.dataset.mcol]: c.checked } }));
   on('resetSize', 'onclick', () => api.overlayResetSize());
   on('oSolo', 'onchange', e => api.set({ solo: e.target.checked }));
+  on('oLimit', 'onchange', e => api.set({ ovLimit: e.target.checked }));
   on('oAuto', 'onchange', e => api.set({ autoHide: e.target.checked }));
   on('oStart', 'onchange', e => api.set({ autoStart: e.target.checked }));
   on('oQuit', 'onchange', e => api.set({ quitWithGame: e.target.checked }));
@@ -1027,6 +1039,7 @@ function render() {
   on('cardSave', 'onclick', async () => { const r = await api.cardSave(FX.card.id); cardSay(r.ok ? 'Сохранено' : r.canceled ? '' : 'Не получилось сохранить'); });
   on('cardDc', 'onclick', async () => { cardSay('Отправляю…'); const r = await api.cardDiscord(FX.card.id); cardSay(r.ok ? 'Отправлено в Discord ✓' : (r.error || 'Не удалось отправить')); });
   on('fShare', 'onclick', e => api.share(e.currentTarget.dataset.share));
+  on('fChat', 'onclick', e => api.copyChat(e.currentTarget.dataset.id));
   on('uCheck', 'onclick', async () => { $('uCheck').disabled = true; $('uCheck').textContent = 'Проверяю…'; U = await api.updateCheck(); render(); });
   on('uGo', 'onclick', () => api.updateInstall());
   on('uSkip', 'onclick', () => api.updateSkip(U.version));
@@ -1096,6 +1109,7 @@ function render() {
     m.querySelectorAll('[data-death]').forEach(r => r.onclick = () => { D.open = r.dataset.death; render(); });
     on('dBack', 'onclick', () => { D.open = null; render(); });
     on('dClear', 'onclick', () => { if (D.clearArmed) { api.deathsClear(); D.clearArmed = false; } else { D.clearArmed = true; $('dClear').textContent = 'Нажмите ещё раз, чтобы удалить'; } });
+    on('logToggle', 'onclick', () => { FX.logOn = !FX.logOn; render(); });
     on('rotLoad', 'onclick', async e => { const id = e.currentTarget.dataset.id; FX.rot = { id, data: await api.fightRot(id) }; render(); });
     on('fCmp', 'onclick', e => { C.a = e.currentTarget.dataset.cmp; C.b = null; statTab = 'compare'; F.open = null; render(); });
     on('cA', 'onchange', e => { C.a = e.target.value; C.b = null; render(); });

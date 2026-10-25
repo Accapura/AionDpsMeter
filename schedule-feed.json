@@ -136,15 +136,15 @@
     }
   ],
   "app": {
-    "version": "1.3.1",
-    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.1/AionDpsMeter.v1.3.1.exe",
-    "sha256": "1239d8486df1122f9d17ec52e28b9ae3565e7469fcf99f081857ba502c7af94e",
-    "size": 112535390,
-    "notes": "• Молния темы «Зомби» идёт по скруглённому контуру, а «Анимации темы» её выключают\n• «Пончик» и «Кольца» при квадратных углах снова круглые, «Гистограмма» не растягивается на одного игрока\n• В английском доли с точкой, подпись «13 тем»",
+    "version": "1.3.3",
+    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.3/AionDpsMeter.v1.3.3.exe",
+    "sha256": "299978b6f28eed5f964851a75f3e47a641b1a08390218a33aaa35faf1e8fc763",
+    "size": 112564949,
+    "notes": "• Две новые темы «Серая» и «Чёрная» (всего 15)\n• Таймеры подземелья и босса внизу оверлея\n• Боевой лог в карточке боя и кнопка «Для чата» в истории\n• Проверены русский и английский тексты, облегчена анимация темы «Зомби»",
     "patch": {
-      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.1.gz",
-      "sha256": "be7109fccd891ca03eb4e7e22a2dfcc45a1c463bf57d968c78d02ff49bef9a87",
-      "size": 1712874,
+      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.3.gz",
+      "sha256": "81324320fce5202909dbb2a6beba186f9e4ff245e7fd04999a2350597089b787",
+      "size": 1720497,
       "shell": "e33-net10"
     }
   }

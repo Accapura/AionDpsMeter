@@ -12,6 +12,8 @@ const THEMES = {
   teal: { name: 'Бирюза', g1: '16,96,100', g2: '8,46,58', accent: '#6ff2e0', accentFg: '#052a2a', text: '#effffd', muted: '#a9dcd8', line: 'rgba(180,255,245,.2)', hp: '#ff7088' },
   blackflame: { name: 'Чёрное пламя', g1: '52,9,24', g2: '9,5,12', accent: '#ff4057', accentFg: '#1c0307', text: '#fff1f3', muted: '#cfa6ad', line: 'rgba(255,80,100,.26)', hp: '#ff8a3d' },
   zombie: { name: 'Зомби', g1: '16,52,34', g2: '5,15,11', accent: '#ff8a2b', accentFg: '#210d02', text: '#f3fff4', muted: '#a9cdb2', line: 'rgba(255,150,60,.26)', hp: '#ff6a1f' },
+  gray: { name: 'Серая', g1: '86,88,96', g2: '38,39,45', accent: '#e3e5ea', accentFg: '#17181c', text: '#f6f7f9', muted: '#b4b7c0', line: 'rgba(255,255,255,.2)', hp: '#ff6b7a' },
+  black: { name: 'Чёрная', g1: '20,20,23', g2: '0,0,0', accent: '#f2f2f5', accentFg: '#08080a', text: '#f5f5f7', muted: '#9a9aa4', line: 'rgba(255,255,255,.16)', hp: '#ff5d73' },
   midnight: { name: 'Полночь', g1: '34,46,112', g2: '14,18,56', accent: '#86a8ff', accentFg: '#0b1440', text: '#f2f5ff', muted: '#b7c2ec', line: 'rgba(170,190,255,.22)', hp: '#ff6b88' },
 };
 
@@ -382,24 +384,30 @@ function zfxFrame(ts) {
   const dt = ZFX.last ? Math.min(0.1, (ts - ZFX.last) / 1000) : 0; ZFX.last = ts; ZFX.t += dt;
   const sc = document.body.dataset.win === 'overlay' ? 0.6 : 0.85;
   const W = Math.max(2, Math.round(cv.clientWidth * sc)), H = Math.max(2, Math.round(cv.clientHeight * sc));
-  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; ZFX.off = null; }
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; ZFX.off = null; ZFX.base = null; }
   const g = cv.getContext('2d'), iw = img.naturalWidth, ih = img.naturalHeight;
   const s = Math.max(W / iw, H / ih), dw = iw * s, dh = ih * s, ox = (W - dw) / 2, oy = H - dh; // cover, привязка к низу
+  if (!ZFX.base) { // картинка один раз приводится к размеру окна — дальше рисуется уже маленькая копия
+    const b = ZFX.base = document.createElement('canvas'); b.width = W; b.height = H;
+    b.getContext('2d').drawImage(img, ox, oy, dw, dh);
+  }
+  const base = ZFX.base;
   g.clearRect(0, 0, W, H);
-  g.drawImage(img, ox, oy, dw, dh);
+  g.drawImage(base, 0, 0);
   if (!still || !ZFX.drawnStill) {
-    const N = ZFX.N, y0 = 0.30, fade = 0.10; // качается всё ниже 30% высоты картинки, верх плавно растворяется
+    const N = document.body.dataset.win === 'overlay' ? 28 : ZFX.N, y0 = 0.30, fade = 0.10; // качается всё ниже 30% высоты картинки, верх плавно растворяется
     if (!ZFX.off) ZFX.off = document.createElement('canvas');
-    const o = ZFX.off; o.width = W; o.height = H;
-    const og = o.getContext('2d'), sy = ih * y0, dy = oy + dh * y0, foot = oy + dh;
+    const o = ZFX.off; if (o.width !== W || o.height !== H) { o.width = W; o.height = H; }
+    const og = o.getContext('2d'); og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-over'; og.clearRect(0, 0, W, H);
+    const dy = oy + dh * y0, foot = oy + dh, sy = dy; // сдвиг считается уже в пикселях готовой копии
     const t = still ? 0 : ZFX.t;
     for (let i = 0; i < N; i++) {
       const u = (i + 0.5) / N, d = Math.abs(u - 0.5);
       let hero = Math.min(1, Math.max(0, (d - 0.07) / 0.14)); hero = hero * hero * (3 - 2 * hero);
       const k = still ? 0 : 0.022 * hero * (Math.sin(t * 1.9 + ZFX.ph[i]) + 0.35 * Math.sin(t * 3.7 + ZFX.ph[i] * 1.7));
-      const sx = iw * i / N, sw = iw / N + 1.5;
+      const sx = W * i / N, sw = W / N + 1.5;
       og.setTransform(1, 0, k, 1, -k * foot, 0); // сдвиг растёт вверх от «земли»
-      og.drawImage(img, sx, sy, sw, ih - sy, ox + sx * s, dy, sw * s, foot - dy);
+      og.drawImage(base, sx, sy, sw, H - sy, sx, dy, sw, H - dy);
     }
     og.setTransform(1, 0, 0, 1, 0, 0);
     og.globalCompositeOperation = 'destination-in';
@@ -408,7 +416,11 @@ function zfxFrame(ts) {
     g.drawImage(o, 0, 0);
     ZFX.drawnStill = still;
   }
-  if (!still && !document.hidden) ZFX.raf = requestAnimationFrame(ts2 => { if (ts2 - ZFX.last >= 40) zfxFrame(ts2); else ZFX.raf = requestAnimationFrame(zfxFrame); }); // ~25 к/с
+  if (!still && !document.hidden) {
+    const gap = document.body.dataset.win === 'overlay' ? 55 : 42; // ~18 к/с в оверлее, ~24 в окне
+    const tick = ts2 => { if (ts2 - ZFX.last >= gap) zfxFrame(ts2); else ZFX.raf = requestAnimationFrame(tick); };
+    ZFX.raf = requestAnimationFrame(tick);
+  }
 }
 function zfxSync(on) {
   const sh = document.querySelector('.shell');
@@ -440,8 +452,10 @@ function zbPerimeter(w, h, r, step) {
 function zbDraw(it, t, still) {
   const el = it.el, cv = it.cv, w = el.clientWidth, h = el.clientHeight;
   if (w < 20 || h < 20) return;
-  const dpr = Math.min(2, devicePixelRatio || 1);
-  const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0; // скругление может смениться в «Оформлении» без смены размера окна
+  const dpr = Math.min(1.5, devicePixelRatio || 1);
+  const nowMs = performance.now();
+  if (!it.radT || nowMs - it.radT > 1500) { it.radT = nowMs; it.radV = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0; }
+  const rad = it.radV; // скругление может смениться в «Оформлении» без смены размера окна
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr) || !it.P || it.rad !== rad) {
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     it.rad = rad; it.P = zbPerimeter(w, h, rad, 7);
@@ -460,9 +474,9 @@ function zbDraw(it, t, still) {
     const head = Math.floor(u * N), seg = [];
     for (let k = 0; k <= L; k++) { const i = (head - k + N * 2) % N, a = still ? 0 : (rnd() - .5) * (hi ? 5 : 6) * (0.5 + 0.5 * Math.sin(k * 0.9 + t * 9)); seg.push({ i, q: pt(i, a), f: 1 - k / L }); }
     const stroke = (from, to, col, lw) => { g.beginPath(); for (let k = from; k <= to; k++) { const q = seg[k].q; k === from ? g.moveTo(q.x, q.y) : g.lineTo(q.x, q.y); } g.strokeStyle = col; g.lineWidth = lw; g.stroke(); };
-    const CH = 5, per = Math.ceil(L / CH);
+    const CH = 4, per = Math.ceil(L / CH);
     for (let c = 0; c < CH; c++) { const a = c * per, b = Math.min(L, a + per + 1), f = seg[Math.min(L, a)].f, al = Math.max(0.05, f);
-      stroke(a, b, `rgba(18,130,56,${.22 * al})`, 5); stroke(a, b, `rgba(52,215,100,${.6 * al})`, 2.2); stroke(a, b, `rgba(190,255,210,${.95 * al})`, 1); }
+      stroke(a, b, `rgba(52,215,100,${.62 * al})`, 3); stroke(a, b, `rgba(190,255,210,${.95 * al})`, 1); }
     // ответвления: короткие зигзаги внутрь окна
     if (!still) for (let b = 0; b < 2; b++) if (rnd() < 0.4) { const s = seg[Math.floor(rnd() * L * .6)], i = s.i; let x = s.q.x, y = s.q.y; g.beginPath(); g.moveTo(x, y);
       for (let n = 0; n < 3; n++) { x -= P[i].nx * (3 + rnd() * 4) + (rnd() - .5) * 6; y -= P[i].ny * (3 + rnd() * 4) + (rnd() - .5) * 6; g.lineTo(x, y); }
@@ -472,7 +486,7 @@ function zbDraw(it, t, still) {
 function zbLoop(ts) {
   ZB.raf = 0; ZB.items = ZB.items.filter(it => it.el.isConnected);
   if (!ZB.items.length || document.hidden) return;
-  if (ts - ZB.last >= 62) { ZB.last = ts; const t = ts / 1000; for (const it of ZB.items) zbDraw(it, t, false); }
+  if (ts - ZB.last >= 75) { ZB.last = ts; const t = ts / 1000; for (const it of ZB.items) zbDraw(it, t, false); }
   ZB.raf = requestAnimationFrame(zbLoop);
 }
 function zbStart() {

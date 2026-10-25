@@ -137,12 +137,21 @@ public sealed partial class CombatTracker
                 case BattleStateEvent b:
                     OnBattleState(b);
                     break;
+                case InstanceTimerEvent it:
+                    _timers[it.Kind] = it;
+                    break;
+                case BossTimeLimitEvent bl:
+                    _timers[InstanceTimerEvent.BossLimit] = new InstanceTimerEvent(bl.TimeMs, _entities.MapId, InstanceTimerEvent.BossLimit,
+                        bl.TimeMs, bl.EndMs);
+                    _bossLimitActor = bl.ActorId;
+                    break;
                 case ZoneChangedEvent z:
                     // A reload of the map we are on keeps every id: an in-map teleport, or the revive after dying on a
                     // boss. The parser knows the map only from the load before; after a meter restart inside a dungeon
                     // the registry knows it from the cache — without that, the first death ended the fight and the boss
                     // came back as "#id".
                     if (z.IsTeleport || z.MapId == _entities.MapId) break;
+                    _timers.Clear(); // the instance's countdowns end with it
                     if (_current is { IsActive: true }) Finish(EncounterEndReason.ZoneChange, _current.LastDamageMs);
                     _entities.OnZoneChanged(z.MapId, z.ZoneName);
                     break;
@@ -318,6 +327,7 @@ public sealed partial class CombatTracker
             npc = _entities.ForgetNpc(e.ActorId);
         if (e.CurrentHp <= 0 && npc.Hp > 0)
         {
+            EndBossLimit(e.ActorId);
             NoticeBoss(npc, BossNoticeKind.Killed, e.TimeMs);
             _entities.NoteDeath(npc);
         }
@@ -348,6 +358,7 @@ public sealed partial class CombatTracker
 
     private void OnDeath(DeathEvent e)
     {
+        EndBossLimit(e.ActorId);
         if (!_entities.TryGetNpc(e.ActorId, out var npc)) return;
         if (npc.Hp != 0)
         {
@@ -368,6 +379,7 @@ public sealed partial class CombatTracker
         if (_entities.IsPlayerLike(e.ActorId)) return;
         var npc = _entities.UpsertNpc(e.ActorId);
         npc.InCombat = e.InCombat;
+        if (!e.InCombat) EndBossLimit(e.ActorId); // a wipe or a reset: no clock runs any more
         if (e.InCombat || _current is not { IsActive: true } enc || enc.BossId != e.ActorId) return;
 
         var reason = npc.Hp switch
@@ -498,6 +510,27 @@ public sealed partial class CombatTracker
     // ---------------------------------------------------------------- boss sightings (respawn timers)
 
     private readonly List<BossNotice> _pendingNotices = new();
+    private readonly Dictionary<int, InstanceTimerEvent> _timers = new();
+    private uint _bossLimitActor;
+
+    /// <summary>The boss whose time limit runs died or left combat: its clock is gone.</summary>
+    private void EndBossLimit(uint actorId)
+    {
+        if (actorId == _bossLimitActor) _timers.Remove(InstanceTimerEvent.BossLimit);
+    }
+
+    /// <summary>The countdown that runs out first after <paramref name="nowMs"/> (dungeon time limit, a boss's limit,
+    /// the wait after entering); null when none is running.</summary>
+    public InstanceTimerEvent? NextTimer(long nowMs)
+    {
+        lock (_gate)
+        {
+            InstanceTimerEvent? next = null;
+            foreach (var t in _timers.Values)
+                if (t.EndMs > nowMs && (next is null || t.EndMs < next.EndMs)) next = t;
+            return next;
+        }
+    }
     private readonly List<FieldBossListEvent> _pendingLists = new();
     private readonly List<PartyRosterEvent> _pendingRosters = new();
 

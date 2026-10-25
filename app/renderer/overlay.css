@@ -114,3 +114,8 @@ body.minimal .minbar svg.i{width:13px;height:13px}
 body.minimal.locked .minbar{display:none}
 body.minimal .list{padding-top:24px}
 body.minimal.locked .list{padding-top:8px}
+
+/* Лимит времени подземелья или босса: обратный отсчёт в нижней строке */
+.limit{flex:none;display:inline-flex;align-items:center;gap:4px;font-weight:700;color:#ffc66b;margin-right:8px;font-variant-numeric:tabular-nums}
+.limit.hot{color:#ff6b6b}
+.limit svg{flex:none}

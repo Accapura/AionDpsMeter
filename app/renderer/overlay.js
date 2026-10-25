@@ -297,7 +297,7 @@ function recordLine(me) {
   return `<span class="rec ${d >= 0 ? 'up' : 'down'}" title="Ваш рекорд на этом боссе: ${fmt(best)} DPS">${d >= 0 ? '▲' : '▼'} ${pct}% к рекорду</span>`;
 }
 
-api.on('settings', s => { S = s; chrome(); render(); });
+api.on('settings', s => { S = s; chrome(); render(); showLimit(); });
 api.on('status', s => { status = s; if (!matches(snap)) render(); });
 api.on('snap', s => { snap = s; render(); });
 api.on('records', r => { records = r || {}; });
@@ -320,6 +320,23 @@ function showPing(ms, est, dbg) {
   el.title = est ? 'Примерный пинг до адреса сервера: ' + ms + ' мс. Точный — по ответу игры на её пинг-запрос — появится в течение 10 секунд' + dt : 'Пинг до игрового сервера (весь путь, с ускорителем): ' + ms + ' мс. Точный замер игра даёт раз в 10 секунд, между ними число меняется вместе с задержкой соединения' + dt;
   el.hidden = false;
 }
+// Лимит времени подземелья или босса: считаем обратный отсчёт сами, раз в секунду.
+let limitTimer = null, limitTick = 0;
+function showLimit() {
+  const el = $('limit'); if (!el) return;
+  const t = limitTimer, left = t ? t.endMs - Date.now() : 0;
+  if (!t || left <= -1500 || (S && S.ovLimit === false)) { el.hidden = true; clearInterval(limitTick); limitTick = 0; if (t && left <= -1500) limitTimer = null; return; }
+  const s = Math.max(0, Math.ceil(left / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60;
+  const clock = (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(ss).padStart(2, '0');
+  const hot = left < 60000 || left < (t.endMs - t.startMs) / 10;
+  const what = t.kind === 256 ? 'Время на босса' : t.kind === 1 ? 'Ожидание после входа' : 'Лимит времени подземелья';
+  el.className = 'limit' + (hot ? ' hot' : '');
+  el.innerHTML = `<svg width="11" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14M5 21h14M7 3v4l5 5-5 5v4M17 3v4l-5 5 5 5v4"/></svg>${clock}`;
+  el.title = what + ' закончится в ' + new Date(t.endMs).toLocaleTimeString('ru-RU');
+  el.hidden = false;
+  if (!limitTick) limitTick = setInterval(showLimit, 1000);
+}
+api.on('timer', t => { limitTimer = t; showLimit(); });
 api.on('ping', p => showPing(p && p.ms, p && p.est, p && p.dbg));
 api.on('lag', () => { const el = $('ping'); if (!el) return; el.classList.add('spike'); setTimeout(() => el.classList.remove('spike'), 9000); });
-api.state().then(st => { showPing(st.ping, st.pingEst, st.pingDbg); records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); });
+api.state().then(st => { limitTimer = st.timer || null; showPing(st.ping, st.pingEst, st.pingDbg); records = st.records || {}; S = st.settings; status = st.status; snap = st.snap; chrome(); render(); showLimit(); });

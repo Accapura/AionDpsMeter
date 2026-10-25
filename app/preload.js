@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('api', {
   fightExport: (id, kind) => ipcRenderer.invoke('fight-export', id, kind),
   copy: text => ipcRenderer.send('copy-text', String(text || '').slice(0, 64)),
   share: fightId => ipcRenderer.send('share', fightId),
+  copyChat: fightId => ipcRenderer.send('copy-chat', fightId),
   updateCheck: () => ipcRenderer.invoke('update-check'),
   updateInstall: () => ipcRenderer.send('update-install'),
   updateSkip: v => ipcRenderer.send('update-skip', v),

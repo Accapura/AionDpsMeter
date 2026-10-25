@@ -23,6 +23,7 @@ public static class Opcodes
     public const ushort RemainHp = 0x008D;
     public const ushort KillCredit = 0x048D;
     public const ushort BattleToggle = 0x218D;   // KR only, unverified on Global
+    public const ushort InstanceTimer = 0x0061;  // map u32, kind u8, start u64 ms, end u64 ms
     public const ushort HpMp = 0x1B92;
     public const ushort PartyRoster = 0x0297;
     public const ushort FieldBossList = 0x0191;  // a map's field bosses: alive since / back at (in-game map list)

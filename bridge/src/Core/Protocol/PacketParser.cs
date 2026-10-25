@@ -94,6 +94,9 @@ public sealed class PacketParser
             case Opcodes.BattleToggle:
                 ParseBattleToggle(body);
                 break;
+            case Opcodes.InstanceTimer:
+                ParseInstanceTimer(body);
+                break;
             default:
                 // Identity records also ride inside other packets: mid-packet, and inside LZ4 bundles embedded in a
                 // larger packet (the self record repeats that way every few minutes after a zone load).
@@ -791,8 +794,31 @@ public sealed class PacketParser
         var o = 0;
         if (!Wire.TryVarint(b, ref o, out var id) || !IsEntityId(id)) return;
         if (!Wire.TryVarint(b, ref o, out _) || !Wire.TryVarint(b, ref o, out var toggle) || toggle > 1) return;
+        // A boss with a time limit enters combat with its deadline, epoch ms.
+        long end = 0;
+        if (toggle == 1 && o + 8 == b.Length)
+        {
+            end = System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(b[o..]);
+            o += 8;
+            if (end <= TimeMs || end - TimeMs > 3_600_000) end = 0;
+        }
         if (o != b.Length) return;
         Emit(new BattleStateEvent(TimeMs, id, toggle == 1));
+        if (end > 0) Emit(new BossTimeLimitEvent(TimeMs, id, end));
+    }
+
+    // ------------------------------------------------------------------ instance timers (00 61)
+
+    /// <summary><c>map u32, kind u8, start u64 (epoch ms), end u64 (epoch ms)</c></summary>
+    private void ParseInstanceTimer(ReadOnlySpan<byte> b)
+    {
+        var o = 0;
+        if (!Wire.TryU32(b, ref o, out var map) || map is 0 or > 9_999_999) return;
+        if (!Wire.TryU8(b, ref o, out var kind) || o + 16 > b.Length) return;
+        var start = System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(b[o..]);
+        var end = System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(b[(o + 8)..]);
+        if (start < 1_600_000_000_000 || end <= start || end - start > 24 * 3_600_000L) return;
+        Emit(new InstanceTimerEvent(TimeMs, (int)map, kind, start, end));
     }
 
     /// <summary><c>entity varint, kind varint (2 = NPC, 1 = player), varint, varint, hp u64</c></summary>

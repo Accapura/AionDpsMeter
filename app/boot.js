@@ -8,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 
 const BASE = require('./package.json');
-const newer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+const newer = (a, b) => { const x = String(a).split('-')[0].split('.').map(Number), y = String(b).split('-')[0].split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
 
 function pick() {
   const dir = path.join(app.getPath('userData'), 'updates');

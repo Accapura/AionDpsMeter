@@ -338,6 +338,7 @@ string last = "";
 var icmpPing = new IcmpPinger(() => capture?.ServerIp);
 icmpPing.Start();
 long pingAt = 0;
+string timerLast = "";
 int pingLast = int.MinValue;
 while (running)
 {
@@ -388,6 +389,14 @@ while (running)
                     cp = c.CombatPower,
                 }),
         });
+    }
+    // Таймеры подземелья и босса: шлём только когда меняется ближайший; обратный отсчёт считает окно
+    var tm = tracker.NextTimer(now);
+    var tmKey = tm is null ? "none" : $"{tm.Kind}|{tm.EndMs}";
+    if (tmKey != timerLast)
+    {
+        timerLast = tmKey;
+        Emit(tm is null ? (object)new { t = "timer", none = true } : new { t = "timer", kind = tm.Kind, startMs = tm.StartMs, endMs = tm.EndMs });
     }
     CheckForeground();
     // пинг до игрового сервера: раз в 3 секунды, если изменился
