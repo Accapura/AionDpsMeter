@@ -1,7 +1,7 @@
 'use strict';
 let lookOpen = { theme: true };
 const SFX_EV = [['pb', 'Личный рекорд', 'Побит ваш лучший DPS на этом боссе', '★'], ['death', 'Моя смерть', 'Сразу после гибели персонажа', '☠'], ['phase', 'Смена фазы босса', 'Босс на 75 / 50 / 25 % HP', '⚑'], ['kill', 'Босс убит', 'Победный сигнал', '✓'], ['start', 'Начало боя', 'Тихий сигнал старта', '⏱']];
-let S = null, status = {}, page = 'overlay', version = '', showAddr = false, U = null, rpcAvailable = false;
+let S = null, status = {}, page = 'overlay', version = '', showAddr = false, diagOpen = false, diagTimer = 0, U = null, rpcAvailable = false;
 // «Игра найдена, читаю бой · 1.2.3.4:7777» → ['Игра найдена, читаю бой', '1.2.3.4:7777']
 const splitStatus = msg => { const i = String(msg || '').indexOf(' · '); return i < 0 ? [msg || '', ''] : [msg.slice(0, i), msg.slice(i + 3)]; };
 const $ = id => document.getElementById(id);
@@ -141,9 +141,9 @@ const pages = {
       <div class="muted" style="font-size:12px">Наведите курсор на название колонки в оверлее — появится подсказка, что она показывает.</div></div>
     <div class="card field"><span class="lbl">Поведение</span>
       <label class="opt"><input type="checkbox" id="oSolo" ${S.solo ? 'checked' : ''}> <span><b>Только я</b> — крупно свой DPS, место, урон и крит вместо списка группы</span></label>
-      <label class="opt"><input type="checkbox" id="oLimit" ${S.ovLimit !== false ? 'checked' : ''}> <span><b>Показывать лимит времени</b> — обратный отсчёт подземелья и босса внизу оверлея</span></label>
       <label class="opt"><input type="checkbox" id="oAuto" ${S.autoHide !== false ? 'checked' : ''}> <span><b>Прятать оверлей</b>, когда игра свёрнута или открыто другое окно</span></label>
-      <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
+      <label class="opt"><input type="checkbox" id="oLimit" ${S.ovLimit !== false ? 'checked' : ''}> <span><b>Показывать лимит времени</b> — обратный отсчёт подземелья и босса внизу оверлея</span></label>
+            <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
       <label class="opt"><input type="checkbox" id="oQuit" ${S.quitWithGame ? 'checked' : ''}> <span><b>Закрываться вместе с игрой</b> — через 20 секунд после выхода из игры</span></label>
       <label class="opt"><input type="checkbox" id="oStream" ${S.streamer ? 'checked' : ''}> <span><b>Режим стримера</b> — ники игроков заменяются на «Игрок NN» в оверлее и приложении (Ctrl+Shift+H)</span></label>
       <label class="opt"><input type="checkbox" id="oProf" ${S.profilesOn !== false ? 'checked' : ''}> <span><b>Свои настройки для каждого режима</b> — список, прозрачность, колонки, «Только я», размер и место оверлея запоминаются отдельно для «Данж: Босс», «Моб» и «Манекен»</span></label></div>
@@ -160,10 +160,10 @@ const pages = {
       <div class="row"><button type="button" id="hkReset">Вернуть стандартные</button><span class="muted" style="font-size:12px">Нажмите на сочетание, затем любую клавишу или сочетание — подойдут и клавиши цифрового блока (Num 1, Num +). Esc — отмена.</span></div></div>`,
 
   look: () => {
-    const cur = { theme: THEMES[S.theme] ? S.theme : 'midnight', corners: S.corners === 'square' ? 'square' : 'round', navPos: S.navPos || 'left', btnPos: S.btnPos || 'top', ovView: S.ovView || 'list', ovStat: S.ovStat || 'dps', fx: S.fx === 'off' ? 'off' : 'on' };
+    const cur = { theme: THEMES[S.theme] ? S.theme : 'midnight', corners: S.corners === 'square' ? 'square' : 'round', navPos: S.navPos || 'left', btnPos: S.btnPos || 'top', ovView: S.ovView || 'list', ovStat: S.ovStat || 'dps', fx: S.fx === 'off' ? 'off' : S.fx === 'auto' ? 'auto' : 'on' };
     const tile = (ap, k, label, pv, cls) => `<button type="button" class="tile ${cls || ''}${cur[ap] === k ? ' on' : ''}" data-ap="${ap}" data-v="${k}" aria-pressed="${cur[ap] === k}">${pv}<span class="tl">${label}</span></button>`;
     const chev = '<svg class="chv" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-    const sum = { theme: (THEMES[cur.theme] || {}).name, corners: cur.corners === 'round' ? 'Закруглённые' : 'Квадратные', navPos: (NAV_POS.find(x => x[0] === cur.navPos) || [])[1], btnPos: (BTN_POS.find(x => x[0] === cur.btnPos) || [])[1], ovView: (OV_VIEWS.find(x => x[0] === cur.ovView) || [])[1], ovStat: (OV_STATS.find(x => x[0] === cur.ovStat) || [])[1], fx: cur.fx === 'off' ? 'Выключены' : 'Включены' };
+    const sum = { theme: (THEMES[cur.theme] || {}).name, corners: cur.corners === 'round' ? 'Закруглённые' : 'Квадратные', navPos: (NAV_POS.find(x => x[0] === cur.navPos) || [])[1], btnPos: (BTN_POS.find(x => x[0] === cur.btnPos) || [])[1], ovView: (OV_VIEWS.find(x => x[0] === cur.ovView) || [])[1], ovStat: (OV_STATS.find(x => x[0] === cur.ovStat) || [])[1], fx: cur.fx === 'off' ? 'Выключены' : cur.fx === 'auto' ? 'Авто' : 'Включены' };
     const sec = (id, ico, title, hint, body, cls) => `<div class="card look acc${lookOpen[id] ? ' open' : ''}" data-sec="${id}"><button type="button" class="lh" aria-expanded="${!!lookOpen[id]}"><span class="li">${ico}</span><span class="lt"><b>${title}</b><small>${hint}</small></span><span class="cv">${esc(sum[id] || '')}</span>${chev}</button><div class="lb"><div class="lbi"><div class="tiles ${cls || ''}">${body}</div></div></div></div>`;
     // миниатюры
     const th = ([k, t]) => tile('theme', k, t.name, `<i class="ts" style="background:linear-gradient(155deg,rgb(${t.g1}),rgb(${t.g2}))"><b style="background:${t.accent}"></b><u style="background:${t.text}"></u><u style="background:${t.muted}"></u></i>`, 'tl-theme');
@@ -188,7 +188,7 @@ const pages = {
       line: `<rect x="6" y="18" width="64" height="14" rx="5" fill="${A}" opacity=".35"/><rect x="11" y="23" width="16" height="4" rx="2" fill="${A}"/><rect x="34" y="23" width="12" height="4" rx="2" fill="${A}" opacity=".6"/><rect x="54" y="23" width="12" height="4" rx="2" fill="#7fe3a4"/>`,
     };
     const vw = OV_VIEWS.map(([k, l]) => tile('ovView', k, l, `<svg class="vp" viewBox="0 0 76 50" aria-hidden="true">${V[k] || ''}</svg>`)).join('');
-    const fxT = [['on', 'Включены', 'Все эффекты темы'], ['off', 'Выключены', 'Без анимаций — легче для слабого ПК']].map(([k, l, d]) => tile('fx', k, l, `<i class="sp fxp">${k === 'on' ? '✦' : '○'}</i>`)).join('');
+    const fxT = [['on', 'Включены', 'Все эффекты темы'], ['auto', 'Авто', 'Сами гаснут на слабом ПК'], ['off', 'Выключены', 'Без анимаций — легче для слабого ПК']].map(([k, l, d]) => tile('fx', k, l, `<i class="sp fxp">${k === 'on' ? '✦' : k === 'auto' ? '⚙' : '○'}</i>`)).join('');
     const st = OV_STATS.map(([k, l]) => tile('ovStat', k, l, `<i class="sp num">${{ dps: '9,8K', dmg: '3,2M', pct: '34%' }[k]}</i>`)).join('');
     const ic = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     return `${head('Оформление', 'Цвет, форма окон, положение кнопок и вид оверлея DPS')}
@@ -198,7 +198,7 @@ const pages = {
     ${sec('btnPos', ic('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'), 'Кнопки оверлея DPS', 'Где в окне урона находятся кнопки управления', bt, 'g-4')}
     ${sec('ovView', ic('<path d="M5 6h14M5 12h10M5 18h6"/>'), 'Вид списка игроков', '14 видов: от списка до колец и пончика долей, плюс 3 компактных — только ваш DPS в маленьком окне', vw, 'g-view')}
     ${sec('ovStat', ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'), 'Что показывать крупно', 'Главное число в оверлее; остальные уходят на второй план', st, 'g-3')}
-    ${sec('fx', ic('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'), 'Анимации темы', 'Эффекты тем «Чёрное пламя» и «Зомби» (пламя, молния, толпа): выключите, если приложение лагает', fxT, 'g-2')}
+    ${sec('fx', ic('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'), 'Анимации темы', 'Эффекты тем «Чёрное пламя» и «Зомби» (пламя, молния, толпа): выключите, если приложение лагает, или выберите «Авто»', fxT, 'g-3')}
     <div class="muted" style="font-size:12px;text-align:center">Изменения сразу видны и в оверлее, и в этом окне. Настроек в самом оверлее нет: всё меняется здесь.</div>`;
   },
 
@@ -208,7 +208,8 @@ const pages = {
     return `${head('Настройки', 'Чтение боя, уведомления и что нужно для работы программы')}
     <div class="card field center"><span class="lbl">Состояние</span><div class="big">${esc(main || '—')}</div>
       ${addr ? `<div class="addr" style="justify-content:center"><span class="muted">Адрес сервера игры:</span><code>${showAddr ? esc(addr) : '••••••••••••'}</code><button type="button" id="addrToggle">${showAddr ? 'Скрыть' : 'Показать'}</button></div>` : ''}
-      <div class="row" style="justify-content:center"><button type="button" id="restart">Перезапустить чтение</button><button type="button" id="report">Отчёт об ошибке</button></div>
+      <div class="row" style="justify-content:center"><button type="button" id="restart">Перезапустить чтение</button><button type="button" id="report">Отчёт об ошибке</button><button type="button" id="diagBtn">${diagOpen ? 'Скрыть диагностику' : 'Диагностика захвата'}</button></div>
+      <div id="diagBox" style="width:100%" ${diagOpen ? '' : 'hidden'}></div>
       <div class="muted" style="font-size:12px">Что-то не работает? «Отчёт об ошибке» сохранит на рабочий стол файл с версией, состоянием чтения и последними сообщениями — отправьте его автору в Discord.</div></div>
     <div class="card field center"><span class="lbl">Уведомления о событиях</span>
       <div>Где на экране показывать уведомления перед ивентами и о новых событиях в расписании:</div>
@@ -976,6 +977,43 @@ function charsBody() {
   }).join('')}</div>`;
 }
 
+// Диагностика захвата: раз в 2 секунды спрашиваем у модуля чтения счётчики, пока открыта вкладка «Настройки».
+function diagHtml(d) {
+  if (!d || d.none) return `<div class="dg"><div class="dg-head"><span class="dg-pill"><i></i>${esc(T('Чтение не запущено'))}</span></div></div>`;
+  const ip = x => showAddr ? esc(x) : esc(String(x).replace(/\d{1,3}(\.\d{1,3}){3}/g, '•.•.•.•'));
+  const num = n => Number(n).toLocaleString(S.lang === 'en' ? 'en-US' : 'ru-RU');
+  const lost = d.dropped > 0 || d.gaps > 3, live = d.flows > 0 && d.agoMs >= 0 && d.agoMs < 10000;
+  const pill = live ? ['ok', 'Игра читается'] : d.flows > 0 ? ['warn', 'Игра давно молчит'] : ['', 'Ждём игру'];
+  const ago = d.agoMs < 0 ? T('ещё нет') : d.agoMs < 1500 ? T('только что') : Math.round(d.agoMs / 1000) + ' ' + T('с назад');
+  const tile = (n, k, bad) => `<div class="dg-tile${bad ? ' bad' : ''}"><b>${n}</b><span>${esc(T(k))}</span></div>`;
+  const chips = (list, off) => list.map(x => `<span class="dg-chip${off ? ' off' : ''}">${esc(x)}</span>`).join('');
+  return `<div class="dg">
+    <div class="dg-head"><span class="dg-pill ${pill[0]}"><i></i>${esc(T(pill[1]))}</span><span class="dg-ago">${esc(T('Последние данные игры'))}: ${esc(ago)}</span></div>
+    <div class="dg-tiles">
+      ${tile(num(d.packets), 'Пакетов увидено')}${tile(num(d.events), 'Событий игры')}${tile(num(d.flows), 'Потоки игры')}
+      ${tile(num(d.received), 'Принято Npcap')}${tile(num(d.dropped), 'Потеряно', d.dropped > 0)}${tile(num(d.gaps), 'Дыр в потоке', d.gaps > 3)}
+    </div>
+    <div class="dg-sec"><div class="dg-lbl">${esc(T('Слушаются адаптеры'))}</div><div class="dg-chips">${chips(d.adapters || []) || '<span class="dg-note">—</span>'}${d.server ? `<button type="button" class="dg-chip srv dg-eye" data-dg="srv" title="${esc(T(showAddr ? 'Скрыть' : 'Показать'))}">${esc(T('сервер'))} ${ip(d.server)} <u>${esc(T(showAddr ? 'Скрыть' : 'Показать'))}</u></button>` : ''}</div></div>
+    ${(d.failed || []).length ? `<div class="dg-sec"><div class="dg-lbl">${esc(T('Адаптеры, которые не открылись'))}</div><div class="dg-chips">${chips(d.failed, true)}</div></div>` : ''}
+    <div class="dg-sec"><div class="dg-lbl">${esc(T('Фильтр'))}</div><div class="dg-code">${ip(d.filter)}</div></div>
+    <div class="dg-note${lost ? ' warn' : ''}">${esc(T(lost ? 'Есть потери пакетов: бой может считаться неполно. Закройте тяжёлые программы или проверьте сеть.' : 'Потерь нет: поток игры читается целиком.'))}</div>
+  </div>`;
+}
+let diagCache = null;
+function paintDiag() {
+  const box = $('diagBox');
+  if (!box) return;
+  box.innerHTML = diagHtml(diagCache);
+  const b = box.querySelector('[data-dg=srv]');
+  if (b) b.onclick = () => { showAddr = !showAddr; paintDiag(); const t = $('addrToggle'); if (t) t.textContent = T(showAddr ? 'Скрыть' : 'Показать'); const c = document.querySelector('.addr code'); if (c && diagCache?.server) c.textContent = showAddr ? diagCache.server : '••••••••••••'; };
+}
+async function pollDiag() {
+  const box = $('diagBox');
+  if (!box || !diagOpen || page !== 'connect') { diagTimer = 0; return; }
+  try { diagCache = await api.diag(); paintDiag(); } catch { /* окно закрыто */ }
+  clearTimeout(diagTimer);
+  diagTimer = setTimeout(pollDiag, 2000);
+}
 function render() {
   if (!S) return;
   applyTheme(S, 92);
@@ -1022,8 +1060,8 @@ function render() {
   m.querySelectorAll('[data-mcol]').forEach(c => c.onchange = () => api.set({ columns: { [c.dataset.mcol]: c.checked } }));
   on('resetSize', 'onclick', () => api.overlayResetSize());
   on('oSolo', 'onchange', e => api.set({ solo: e.target.checked }));
-  on('oLimit', 'onchange', e => api.set({ ovLimit: e.target.checked }));
   on('oAuto', 'onchange', e => api.set({ autoHide: e.target.checked }));
+  on('oLimit', 'onchange', e => api.set({ ovLimit: e.target.checked }));
   on('oStart', 'onchange', e => api.set({ autoStart: e.target.checked }));
   on('oQuit', 'onchange', e => api.set({ quitWithGame: e.target.checked }));
   on('oStream', 'onchange', e => api.set({ streamer: e.target.checked }));
@@ -1045,6 +1083,8 @@ function render() {
   on('uSkip', 'onclick', () => api.updateSkip(U.version));
   on('ct', 'onclick', () => api.set({ clickThrough: !S.clickThrough }));
   on('restart', 'onclick', () => api.restartBridge());
+  on('diagBtn', 'onclick', () => { diagOpen = !diagOpen; render(); });
+  if (diagOpen && page === 'connect') { if (diagCache) paintDiag(); pollDiag(); } else if (diagTimer) { clearTimeout(diagTimer); diagTimer = 0; }
   on('tt', 'onclick', () => api.testToast());
   on('sfxMaster', 'oninput', e => { $('sfxMasterV').textContent = e.target.value + '%'; });
   on('sfxMaster', 'onchange', e => api.set({ sfx: { master: +e.target.value } }));

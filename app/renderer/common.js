@@ -40,6 +40,27 @@ function applyTheme(s, opacityOverride) {
   _applyTheme(s, opacityOverride);
   document.documentElement.classList.add('ready');
 }
+// «Анимации темы: авто» — на слабом ПК (≤4 потоков ЦП или ≤4 ГБ ОЗУ) или если кадры идут медленнее ~20 в секунду, эффекты гасятся сами.
+let _fxLast = null, _fxRaf = 0;
+function fxLowFlag() { try { return localStorage.getItem('adm.fxlow') === '1'; } catch { return false; } }
+function fxWeak() { return (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || fxLowFlag(); }
+function fxResolve(v) { return v === 'off' ? 'off' : v === 'auto' && fxWeak() ? 'off' : 'on'; }
+function fxWatch(on) {
+  if (!on) { if (_fxRaf) { cancelAnimationFrame(_fxRaf); _fxRaf = 0; } return; }
+  if (_fxRaf) return;
+  let last = 0, n = 0, sum = 0, bad = 0, good = 0;
+  const tick = t => {
+    _fxRaf = requestAnimationFrame(tick);
+    const dt = t - last; last = t;
+    if (document.hidden || dt <= 0 || dt > 500) { n = 0; sum = 0; return; }
+    sum += dt; n++;
+    if (n < 90) return;
+    const avg = sum / n; n = 0; sum = 0;
+    if (avg > 50) { good = 0; if (++bad >= 2) { try { localStorage.setItem('adm.fxlow', '1'); } catch {} cancelAnimationFrame(_fxRaf); _fxRaf = 0; if (_fxLast) _applyTheme(_fxLast); } }
+    else { bad = 0; if (++good >= 6) { cancelAnimationFrame(_fxRaf); _fxRaf = 0; } }
+  };
+  _fxRaf = requestAnimationFrame(tick);
+}
 function _applyTheme(s, opacityOverride) {
   STREAMER = !!s.streamer;
   const t = THEMES[s.theme] || THEMES.midnight;
@@ -56,7 +77,8 @@ function _applyTheme(s, opacityOverride) {
     d.app = { left: 'side', top: 'top', bottom: 'dock', right: 'right' }[s.navPos] || 'side';
     d.hd = { left: 'side', top: 'top', bottom: 'bottom', right: 'rside' }[s.btnPos] || 'top';
     d.ov = OV_VIEWS.some(v => v[0] === s.ovView) ? s.ovView : 'list';
-    d.fx = s.fx === 'off' ? 'off' : 'on';
+    d.fx = fxResolve(s.fx);
+    _fxLast = s; fxWatch(s.fx === 'auto' && d.fx === 'on' && (d.skin === 'blackflame' || d.skin === 'zombie'));
     bfSync(d.skin === 'blackflame');
     zfxSync(d.skin === 'zombie');
     if (d.skin === 'zombie') zboltScan(); else if (ZB.items.length) zboltClear();

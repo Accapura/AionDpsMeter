@@ -28,7 +28,7 @@ const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 // ---------------------------------------------------------------- настройки
 const DEFAULTS = {
   theme: 'midnight',
-  fx: 'on',
+  fx: 'auto',
   corners: 'round',             // round | square — форма углов окон и кнопок
   navPos: 'left',               // главное меню: left | top | bottom | right
   btnPos: 'top',                // кнопки в оверлее: left | bottom | top | right
@@ -417,7 +417,7 @@ const bridge = {
     const p = spawn('dotnet', [dll, '--host', String(process.pid)], { cwd: dir, windowsHide: true });
     this.proc = p;
     if (settings.lang === 'en') this.send('lang en');
-    p.on('error', e => setStatus({ state: 'no-dotnet', msg: e.code === 'ENOENT' ? 'Нужен .NET 10 Runtime' : 'Модуль чтения: ' + e.message }));
+    p.on('error', e => setStatus({ state: 'no-dotnet', msg: e.code === 'ENOENT' ? 'Нужен .NET 10 Runtime' : 'Reader module: ' + e.message }));
     p.stderr.on('data', d => { errText += d; logLine('bridge: ' + String(d).trim().slice(0, 500)); });
     p.on('exit', code => {
       if (this.proc !== p) return;
@@ -450,6 +450,7 @@ const bridge = {
         if (m.serverId && m.serverId !== settings.detectedServerId) patch.detectedServerId = m.serverId;
         if (Object.keys(patch).length) { patchSettings(patch); broadcastSchedule(); }
       }
+      else if (m.t === 'diag') { lastDiag = m; diagWait?.(m); }
       else if (m.t === 'fg') { fgState = m.state; applyOverlayVisibility(); watchGameExit(); }
       else if (m.t === 'fieldbosses') onFieldBosses(m);
       else if (m.t === 'detail') broadcast('detail', m);
@@ -545,14 +546,8 @@ function addFight(f) {
 // Системная строка в боковой панели: нагрузка программы, ускоритель, график пинга за последние минуты.
 const ACCEL = [['exitlag', 'ExitLag'], ['gearup', 'GearUP'], ['lagofast', 'LagoFast'], ['wtfast', 'WTFast'], ['mudfish', 'Mudfish'], ['noping', 'NoPing'], ['haste', 'Haste'], ['uu.exe', 'UU'], ['uuinterface', 'UU'], ['rzgcm', 'Razer'], ['clash', 'Clash']];
 let lastSys = null, accelName = '', accelAt = 0;
-function detectAccel(done) {
-  if (process.platform !== 'win32') return done();
-  let out = '';
-  const p = spawn('tasklist', ['/FO', 'CSV', '/NH'], { windowsHide: true });
-  p.stdout.on('data', c => { out += c; });
-  p.on('error', () => done());
-  p.on('close', () => { const low = out.toLowerCase(); accelName = (ACCEL.find(([k]) => low.includes(k)) || [])[1] || ''; done(); });
-}
+// Имя ускорителя пинга больше не ищется: для этого нужно читать список всех процессов, а программа процессов не трогает.
+function detectAccel(done) { done(); }
 function sysTick() {
   const w = wins.main;
   if (!w || w.isDestroyed() || !w.isVisible() || w.isMinimized()) return;
@@ -1412,7 +1407,31 @@ function whatsNew() {
 // ---------------------------------------------------------------- отчёт об ошибке
 // Один текстовый файл на рабочем столе: версия, система, состояние чтения, последние сообщения модуля.
 // Ссылка вебхука и адрес сервера игры в отчёт не попадают.
+// Диагностика захвата: мост отвечает на команду diag одной строкой со счётчиками.
+let lastDiag = null, diagWait = null;
+function askDiag() {
+  return new Promise(res => {
+    const t = setTimeout(() => { diagWait = null; res(lastDiag); }, 1500);
+    diagWait = d => { clearTimeout(t); diagWait = null; res(d); };
+    bridge.send('diag');
+  });
+}
+ipcMain.handle('diag', () => askDiag());
+function diagLines(d, mask) {
+  if (!d || d.none) return ['Capture is not running'];
+  const ip = x => (mask && x ? String(x).replace(/\d{1,3}(\.\d{1,3}){3}/g, '•.•.•.•') : x);
+  return [
+    'Adapters listened on: ' + ((d.adapters || []).join('; ') || '—'),
+    'Adapters that would not open: ' + ((d.failed || []).join('; ') || '—'),
+    'Kernel filter: ' + ip(d.filter),
+    'Packets seen: ' + d.packets + ' · game events decoded: ' + d.events,
+    'Npcap received: ' + d.received + ' · dropped: ' + d.dropped + ' · stream gaps: ' + d.gaps,
+    'Game streams: ' + d.flows + (d.server ? ' · server ' + ip(d.server) : ''),
+    'Last game data: ' + (d.agoMs >= 0 ? (d.agoMs / 1000).toFixed(1) + ' s ago' : 'none yet'),
+  ];
+}
 async function saveReport() {
+  const diag = await askDiag();
   const os = require('os');
   const home = os.homedir();
   const hide = t => String(t ?? '').split(home).join('%USERPROFILE%');
@@ -1421,39 +1440,42 @@ async function saveReport() {
     try {
       const p = spawn('dotnet', ['--list-runtimes'], { windowsHide: true });
       p.stdout.on('data', d => { out += d; });
-      p.on('error', () => res('dotnet не найден'));
+      p.on('error', () => res('dotnet not found'));
       p.on('exit', () => res(out.trim() || '—'));
-      setTimeout(() => { try { p.kill(); } catch { /* ignore */ } res(out.trim() || 'нет ответа'); }, 5000);
-    } catch { res('dotnet не найден'); }
+      setTimeout(() => { try { p.kill(); } catch { /* ignore */ } res(out.trim() || 'no answer'); }, 5000);
+    } catch { res('dotnet not found'); }
   });
   const sysdir = process.env.SystemRoot ? path.join(process.env.SystemRoot, 'System32', 'Npcap', 'wpcap.dll') : '';
   const safe = clone(settings);
-  if (safe.webhook) safe.webhook.url = safe.webhook.url ? '(задан)' : '';
+  if (safe.webhook) safe.webhook.url = safe.webhook.url ? '(set)' : '';
   const lines = [
-    'Aion DPS Meter — отчёт об ошибке',
-    'Создан: ' + new Date().toString(),
+    'Aion DPS Meter — error report',
+    'Created: ' + new Date().toString(),
     '',
-    '[Программа]',
-    'Версия: ' + APP_VERSION + (global.__aionBoot?.base && global.__aionBoot.base !== APP_VERSION ? ' (лёгкое обновление поверх ' + global.__aionBoot.base + ')' : ''),
-    'Оболочка: ' + SHELL + ' · Electron ' + process.versions.electron + ' · Chrome ' + process.versions.chrome,
-    'Папка программы: ' + hide(path.dirname(process.execPath)),
-    'Модуль чтения: ' + hide(BRIDGE_DIR()),
-    global.__aionBoot?.failed ? 'Загрузчик: ' + global.__aionBoot.failed : null,
+    '[Program]',
+    'Version: ' + APP_VERSION + (global.__aionBoot?.base && global.__aionBoot.base !== APP_VERSION ? ' (light update on top of ' + global.__aionBoot.base + ')' : ''),
+    'Shell: ' + SHELL + ' · Electron ' + process.versions.electron + ' · Chrome ' + process.versions.chrome,
+    'Program folder: ' + hide(path.dirname(process.execPath)),
+    'Reader module: ' + hide(BRIDGE_DIR()),
+    global.__aionBoot?.failed ? 'Loader: ' + global.__aionBoot.failed : null,
     '',
-    '[Система]',
-    'Windows: ' + os.release() + ' · ' + os.arch() + ' · ОЗУ ' + Math.round(os.totalmem() / 1073741824) + ' ГБ',
-    'Npcap: ' + (sysdir && fs.existsSync(sysdir) ? 'установлен' : 'не найден'),
+    '[System]',
+    'Windows: ' + os.release() + ' · ' + os.arch() + ' · RAM ' + Math.round(os.totalmem() / 1073741824) + ' GB',
+    'Npcap: ' + (sysdir && fs.existsSync(sysdir) ? 'installed' : 'not found'),
     '.NET: ' + runtimes.replace(/\[.*?\]/g, '').split('\n').map(x => x.trim()).filter(Boolean).join('; '),
     '',
-    '[Чтение боя]',
-    'Состояние: ' + status.state + ' · ' + String(status.msg || '').replace(/\s·\s[\d.:]+$/, ''),
-    'Персонаж: ' + (settings.character || '—') + ' · сервер: ' + (settings.detectedServer || '—'),
-    'Сохранено боёв: ' + loadFights().length,
+    '[Combat reading]',
+    'State: ' + status.state + ' · ' + String(status.msg || '').replace(/\s·\s[\d.:]+$/, ''),
+    'Character: ' + (settings.character || '—') + ' · server: ' + (settings.detectedServer || '—'),
+    'Fights saved: ' + loadFights().length,
     '',
-    '[Журнал]',
+    '[Capture diagnostics]',
+    ...diagLines(diag, true),
+    '',
+    '[Log]',
     ...LOG.map(hide).map(l => l.replace(/\b\d{1,3}(\.\d{1,3}){3}(:\d+)?\b/g, '•.•.•.•')),
     '',
-    '[Настройки]',
+    '[Settings]',
     hide(JSON.stringify(safe, null, 1)),
   ].filter(l => l !== null);
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');

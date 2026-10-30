@@ -12,8 +12,8 @@ grep -q "AionDpsMeter.v$V.exe" /tmp/assets.txt || fail "нет exe версии 
 grep -q "source-$V.zip" /tmp/assets.txt || fail "нет исходников версии $V"
 grep -v "$V" /tmp/assets.txt | grep . && fail "в релизе файлы чужой версии"
 F=$(gh api repos/$R/contents/schedule-feed.json --jq .content | base64 -d)
-fv=$(echo "$F" | python3 -c 'import json,sys;print(json.load(sys.stdin)["app"]["version"])')
+fv=$(printf '%s' "$F" | python3 -c 'import json,sys;print(json.load(sys.stdin)["app"]["version"])')
 [ "$fv" = "$V" ] || fail "лента указывает на $fv"
-fs=$(echo "$F" | python3 -c 'import json,sys;a=json.load(sys.stdin)["app"];print(a["size"],a["sha256"])')
+fs=$(printf '%s' "$F" | python3 -c 'import json,sys;a=json.load(sys.stdin)["app"];print(a["size"],a["sha256"])')
 grep "AionDpsMeter.v$V.exe" /tmp/assets.txt | awk -v s="$fs" '{split(s,a," "); if($2!=a[1]||$3!="sha256:"a[2]) print "ОШИБКА: размер/хеш не совпадают с лентой"}'
 [ $bad = 0 ] && echo "ВСЁ ВЕРНО для $T"

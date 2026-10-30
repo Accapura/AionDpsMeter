@@ -51,7 +51,7 @@ body[data-fx=off] .bf-spot,body[data-fx=off] .bf-ember,body[data-fx=off] .bf-fog
 @media (prefers-reduced-motion:reduce){.bfx *{animation:none!important}}
 /* оверлей: лёгкая версия — без искр и тумана, маленький сюрикен внизу */
 body[data-win=overlay] .bf-ember,body[data-win=overlay] .bf-fog,body[data-win=overlay] .bf-moon{display:none}
-body[data-win=overlay] .bf-shu{top:auto;right:8px;bottom:30px;width:74px;height:74px;animation:none}
+body[data-win=overlay] .bf-shu{top:auto;right:6px;bottom:26px;width:60px;height:60px;opacity:.32;animation:none} /* фоновый узор: не мешает цифрам списка */
 body[data-win=overlay] .bf-flame{height:17%;opacity:.7}
 body[data-win=overlay] .bf-flamef{height:4%}
 body[data-win=overlay] .bf-spot{width:200px;height:200px;margin:-100px 0 0 -100px}

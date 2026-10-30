@@ -298,6 +298,11 @@ new Thread(() =>
         else if (parts[0] == "reset") tracker.Reset();
         else if (parts[0] == "lang" && parts.Length > 1) data.ReloadNames(dataDir, parts[1] == "en" ? "en" : "ru");
         else if (parts[0] == "detail" && parts.Length > 1) { var dp = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries); if (uint.TryParse(dp[0], out var actor)) EmitDetail(actor, dp.Length > 1 && dp[1] == "c"); }
+        else if (parts[0] == "diag")
+        {
+            var dg = capture?.Diagnostics();
+            Emit(dg is null ? (object)new { t = "diag", none = true } : new { t = "diag", adapters = dg.Adapters, failed = dg.Failed, filter = dg.Filter, packets = dg.Packets, events = dg.Events, received = dg.Received, dropped = dg.Dropped, gaps = dg.Gaps, flows = dg.GameFlows, server = dg.Server, agoMs = dg.LastGameAgoMs });
+        }
         else if (parts[0] == "quit") break;
     }
     running = false; // приложение закрыло stdin — выходим вместе с ним
@@ -305,29 +310,33 @@ new Thread(() =>
 
 // Активное окно (только Windows): оверлей прячется, когда игра не на экране.
 // game — игра впереди, app — окно самого Aion DPS Meter, other — другое окно, none — игра не запущена.
+// Состояние окон: игра определяется по заголовку активного окна («AION2…») и по сетевому трафику. Процесс игры и таблица
+// соединений Windows не читаются. game — игра впереди, app — окно самого Aion DPS Meter, other — другое окно при идущем
+// трафике игры, none — трафика игры давно нет (игра закрыта).
 var hostPid = args.Length > 1 && args[0] == "--host" && int.TryParse(args[1], out var hp) ? hp : 0;
-var gamePids = new HashSet<int>();
-long gamePidsAt = 0;
+long gameSeenAt = 0;
+bool titleSeen = false; // заголовок «AION2…» хоть раз встретился: иначе (другой клиент) оверлей не прячем
 string fgLast = "";
+var fgTitle = new System.Text.StringBuilder(256);
 void CheckForeground()
 {
     if (!OperatingSystem.IsWindows()) return;
     try
     {
         var nowMs = Environment.TickCount64;
-        if (nowMs - gamePidsAt > 5000)
-        {
-            gamePidsAt = nowMs;
-            gamePids.Clear();
-            foreach (var n in GameProcessLocator.ProcessNames)
-                foreach (var p in System.Diagnostics.Process.GetProcessesByName(n)) { gamePids.Add(p.Id); p.Dispose(); }
-        }
+        if (capture?.Status.State == CaptureState.Capturing) gameSeenAt = nowMs;
+        var hwnd = Win32.GetForegroundWindow();
+        fgTitle.Clear();
+        if (hwnd != IntPtr.Zero) Win32.GetWindowText(hwnd, fgTitle, 256);
+        var inFront = fgTitle.ToString().StartsWith("AION2", StringComparison.Ordinal);
+        if (inFront) { gameSeenAt = nowMs; titleSeen = true; }
         string state;
-        if (gamePids.Count == 0) state = "none";
+        if (inFront || (!titleSeen && gameSeenAt != 0 && nowMs - gameSeenAt < 120_000)) state = "game";
+        else if (gameSeenAt == 0 || nowMs - gameSeenAt >= 120_000) state = "none";
         else
         {
-            Win32.GetWindowThreadProcessId(Win32.GetForegroundWindow(), out var pid);
-            state = gamePids.Contains((int)pid) ? "game" : pid == hostPid && hostPid != 0 ? "app" : "other";
+            Win32.GetWindowThreadProcessId(hwnd, out var pid);
+            state = pid == hostPid && hostPid != 0 ? "app" : "other";
         }
         if (state != fgLast) { fgLast = state; Emit(new { t = "fg", state }); }
     }

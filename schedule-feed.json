@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated": "2026-10-20",
+  "updated": "2026-10-31",
   "note": "Расписание AION 2 Global. Часы сервера Global — GMT+9; в программе время показывается по вашим местным часам.",
   "serverTz": {
     "default": "Asia/Seoul"
@@ -136,15 +136,15 @@
     }
   ],
   "app": {
-    "version": "1.3.3",
-    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.3/AionDpsMeter.v1.3.3.exe",
-    "sha256": "299978b6f28eed5f964851a75f3e47a641b1a08390218a33aaa35faf1e8fc763",
-    "size": 112564949,
-    "notes": "• Две новые темы «Серая» и «Чёрная» (всего 15)\n• Таймеры подземелья и босса внизу оверлея\n• Боевой лог в карточке боя и кнопка «Для чата» в истории\n• Проверены русский и английский тексты, облегчена анимация темы «Зомби»",
+    "version": "1.3.4",
+    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.4/AionDpsMeter.v1.3.4.exe",
+    "sha256": "d0a5ef4396fd2669218eab26eda0480c56c6c2f4f41ca518ad8f0753a57efa6a",
+    "size": 112565427,
+    "notes": "• Манекен: счёт больше не сбрасывается, когда манекен «умирает», бой идёт до выбранного в настройках таймера\n• Безопаснее для игры: программа больше не смотрит процессы и соединения Windows, игра определяется по трафику и заголовку окна\n• Диагностика захвата в настройках и отчёт об ошибке на английском\n• Анимации тем сами отключаются на слабом ПК (режим «Авто»), щит «Чёрного пламени» ушёл на задний план",
     "patch": {
-      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.3.gz",
-      "sha256": "81324320fce5202909dbb2a6beba186f9e4ff245e7fd04999a2350597089b787",
-      "size": 1720497,
+      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.4.gz",
+      "sha256": "03b3ce5f02be9f74c33ec274ef588450652e712fe42212c66c2d7425d95a0750",
+      "size": 1729419,
       "shell": "e33-net10"
     }
   }

@@ -246,7 +246,7 @@ public sealed partial class CombatTracker
         if (!sourceIsPlayer && IsLikelyNpc(source)) return; // NPC hitting NPC
 
         var npc = _entities.UpsertNpc(target);
-        if (npc.Hp == 0) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
+        if (npc.Hp == 0 && !(DummyTimed && npc.IsDummy)) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
         if (npc.IsDummy != Options.DummyMode) return; // манекены считаются только в режиме «Манекен», и только они
         if (Options.DungeonOnly && !IsDungeonTarget(npc)) return; // «Данж: Босс»: только подземелья
         if (Options.DummyMode && Options.DummySeconds > 0)
@@ -346,6 +346,7 @@ public sealed partial class CombatTracker
         enc.BossHp = e.CurrentHp;
         if (e.CurrentHp < enc.BossLowestHp) enc.BossLowestHp = e.CurrentHp;
 
+        if (DummyTimed && npc.IsDummy) return; // манекен умер или восстановил HP — тест продолжается до конца таймера
         if (e.CurrentHp <= 0)
         {
             Finish(EncounterEndReason.Kill, Math.Max(e.TimeMs, enc.LastDamageMs));
@@ -370,6 +371,7 @@ public sealed partial class CombatTracker
         if (_current is { IsActive: true } enc && enc.BossId == e.ActorId)
         {
             enc.BossHp = 0;
+            if (DummyTimed && npc.IsDummy) return;
             Finish(EncounterEndReason.Kill, Math.Max(e.TimeMs, enc.LastDamageMs));
         }
     }
@@ -381,6 +383,7 @@ public sealed partial class CombatTracker
         npc.InCombat = e.InCombat;
         if (!e.InCombat) EndBossLimit(e.ActorId); // a wipe or a reset: no clock runs any more
         if (e.InCombat || _current is not { IsActive: true } enc || enc.BossId != e.ActorId) return;
+        if (DummyTimed && npc.IsDummy) return; // манекен «вышел из боя» — таймер теста идёт дальше
 
         var reason = npc.Hp switch
         {
@@ -557,6 +560,9 @@ public sealed partial class CombatTracker
         (_entities.IsKnownNpc(id) && !_entities.IsPlayerLike(id)) ||
         (_current is { IsActive: true } enc && enc.DamageByTarget.ContainsKey(id));
 
+    /// <summary>«Манекен» с таймером: тест идёт заданные секунды, и смерть манекена, возврат HP или выход из боя его не прерывают.</summary>
+    private bool DummyTimed => Options.DummyMode && Options.DummySeconds > 0;
+
     private bool IsAlive(uint npcId) => !_entities.TryGetNpc(npcId, out var n) || n.Hp != 0;
 
     private void SetBoss(Encounter enc, NpcInfo npc, long timeMs)
@@ -623,6 +629,13 @@ public sealed partial class CombatTracker
     private void CheckIdle(long nowMs)
     {
         if (_current is not { IsActive: true } enc) return;
+        if (DummyTimed && _entities.TryGetNpc(enc.BossId ?? 0, out var dn) && dn.IsDummy)
+        {
+            // конец теста — по таймеру из настроек, а не по паузе в ударах или смерти манекена
+            var endAt = enc.StartMs + Options.DummySeconds * 1000L;
+            if (nowMs >= endAt) { Finish(EncounterEndReason.Manual, endAt); _dummyLocked = true; _dummyLockLastMs = Math.Max(enc.LastDamageMs, endAt - 3000); }
+            return;
+        }
         var bossAlive = enc.BossId is { } b && IsAlive(b);
         var timeout = bossAlive ? Options.BossIdleTimeoutMs : Options.IdleTimeoutMs;
         if (nowMs - enc.LastDamageMs > timeout) Finish(EncounterEndReason.Idle, enc.LastDamageMs);
