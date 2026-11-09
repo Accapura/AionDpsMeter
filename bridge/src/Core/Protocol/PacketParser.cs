@@ -342,8 +342,9 @@ public sealed class PacketParser
         o = c.End;
 
         var hits = 1;
-        if (TryTail(b, o, layout, sw, c.Damage, out var tailEnd, out var extra) ||
-            (layout != 6 && TryTail(b, o, 6, sw, c.Damage, out tailEnd, out extra)))
+        long multiDmg = 0;
+        if (TryTail(b, o, layout, sw, c.Damage, out var tailEnd, out var extra, out multiDmg) ||
+            (layout != 6 && TryTail(b, o, 6, sw, c.Damage, out tailEnd, out extra, out multiDmg)))
         {
             o = tailEnd;
             hits += extra;
@@ -366,7 +367,7 @@ public sealed class PacketParser
             ev = new HealEvent(TimeMs, actor, target, NormalizeSkill((int)skill), c.Damage, flags);
             return true;
         }
-        var damageEvent = new DamageEvent(TimeMs, actor, target, NormalizeSkill((int)skill), c.Damage, flags, hits, (int)c.Scalar);
+        var damageEvent = new DamageEvent(TimeMs, actor, target, NormalizeSkill((int)skill), c.Damage, flags, hits, (int)c.Scalar, hits > 1 ? multiDmg : 0);
         DamageTap?.Invoke(damageEvent, layout, dmgType, mods, dir);
         ev = damageEvent;
         return true;
@@ -406,10 +407,11 @@ public sealed class PacketParser
     /// additional hits (already included in the damage). Accepted only when it ends exactly at the end of the
     /// packet or at the next sub-record marker (<c>0x01..0x07 00</c>, or <c>04 38</c>).
     /// </summary>
-    private static bool TryTail(ReadOnlySpan<byte> b, int o, int layout, uint sw, uint damage, out int end, out int extraHits)
+    private static bool TryTail(ReadOnlySpan<byte> b, int o, int layout, uint sw, uint damage, out int end, out int extraHits, out long extraDamage)
     {
         end = o;
         extraHits = 0;
+        extraDamage = 0;
         if (layout == 4)
         {
             if (!Wire.TryVarint(b, ref o, out var field) || field is < 1 or > 25) return false;
@@ -425,6 +427,7 @@ public sealed class PacketParser
             }
             if (sum >= damage) return false;
             extraHits = (int)count;
+            extraDamage = sum;
         }
         var rest = b[o..];
         var clean = rest.IsEmpty
@@ -438,6 +441,9 @@ public sealed class PacketParser
     /// <summary>Collapse level/specialisation digits of player skills unless the data names the variant differently.</summary>
     private int NormalizeSkill(int raw)
     {
+        // Жрец, «Карающая молния» 16 ур.: особенность «ещё раз применяет Небесный приговор» приходит записью «Карающей молнии»
+        // с последней цифрой 7 (17040257), хотя бьёт «Небесный приговор» (1705xxxx) — относим её к нему.
+        if (raw / 10_000 == 1704 && raw % 10 == 7) raw += 10_000;
         if (!GameData.IsClassSkill(raw)) return raw;
         var b = GameData.BaseSkill(raw);
         if (b == raw) return raw;

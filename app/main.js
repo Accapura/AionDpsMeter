@@ -47,6 +47,7 @@ const DEFAULTS = {
   autoStart: false,             // запускать вместе с Windows (свёрнутой в трей)
   quitWithGame: false,          // закрываться вместе с игрой
   minimal: false,               // оверлей только с уроном: без кнопок, режимов и заголовка
+  autoMode: true,               // режим оверлея (Босс / Моб / Манекен) сам переключается на цель, которую бьёте
   autoHide: true,               // прятать оверлей, когда игра не на экране
   solo: false,                  // режим «Только я»
   ovLimit: true,                // лимит времени подземелья и босса внизу оверлея
@@ -73,7 +74,7 @@ const DEFAULTS = {
   detectedServer: '',           // сервер, на котором игра видела персонажа
   feedUrl: 'https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/schedule-feed.json',
   bells: {},                    // включённые/выключенные напоминания ивентов из расписания
-  columns: { crit: false, hits: false, maxHit: false, hps: false, gs: false, cp: false }, // доп. колонки оверлея
+  columns: { crit: false, hits: false, maxHit: false, hps: false, taken: false, gs: false, cp: false }, // доп. колонки оверлея
   seenFeedIds: [],
   whatsNewSeen: '',             // версия, для которой уже показали «Что нового»
   whatsNewFrom: '',             // с какой версии обновлялись (для списка изменений)
@@ -401,6 +402,8 @@ let lastPing = -1; // пинг до игрового сервера, мс (-1 �
 let lastPingDbg = null; // сколько навыков увидено и сопоставлено (для подсказки)
 let lastPingEst = false; // true — это оценка (до адреса сервера), а не замер по навыкам персонажа
 let status = { state: 'starting', msg: 'Запуск…' };
+let selfSince = Date.now();
+let selfKnown = false; // мост уже опознал вашего персонажа (после входа в игру)
 const bossLog = [];
 function setStatus(s) { status = { ...status, ...s }; broadcast('status', status); }
 
@@ -412,7 +415,9 @@ const bridge = {
     const dir = BRIDGE_DIR();
     const dll = path.join(dir, 'AionDpsBridge.dll');
     if (!fs.existsSync(dll)) { setStatus({ state: 'error', msg: 'Не найден модуль чтения (AionDpsBridge.dll)' }); return; }
-    setStatus({ state: 'starting', msg: 'Запуск чтения трафика…' });
+    selfKnown = false;
+    selfSince = Date.now();
+    setStatus({ state: 'starting', msg: 'Запуск чтения трафика…', selfKnown: false, since: selfSince });
     let errText = '';
     const p = spawn('dotnet', [dll, '--host', String(process.pid)], { cwd: dir, windowsHide: true });
     this.proc = p;
@@ -444,6 +449,7 @@ const bridge = {
         if (me && me.cls && me.cls !== 'Unknown' && me.cls !== settings.characterClass) patchSettings({ characterClass: me.cls });
       }
       else if (m.t === 'self') {
+        if (m.name && !selfKnown) { selfKnown = true; setStatus({ selfKnown: true }); }
         const patch = {};
         if (m.name && m.name !== settings.character) patch.character = m.name;
         if (m.server && m.server !== settings.detectedServer) patch.detectedServer = m.server;
@@ -451,6 +457,7 @@ const bridge = {
         if (Object.keys(patch).length) { patchSettings(patch); broadcastSchedule(); }
       }
       else if (m.t === 'diag') { lastDiag = m; diagWait?.(m); }
+      else if (m.t === 'tgt') { if (settings.autoMode !== false && ['dummy', 'boss', 'mob'].includes(m.kind) && m.kind !== settings.mode) setMode(m.kind); }
       else if (m.t === 'fg') { fgState = m.state; applyOverlayVisibility(); watchGameExit(); }
       else if (m.t === 'fieldbosses') onFieldBosses(m);
       else if (m.t === 'detail') broadcast('detail', m);
@@ -480,7 +487,7 @@ const bridge = {
 const pingLog = []; // { t, ms } — только точные замеры (без пометки «~»)
 let lastLagAt = 0;
 function onPing(m) {
-  lastPing = m.ms; lastPingEst = !!m.est; lastPingDbg = { n: m.n | 0 };
+  lastPing = m.ms; lastPingEst = !!m.est; lastPingDbg = { n: m.n | 0, jit: m.jit | 0 };
   const ov = wins.overlay; if (ov && !ov.isDestroyed()) ov.webContents.send('ping', { ms: lastPing, est: lastPingEst, dbg: lastPingDbg });
   if (lastPingEst || !(m.ms > 0)) return;
   const now = Date.now();
@@ -1416,7 +1423,7 @@ function askDiag() {
     bridge.send('diag');
   });
 }
-ipcMain.handle('diag', () => askDiag());
+ipcMain.handle('diag', () => askDiag().then(d => d && !d.none ? { ...d, selfKnown, selfWaitMs: Date.now() - selfSince } : d));
 function diagLines(d, mask) {
   if (!d || d.none) return ['Capture is not running'];
   const ip = x => (mask && x ? String(x).replace(/\d{1,3}(\.\d{1,3}){3}/g, '•.•.•.•') : x);

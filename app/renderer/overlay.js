@@ -77,7 +77,8 @@ function empty() {
   const bad = ['no-npcap', 'no-dotnet', 'error', 'Error', 'disabled'].includes(status.state);
   const wait = S.mode === 'boss' ? 'Ждём босса подземелья' : S.mode === 'dummy' ? 'Ударьте по манекену' : 'Ждём боя';
   const msg = String(status.msg || '').split(' · ')[0];
-  const text = bad ? msg : (status.state === 'Capturing' ? wait : (msg || wait));
+  const noSelf = status.state === 'Capturing' && status.selfKnown === false && Date.now() - (status.since || Date.now()) > 30000;
+  const text = bad ? msg : noSelf ? 'Перезайдите на персонажа: счётчик пока не видит вас' : (status.state === 'Capturing' ? wait : (msg || wait));
   return `<div class="empty"><div>${esc(text)}</div>${bad ? '<button type="button" class="primary" data-a="conn">Подробнее</button>' : ''}</div>`;
 }
 
@@ -125,6 +126,7 @@ function render() {
     S.columns?.hits && { h: 'Удары', t: 'Количество ударов', w: '40px', v: p => p.hits ?? '—' },
     S.columns?.maxHit && { h: 'Макс', t: 'Самый сильный удар', w: '46px', v: p => p.maxHit ? fmt(p.maxHit) : '—' },
     S.columns?.hps && { h: 'HPS', t: 'Лечение в секунду', w: '44px', v: p => p.hps ? fmt(p.hps) : '—' },
+    S.columns?.taken && { h: 'Получ.', t: 'Полученный урон', w: '48px', v: p => p.taken ? fmt(p.taken) : '—' },
     S.columns?.gs && { h: 'ГС', t: 'Гир-скор (уровень экипировки): известен у игроков вашей группы', w: '40px', v: p => p.gs ? p.gs : '—' },
     S.columns?.cp && { h: 'БМ', t: 'Боевая мощь: известна у игроков вашей группы', w: '50px', v: p => p.cp ? fmt(p.cp) : '—' },
   ].filter(Boolean);
@@ -303,7 +305,7 @@ api.on('snap', s => { snap = s; render(); });
 api.on('records', r => { records = r || {}; });
 // Пинг до игрового сервера (считается по трафику игры): полоски сигнала и миллисекунды.
 function showPing(ms, est, dbg) {
-  const dt = dbg ? '\nОтветов игры на пинг: ' + (dbg.n | 0) : '';
+  const dt = dbg ? '\nОтветов игры на пинг: ' + (dbg.n | 0) + (dbg.jit > 0 ? '\nДжиттер (колебание задержки): ' + dbg.jit + ' мс' : '') : '';
   const el = $('ping');
   if (ms === -2) {
     // игра идёт через ускоритель/VPN: он сам подтверждает пакеты, настоящий пинг знает только он

@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated": "2026-10-31",
+  "updated": "2026-11-09",
   "note": "Расписание AION 2 Global. Часы сервера Global — GMT+9; в программе время показывается по вашим местным часам.",
   "serverTz": {
     "default": "Asia/Seoul"
@@ -136,15 +136,15 @@
     }
   ],
   "app": {
-    "version": "1.3.4",
-    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.4/AionDpsMeter.v1.3.4.exe",
-    "sha256": "d0a5ef4396fd2669218eab26eda0480c56c6c2f4f41ca518ad8f0753a57efa6a",
-    "size": 112565427,
-    "notes": "• Манекен: счёт больше не сбрасывается, когда манекен «умирает», бой идёт до выбранного в настройках таймера\n• Безопаснее для игры: программа больше не смотрит процессы и соединения Windows, игра определяется по трафику и заголовку окна\n• Диагностика захвата в настройках и отчёт об ошибке на английском\n• Анимации тем сами отключаются на слабом ПК (режим «Авто»), щит «Чёрного пламени» ушёл на задний план",
+    "version": "1.3.5",
+    "url": "https://github.com/Accapura/AionDpsMeter/releases/download/v1.3.5/AionDpsMeter.v1.3.5.exe",
+    "sha256": "4778133240c53688b1b872521ff83bfce8a4c8f7214e4834d3702c1dcbca7bc8",
+    "size": 113134102,
+    "notes": "• Оверлей сам переключает режим на цель, которую вы бьёте (манекен, моб, босс)\n• Подсказка «Перезайдите на персонажа», если счётчик запущен посреди игры\n• Урон мульти-ударов в таблице навыков и колонка «Полученный урон» в оверлее\n• Пинг: джиттер; жрец: верный счёт «Небесного приговора»; акула на всех экранах установщика",
     "patch": {
-      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.4.gz",
-      "sha256": "03b3ce5f02be9f74c33ec274ef588450652e712fe42212c66c2d7425d95a0750",
-      "size": 1729419,
+      "url": "https://raw.githubusercontent.com/Accapura/AionDpsMeter/main/updates/AionDpsMeter-patch-1.3.5.gz",
+      "sha256": "2e2c9f3ce6acbdf7f354fb00343e58323dea7881aca63cca7dedb76418f3dd82",
+      "size": 1734817,
       "shell": "e33-net10"
     }
   }

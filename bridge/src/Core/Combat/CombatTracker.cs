@@ -204,6 +204,26 @@ public sealed partial class CombatTracker
         return npc.IsBoss && !Options.FieldBlocks.Contains(npc.NpcCode / 1000);
     }
 
+    /// <summary>Свой удар не по тому типу цели, что выбран в режиме: подсказать переключиться (манекен / босс подземелья / моб).</summary>
+    public event Action<string>? TargetSuggested;
+    private string? _sugKind; private int _sugCount; private long _sugFirstMs, _sugFiredMs;
+
+    private void SuggestTarget(NpcInfo npc, long ms)
+    {
+        if (_current is { IsActive: true }) { _sugCount = 0; return; } // посреди боя режим не меняем
+        var mode = Options.DummyMode ? "dummy" : Options.DungeonOnly ? "boss" : "mob";
+        string? kind = null;
+        if (npc.IsDummy) { if (mode != "dummy") kind = "dummy"; }
+        else if (mode == "dummy") kind = npc.IsBoss && IsDungeonTarget(npc) ? "boss" : "mob";
+        else if (mode == "boss" && !IsDungeonTarget(npc)) kind = "mob";
+        if (kind is null) { _sugCount = 0; return; }
+        if (ms - _sugFiredMs < 4000) return;
+        if (kind != _sugKind || ms - _sugFirstMs > 5000) { _sugKind = kind; _sugCount = 0; _sugFirstMs = ms; }
+        if (++_sugCount < 2) return; // два удара подряд по такой цели: случайный взмах по соседу не считается
+        _sugCount = 0; _sugFiredMs = ms;
+        TargetSuggested?.Invoke(kind);
+    }
+
     private bool _dummyLocked;
     private long _dummyLockLastMs;
 
@@ -247,6 +267,7 @@ public sealed partial class CombatTracker
 
         var npc = _entities.UpsertNpc(target);
         if (npc.Hp == 0 && !(DummyTimed && npc.IsDummy)) return; // trailing DoT ticks on a corpse must not open a new segment after the kill
+        if (_entities.SelfId is { } me && me == source) SuggestTarget(npc, d.TimeMs);
         if (npc.IsDummy != Options.DummyMode) return; // манекены считаются только в режиме «Манекен», и только они
         if (Options.DungeonOnly && !IsDungeonTarget(npc)) return; // «Данж: Босс»: только подземелья
         if (Options.DummyMode && Options.DummySeconds > 0)
@@ -283,7 +304,7 @@ public sealed partial class CombatTracker
 
         var offset = (int)Math.Max(0, d.TimeMs - enc.StartMs);
         var flags = d.HitCount > 1 ? d.Flags | HitFlags.Multi : d.Flags;
-        c.AddDamage(offset, d.SkillCode, d.Damage, flags);
+        c.AddDamage(offset, d.SkillCode, d.Damage, flags, d.MultiDamage);
         if (d.PowerScalar is >= 1_000 and <= 200_000 && d.SourceId == source) c.Scalars.Add(d.PowerScalar);
         if (c.FirstHitMs == 0) c.FirstHitMs = d.TimeMs;
         c.LastHitMs = d.TimeMs;
@@ -874,7 +895,7 @@ public sealed partial class CombatTracker
                     st.Hits > 0 ? st.Min : 0, st.Max,
                     Rate(st.Crits, st.Hits), Rate(st.Back, st.Hits), Rate(st.Front, st.Hits),
                     Rate(st.Perfect, st.Hits), Rate(st.Heavy, st.Hits), Rate(st.Multi, st.Hits),
-                    Rate(st.Double, st.Hits));
+                    Rate(st.Double, st.Hits), st.MultiDamage);
             })
             .OrderByDescending(s => s.Damage)
             .ToList();
@@ -884,7 +905,7 @@ public sealed partial class CombatTracker
             t.Hits, t.DotTicks, Rate(t.Crits, t.Hits), Rate(t.Back, t.Hits), Rate(t.Front, t.Hits),
             Rate(t.Perfect, t.Hits), Rate(t.Heavy, t.Hits), Rate(t.Multi, t.Hits),
             t.Max, c.MaxHitSkill != 0 ? _data.SkillName(c.MaxHitSkill) : null,
-            Rate(t.Double, t.Hits));
+            Rate(t.Double, t.Hits), t.MultiDamage);
 
         var casts = c.Casts.Count <= maxCasts ? c.Casts.ToArray() : c.Casts.GetRange(0, maxCasts).ToArray();
         return new CombatantDetail(

@@ -27,10 +27,12 @@ public sealed class HitStats
     public long DotDamage;
     public long Min = long.MaxValue;
     public long Max;
+    public long MultiDamage;
 
-    public void Add(long damage, HitFlags flags)
+    public void Add(long damage, HitFlags flags, long multiDamage = 0)
     {
         Damage += damage;
+        if (multiDamage > 0 && multiDamage < damage) MultiDamage += multiDamage;
         if ((flags & HitFlags.Dot) != 0)
         {
             // DoT ticks never crit / land from behind, so keep them out of the hit-quality denominators.
@@ -58,7 +60,7 @@ public sealed class SkillStats
 }
 
 /// <summary>One cast / hit in order, for the rotation view.</summary>
-public readonly record struct CastRecord(int OffsetMs, int SkillCode, long Damage, HitFlags Flags);
+public readonly record struct CastRecord(int OffsetMs, int SkillCode, long Damage, HitFlags Flags, long Multi = 0);
 
 public sealed class Combatant
 {
@@ -101,13 +103,13 @@ public sealed class Combatant
     {
         foreach (var cast in other.Casts)
         {
-            Total.Add(cast.Damage, cast.Flags);
+            Total.Add(cast.Damage, cast.Flags, cast.Multi);
             if (!Skills.TryGetValue(cast.SkillCode, out var s))
             {
                 s = new SkillStats { SkillCode = cast.SkillCode };
                 Skills[cast.SkillCode] = s;
             }
-            s.Stats.Add(cast.Damage, cast.Flags);
+            s.Stats.Add(cast.Damage, cast.Flags, cast.Multi);
             if (Casts.Count < MaxCasts) Casts.Add(cast);
         }
         Casts.Sort((a, b) => a.OffsetMs.CompareTo(b.OffsetMs));
@@ -124,10 +126,10 @@ public sealed class Combatant
         LastHitMs = Math.Max(LastHitMs, other.LastHitMs);
     }
 
-    public void AddDamage(int offsetMs, int skillCode, long damage, HitFlags flags)
+    public void AddDamage(int offsetMs, int skillCode, long damage, HitFlags flags, long multiDamage = 0)
     {
         var prevMax = Total.Max;
-        Total.Add(damage, flags);
+        Total.Add(damage, flags, multiDamage);
         if (Total.Max > prevMax) MaxHitSkill = skillCode;
 
         if (!Skills.TryGetValue(skillCode, out var s))
@@ -135,13 +137,13 @@ public sealed class Combatant
             s = new SkillStats { SkillCode = skillCode };
             Skills[skillCode] = s;
         }
-        s.Stats.Add(damage, flags);
+        s.Stats.Add(damage, flags, multiDamage);
 
         var sec = Math.Max(0, offsetMs / 1000);
         while (PerSecond.Count <= sec) PerSecond.Add(0);
         PerSecond[sec] += damage;
 
-        if (Casts.Count < MaxCasts) Casts.Add(new CastRecord(offsetMs, skillCode, damage, flags));
+        if (Casts.Count < MaxCasts) Casts.Add(new CastRecord(offsetMs, skillCode, damage, flags, multiDamage));
     }
 }
 

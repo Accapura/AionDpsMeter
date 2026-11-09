@@ -34,6 +34,7 @@ public enum GameClass : byte
 public abstract record GameEvent(long TimeMs);
 
 /// <param name="Damage">Total damage of the record, additional hits included.</param>
+/// <param name="MultiDamage">Damage of the additional (multi) hits only; already included in Damage. 0 when unknown.</param>
 /// <param name="HitCount">1 + number of additional hits carried by the record.</param>
 /// <param name="PowerScalar">The actor's damage multiplier in 1/100 % (players 16000–22000, mobs 10000); 0 if absent.
 /// Summons inherit their owner's value, which lets unannounced summons be merged into the right player.</param>
@@ -45,7 +46,8 @@ public sealed record DamageEvent(
     long Damage,
     HitFlags Flags,
     int HitCount = 1,
-    int PowerScalar = 0) : GameEvent(TimeMs);
+    int PowerScalar = 0,
+    long MultiDamage = 0) : GameEvent(TimeMs);
 
 public sealed record HealEvent(long TimeMs, uint SourceId, uint TargetId, int SkillCode, long Amount, HitFlags Flags) : GameEvent(TimeMs);
 

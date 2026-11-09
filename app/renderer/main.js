@@ -135,12 +135,14 @@ const pages = {
         <label class="row" style="gap:7px"><input type="checkbox" data-mcol="hits" ${S.columns?.hits ? 'checked' : ''}> Удары</label>
         <label class="row" style="gap:7px"><input type="checkbox" data-mcol="maxHit" ${S.columns?.maxHit ? 'checked' : ''}> Макс. удар</label>
         <label class="row" style="gap:7px"><input type="checkbox" data-mcol="hps" ${S.columns?.hps ? 'checked' : ''}> Лечение (HPS)</label>
+        <label class="row" style="gap:7px"><input type="checkbox" data-mcol="taken" ${S.columns?.taken ? 'checked' : ''}> Полученный урон</label>
         <label class="row" style="gap:7px" title="Известен у игроков вашей группы"><input type="checkbox" data-mcol="gs" ${S.columns?.gs ? 'checked' : ''}> Гир-скор</label>
         <label class="row" style="gap:7px" title="Известна у игроков вашей группы"><input type="checkbox" data-mcol="cp" ${S.columns?.cp ? 'checked' : ''}> Боевая мощь</label>
       </div>
       <div class="muted" style="font-size:12px">Наведите курсор на название колонки в оверлее — появится подсказка, что она показывает.</div></div>
     <div class="card field"><span class="lbl">Поведение</span>
       <label class="opt"><input type="checkbox" id="oSolo" ${S.solo ? 'checked' : ''}> <span><b>Только я</b> — крупно свой DPS, место, урон и крит вместо списка группы</span></label>
+      <label class="opt"><input type="checkbox" id="oAutoMode" ${S.autoMode !== false ? 'checked' : ''}> <span><b>Переключать режим сам</b>: если вы бьёте манекен, моба или босса подземелья не из выбранного режима, оверлей перейдёт на него</span></label>
       <label class="opt"><input type="checkbox" id="oAuto" ${S.autoHide !== false ? 'checked' : ''}> <span><b>Прятать оверлей</b>, когда игра свёрнута или открыто другое окно</span></label>
       <label class="opt"><input type="checkbox" id="oLimit" ${S.ovLimit !== false ? 'checked' : ''}> <span><b>Показывать лимит времени</b> — обратный отсчёт подземелья и босса внизу оверлея</span></label>
             <label class="opt"><input type="checkbox" id="oStart" ${S.autoStart ? 'checked' : ''}> <span><b>Запускать вместе с Windows</b> — программа стартует свёрнутой в трей, оверлей появится, когда откроется игра</span></label>
@@ -996,6 +998,7 @@ function diagHtml(d) {
     <div class="dg-sec"><div class="dg-lbl">${esc(T('Слушаются адаптеры'))}</div><div class="dg-chips">${chips(d.adapters || []) || '<span class="dg-note">—</span>'}${d.server ? `<button type="button" class="dg-chip srv dg-eye" data-dg="srv" title="${esc(T(showAddr ? 'Скрыть' : 'Показать'))}">${esc(T('сервер'))} ${ip(d.server)} <u>${esc(T(showAddr ? 'Скрыть' : 'Показать'))}</u></button>` : ''}</div></div>
     ${(d.failed || []).length ? `<div class="dg-sec"><div class="dg-lbl">${esc(T('Адаптеры, которые не открылись'))}</div><div class="dg-chips">${chips(d.failed, true)}</div></div>` : ''}
     <div class="dg-sec"><div class="dg-lbl">${esc(T('Фильтр'))}</div><div class="dg-code">${ip(d.filter)}</div></div>
+    ${d.flows > 0 && d.selfKnown === false && d.selfWaitMs > 30000 ? `<div class="dg-note warn">${esc(T('Персонаж ещё не определён: перезайдите на персонажа в игре (выйдите к выбору и войдите снова), иначе урон не считается.'))}</div>` : ''}
     <div class="dg-note${lost ? ' warn' : ''}">${esc(T(lost ? 'Есть потери пакетов: бой может считаться неполно. Закройте тяжёлые программы или проверьте сеть.' : 'Потерь нет: поток игры читается целиком.'))}</div>
   </div>`;
 }
@@ -1061,6 +1064,7 @@ function render() {
   on('resetSize', 'onclick', () => api.overlayResetSize());
   on('oSolo', 'onchange', e => api.set({ solo: e.target.checked }));
   on('oAuto', 'onchange', e => api.set({ autoHide: e.target.checked }));
+  on('oAutoMode', 'onchange', e => api.set({ autoMode: e.target.checked }));
   on('oLimit', 'onchange', e => api.set({ ovLimit: e.target.checked }));
   on('oStart', 'onchange', e => api.set({ autoStart: e.target.checked }));
   on('oQuit', 'onchange', e => api.set({ quitWithGame: e.target.checked }));

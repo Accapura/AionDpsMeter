@@ -85,6 +85,7 @@ void EmitSelf()
     Emit(new { t = "self", name = tracker.SelfName, serverId = sid, server = sid != 0 ? data.ServerName(sid) : null });
 }
 tracker.SelfIdentified += _ => EmitSelf();
+tracker.TargetSuggested += k => Emit(new { t = "tgt", kind = k });
 tracker.BossNoticed += n =>
 {
     if (n.MapId != 0)
@@ -169,6 +170,7 @@ void EmitDetail(uint actor, bool withCasts = false)
             front = d.Quality.FrontRate,
             multi = d.Quality.MultiRate,
             dbl = d.Quality.DoubleRate,
+            multiDmg = d.Quality.MultiDamage,
             maxHit = d.Quality.MaxHit,
             maxHitSkill = d.Quality.MaxHitSkill,
         },
@@ -176,7 +178,7 @@ void EmitDetail(uint actor, bool withCasts = false)
         {
             name = k.Name, hits = k.Hits, dots = k.DotTicks, dmg = k.Damage, dps = Math.Round(k.Dps), share = Math.Round(k.Share, 4),
             avg = k.Average, max = k.Max, crit = k.CritRate, back = k.BackRate, front = k.FrontRate, perfect = k.PerfectRate,
-            heavy = k.HeavyRate, multi = k.MultiRate, dbl = k.DoubleRate,
+            heavy = k.HeavyRate, multi = k.MultiRate, dbl = k.DoubleRate, multiDmg = k.MultiDamage,
         }),
         perSecond = d.PerSecond,
         rot = withCasts ? RotationOf(d, d.CombatMs, 6000) : null,
@@ -394,6 +396,7 @@ while (running)
                     share = Math.Round(c.Share, 4),
                     heal = c.Healing,
                     hps = s.CombatMs > 0 ? Math.Round(c.Healing / (s.CombatMs / 1000.0)) : 0,
+                    taken = c.DamageTaken,
                     gs = c.GearScore,
                     cp = c.CombatPower,
                 }),
@@ -427,8 +430,9 @@ while (running)
         else if (passive >= 3) { ping = passive; est = true; }
         else ping = icmp >= 0 || passive >= 0 ? -2 : -1;
         var info = capture?.Ping.EchoInfo ?? (0, 0);
-        var pk = HashCode.Combine(ping, est, info.Item1);
-        if (pk != pingLast) { pingLast = pk; Emit(new { t = "ping", ms = ping, est, n = info.Item1 }); }
+        var jit = capture?.Ping.JitterMs ?? -1;
+        var pk = HashCode.Combine(ping, est, info.Item1, jit);
+        if (pk != pingLast) { pingLast = pk; Emit(new { t = "ping", ms = ping, est, n = info.Item1, jit }); }
     }
     Thread.Sleep(250);
 }

@@ -21,6 +21,8 @@ public sealed class PingMeter
     private double? _live;
     private long _echoAtMs;
     private int _echoCount, _echoLast;
+    private long _echoLastStamp = long.MinValue; // метка «время отправки» последнего принятого ответа: повторы и опоздавшие ответы пропускаются
+    private readonly List<int> _echoRtts = new(); // последние точные замеры игры, для джиттера
 
     /// <summary>Пинг в мс; -1, пока нет замеров (или они устарели).</summary>
     public int PingMs
@@ -61,6 +63,21 @@ public sealed class PingMeter
     /// <summary>Для подсказки в оверлее: сколько ответов игры получено и последний замер, мс.</summary>
     public (int Count, int Last) EchoInfo { get { lock (_gate) return (_echoCount, _echoLast); } }
 
+    /// <summary>Джиттер (мс): среднее изменение между соседними точными замерами игры за последние ~2 минуты; -1, если замеров меньше трёх.</summary>
+    public int JitterMs
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_echoRtts.Count < 3) return -1;
+                double sum = 0;
+                for (var i = 1; i < _echoRtts.Count; i++) sum += Math.Abs(_echoRtts[i] - _echoRtts[i - 1]);
+                return (int)Math.Round(sum / (_echoRtts.Count - 1));
+            }
+        }
+    }
+
     private static long CounterMs()
     {
         var ts = System.Diagnostics.Stopwatch.GetTimestamp(); var f = System.Diagnostics.Stopwatch.Frequency;
@@ -74,6 +91,11 @@ public sealed class PingMeter
         {
             if (d[i] != 0x03 || d[i + 1] != 0x36 || d[i + 2] != 0 || d[i + 3] != 0) continue;
             var v = BitConverter.ToInt64(d, i + 4);
+            var wallNowCheck = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            lock (_gate)
+            {
+                if (v <= _echoLastStamp && wallNowCheck - _echoAtMs < 60_000) continue; // повторно отправленный или опоздавший ответ: часы пинга не трогаем
+            }
             var wallNow = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var counterNow = CounterMs();
             long rtt = -1;
@@ -84,7 +106,8 @@ public sealed class PingMeter
             lock (_gate)
             {
                 _anchor = rtt; _anchorPassive = PassiveLow(wallNow, 8000); _live = rtt;
-                _echoAtMs = wallNow; _echoLast = (int)rtt; _echoCount++;
+                _echoAtMs = wallNow; _echoLast = (int)rtt; _echoCount++; _echoLastStamp = v;
+                _echoRtts.Add((int)rtt); if (_echoRtts.Count > 12) _echoRtts.RemoveAt(0);
             }
         }
     }
